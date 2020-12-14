@@ -33,6 +33,14 @@ func main() {
 
 	defer c.Close()
 
+	go func() {
+		for {
+			_, message, err := c.ReadMessage()
+			if err != nil { log.Print(err) }
+			log.Printf("Received %s", message)
+		}
+	}()
+
 	for {
 		var input string
 
@@ -40,14 +48,14 @@ func main() {
 
 		_, err := fmt.Scanln(&input)
 
-		if err != nil { log.Fatal(err) }
+		if err != nil {
+			log.Print(err)
+			continue
+		}
 
 		log.Printf("Sending %s", input)
 		err = c.WriteMessage(websocket.TextMessage, []byte(input))
 		if err != nil { log.Fatal(err) }
 
-		_, message, err := c.ReadMessage()
-		if err != nil { log.Fatal(err) }
-		log.Printf("Received %s", message)
 	}
 }
