@@ -17,7 +17,7 @@ var current
         
 func _input(event):
     if (event is InputEventMouseButton and event.button_index == BUTTON_LEFT) or (event is InputEventMouseMotion and current):
-        var camera = $Camera2
+        var camera = get_viewport().get_camera()
         var mouse = get_viewport().get_mouse_position()
         var from = camera.project_ray_origin(mouse)
         var to = from + camera.project_ray_normal(mouse) * ray_length        
@@ -32,11 +32,14 @@ func _input(event):
             if event is InputEventMouseButton and event.button_index == BUTTON_LEFT:
                 if event.is_pressed() and cast.collider.is_class("StaticBody"):     
                     current = cast.collider
-                elif cast.collider.is_class("Area"):
-                    var new_position = cast.collider.transform.origin
-                    cast.collider.visible = true
-                    new_position.y = 2
+                elif current and cast.collider.is_class("Area"):
+                    var new_position = cast.collider.global_transform.origin
+                    new_position.y = cast.position.y
+                    print('---------')
+                    print(cast.position.y)
+                    print(new_position.y)
                     current.set_translation(new_position)
+                    # cast.collider.visible = true
                     current = null
             elif current and event is InputEventMouseMotion:
                 current.set_translation(cast.position)
