@@ -39,6 +39,6 @@ func _ready():
                 var new_tile = mainTile.duplicate()
                 new_tile.translation.x = row * offset_width
                 new_tile.translation.z = column * offset_width
-                new_tile.visible = true
+                new_tile.visible = false
                 tiles.add_child(new_tile)
                 new_tile.set_owner(get_tree().edited_scene_root)
