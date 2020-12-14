@@ -4,6 +4,9 @@ import (
 	"fmt"
 	"flag"
 	"log"
+	"net/http"
+
+	"cirya.me/server/api"
 )
 
 var port = flag.Int("p", 3333, "-p [port]")
@@ -11,18 +14,15 @@ var port = flag.Int("p", 3333, "-p [port]")
 func main() {
 	flag.Parse()
 
-	address := "0.0.0.0:" + *port
+	addr := fmt.Sprintf("0.0.0.0:%d", *port)
 
-	log.Printf("Starting server ws://%s")
+	log.Printf("Starting server %s", addr)
 
-	err := http.ListendAndServe(addr, nil)
+	s := api.New()
 
-	if err != null {
+	err := http.ListenAndServe(addr, s.Router())
+
+	if err != nil {
 		log.Fatal("Server error", err)
 	}
 }
-
-// ambientacion, piezas, tamaño de tablero
-// codigo tipo kahoot para entrar en partida
-// quien crea la sala
-// entra con el codigo y on demand

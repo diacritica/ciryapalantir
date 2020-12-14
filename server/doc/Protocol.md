@@ -104,18 +104,18 @@ Action by default when you connect to the server. The server will send you back 
     "owner": "USER_ID",
     "config": { .. },
     "players": {
-        1: { "username: "USER_ID", "subset": "white", "ready": true },
-        2: { "username: "USER_ID", "subset": "black", "ready": true }
+        "1": { "username: "USER_ID", "subset": "white", "ready": true },
+        "2": { "username: "USER_ID", "subset": "black", "ready": true }
     },
     "status": "WAITING_1",
     "turn: 20,
     "moves": [ "a6 f6", ... ],
     "board": {
         "a": {
-            1: ["C1", "C2", "T1"]
+            "1": ["C1", "C2", "T1"]
         },
         "d": {
-            3: ["H1"]
+            "3": ["H1"]
         }
     }
 }
@@ -160,7 +160,7 @@ When there is no entry for a row/column it means it's an empty position (so equi
     "owner": "USER_ID",
     "config": { ... },
     "players": {
-        2: { "username": "USER_ID", "subset": "white", "ready": false }
+        "2": { "username": "USER_ID", "subset": "white", "ready": false }
     },
     "status": "WAITING_PLAYERS"
 }
@@ -173,8 +173,8 @@ When there is no entry for a row/column it means it's an empty position (so equi
     "owner": "USER_ID",
     "config": { ... },
     "players": {
-        1: { "username": "USER_ID", "subset": "white", "ready": true },
-        2: { "username": "USER_ID", "subset": "white", "ready": true }
+        "1": { "username": "USER_ID", "subset": "white", "ready": true },
+        "2": { "username": "USER_ID", "subset": "white", "ready": true }
     },
     "status": "TURN_1",
     "moves": [],
