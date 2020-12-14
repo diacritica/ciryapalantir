@@ -26,14 +26,8 @@ shape = SubResource( 3 )
 mesh = SubResource( 4 )
 material/0 = null
 
-[node name="Tiles" type="GridMap" parent="."]
-transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, -4.32422, 0.741716, -4.32392 )
-data = {
-"cells": PoolIntArray(  )
-}
-__meta__ = {
-"_editor_clip_": 0
-}
+[node name="Tiles" type="Spatial" parent="."]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, -4.32, 0, -4.32 )
 
 [node name="BaseTile" type="Area" parent="Tiles"]
 
