@@ -10,10 +10,11 @@ var tile_size = 2.12
 var offset_width = tile_size + border_width
 var map_border = 2.58
 
+var tile = load("res://Tile.tscn")
+
 # Called when the node enters the scene tree for the first time.
 func _ready():
     var centered = $Surface.centered
-    var mainTile = $BaseTile
     var tiles = get_node_or_null("Tiles")
     
     if tiles && auto:
@@ -36,9 +37,11 @@ func _ready():
     if tiles.get_child_count() == 0:
         for row in range(rows):
             for column in range(columns):
-                var new_tile = mainTile.duplicate()
+                var new_tile = tile.instance()
                 new_tile.translation.x = row * offset_width
                 new_tile.translation.z = column * offset_width
                 new_tile.visible = false
+                new_tile.row = row
+                new_tile.column = column
                 tiles.add_child(new_tile)
                 new_tile.set_owner(get_tree().edited_scene_root)
