@@ -10,6 +10,7 @@ var tile_size = 2.12
 var offset_width = tile_size + border_width
 var map_border = 2.58
 
+onready var global = get_node("/root/Global")
 var tile = preload("res://Tile.tscn")
 
 # Called when the node enters the scene tree for the first time.
@@ -36,7 +37,10 @@ func _ready():
         
     if tiles.get_child_count() == 0:
         for row in range(rows):
+            global.board_state.append([])
             for column in range(columns):
+                global.board_state[row].append([])
+                
                 var new_tile = tile.instance()
                 new_tile.translation.x = row * offset_width
                 new_tile.translation.z = column * offset_width

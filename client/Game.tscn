@@ -1,8 +1,10 @@
-[gd_scene load_steps=5 format=2]
+[gd_scene load_steps=7 format=2]
 
 [ext_resource path="res://Board.tscn" type="PackedScene" id=1]
 [ext_resource path="res://units/light-cirya-basic.tscn" type="PackedScene" id=2]
 [ext_resource path="res://Game.gd" type="Script" id=3]
+[ext_resource path="res://units/light-hallacirya-ship.tscn" type="PackedScene" id=4]
+[ext_resource path="res://camera.gd" type="Script" id=5]
 
 [sub_resource type="Environment" id=1]
 
@@ -28,8 +30,16 @@ environment = SubResource( 1 )
 [node name="Tiles" type="Spatial" parent="Board"]
 transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, -4.32, 0, -4.32 )
 
+[node name="light-hallacirya-ship" parent="." instance=ExtResource( 4 )]
+transform = Transform( 0.75, 0, 0, 0, 0.75, 0, 0, 0, 0.75, 1.77206, 2.58386, 2.72424 )
+
 [node name="light-cirya-basic" parent="." instance=ExtResource( 2 )]
 transform = Transform( 0.75, 0, 0, 0, 0.75, 0, 0, 0, 0.75, -4.52177, 2.78299, 0 )
 
 [node name="light-cirya-basic2" parent="." instance=ExtResource( 2 )]
 transform = Transform( 0.75, 0, 0, 0, 0.75, 0, 0, 0, 0.75, 0.0772452, 2.78299, 0 )
+
+[node name="DebugCamera" type="Camera" parent="."]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.8476, 4.09103 )
+current = true
+script = ExtResource( 5 )
