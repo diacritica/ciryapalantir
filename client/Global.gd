@@ -22,9 +22,13 @@ func render_board():
                 var tile = get_tile(row_index, column_index)
 
                 var new_position = tile.global_transform.origin
-                new_position.y = column.size() * cirya_height
+                new_position.y = get_stack_height(row_index, column_index)
                 
                 piece.set_translation(new_position)
+                
+func get_stack_height(row, column):
+    var pieces = board_state[row][column]
+    return pieces.size() * cirya_height
 
 func get_tile(row, column):
     var tiles = board.get_node('Tiles').get_children()
@@ -32,6 +36,11 @@ func get_tile(row, column):
     for node in tiles:
         if node.row == row and node.column == column:
             return node
+            
+func remove_piece_from_state(piece_id):
+    for row in board_state:
+        for column in row:
+            column.erase(piece_id)
 
 func valid_drop_tile(row, column):
     var tile = board_state[row][column]

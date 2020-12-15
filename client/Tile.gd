@@ -23,6 +23,7 @@ func drop(piece):
         print('not valid')
         piece.set_translation(global.piece_initial_position)
     else:
+        global.remove_piece_from_state(piece.get_instance_id())
         global.board_state[row][column].append(piece.get_instance_id())
         new_position.y = global.board_state[row][column].size() * global.cirya_height + 5
         piece.set_translation(new_position)

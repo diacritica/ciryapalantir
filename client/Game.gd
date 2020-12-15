@@ -32,9 +32,6 @@ func _input(event):
             
             var space_state = get_world().direct_space_state
             piece_cast = space_state.intersect_ray(global.current_piece.global_transform.origin, Vector3(0, -ray_length, 0), [], 2147483647, false, true)
-            
-#            if piece_cast:
-#                piece_cast.collider.visible = true
         
         # https://docs.godotengine.org/es/stable/classes/class_physicsdirectspacestate.html
         var cast = camera.get_world().direct_space_state.intersect_ray(from, to, exclude, mouse_raycast_collision, true, false)
@@ -49,8 +46,8 @@ func _input(event):
                     piece_cast.collider.drop(piece)
             elif global.current_piece and event is InputEventMouseMotion:
                 var new_position = cast.position
-                new_position.y = 1
-                cast.collider.visible = true
+                if piece_cast:
+                    new_position.y = global.get_stack_height(piece_cast.collider.row, piece_cast.collider.column)
                 global.current_piece.set_translation(new_position)
         elif global.current_piece:
             global.restore_initial_position()
