@@ -21,9 +21,15 @@ func (a *Api) GetRoomSocket(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		log.Printf("Problem looking up the room", err)
-		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-		w.WriteHeader(404)
-		io.WriteString(w, "Room not found")
+		returnError(w, 404, "Room not found")
+		return
+	}
+
+	game, err := getGame(room)
+	
+	if err != nil {
+		log.Printf("Problem looking up the game", err)
+		returnError(w, 404, "Game not found")
 		return
 	}
 
@@ -31,9 +37,7 @@ func (a *Api) GetRoomSocket(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		log.Printf("Problem looking up the user")
-		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-		w.WriteHeader(403)
-		io.WriteString(w, "User not allowed")
+		returnError(w, 403, "User not allowed")
 		return
 	}
 
@@ -46,42 +50,23 @@ func (a *Api) GetRoomSocket(w http.ResponseWriter, r *http.Request) {
 
 	defer c.Close()
 
-	room.AddUser(user)
-	defer room.RemoveUser(user)
+	// room.AddUser(user)
+	// defer room.RemoveUser(user)
 
-	finish := make(chan interface{})
+	// Starts a go routine to send messages back to the user
+	go SendMessages(c, room, user)
 
-	go func () {
-		for {
-			select {
-			case message := <- room.UserMessage(user):
-				bmsg, err := message.Format()
+	app.HandleMessage(app.ConnectMessage(user), room, game)
+	defer app.HandleMessage(app.DisconnectMessage(user), room, game)
 
-				if err != nil {
-					log.Print("Error:", err)
-					finish <- true
-				}
-
-				err = c.WriteMessage(MSG_TYPE, bmsg)
-
-				if err != nil {
-					log.Print("Error:", err)
-					finish <- true
-				}
-
-			case _ = <- finish:
-				break
-			}
-		}
-	}()
-
+	// Main read loop
 	for {
 		_, msg, err := c.ReadMessage()
 
 		if err != nil {
-			log.Print("Error reading message.", err)
-			// TODO RETURN ERROR TO CLIENT
-			continue
+			// When the user disconnects we get an error reading
+			// log.Print("Error reading message.", err)
+			break
 		}
 
 		log.Print("Message:", string(msg))
@@ -95,10 +80,43 @@ func (a *Api) GetRoomSocket(w http.ResponseWriter, r *http.Request) {
 
 		log.Print("Parsed:", message)
 		message.AddUser(user)
-		room.HandleMessage(message)
+
+		// Delegates to handlers
+		app.HandleMessage(message, room, game)
 	}
 }
 
+func SendMessages(c *websocket.Conn, room app.Room, user app.User) {
+	finish := make(chan bool)
+
+	for {
+		select {
+		case message := <- room.UserMessage(user):
+			bmsg, err := message.Format()
+
+			if err != nil {
+				log.Print("Error:", err)
+				finish <- true
+			}
+
+			err = c.WriteMessage(MSG_TYPE, bmsg)
+
+			if err != nil {
+				log.Print("Error:", err)
+				finish <- true
+			}
+
+		case _ = <- finish:
+			break
+		}
+	}
+}
+
+func returnError(w http.ResponseWriter, status int, msg string) {
+	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+	w.WriteHeader(status)
+	io.WriteString(w, msg)
+}
 
 func corsHandler(r *http.Request) bool {
 	return true
@@ -137,6 +155,32 @@ func getRoom(r *http.Request) (app.Room, error) {
 	}
 
 	return room, nil
+}
+
+func getGame(room app.Room) (app.Game, error){
+	gameId := room.CurrentGame()
+	store := app.GetStore()
+	result, err := store.Get(app.ID(gameId))
+
+	if err != nil {
+		return nil, err
+	}
+
+	var game app.Game
+	
+	if result == nil {
+		game = app.NewGame(gameId)
+		store.Save(app.ID(gameId), game)
+	} else {
+		var ok bool
+		game, ok = result.(app.Game)
+
+		if !ok {
+			return nil, fmt.Errorf("Error, stored ID is not a room")
+		}
+	}
+
+	return game, nil
 }
 
 /*

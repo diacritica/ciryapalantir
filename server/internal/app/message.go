@@ -5,15 +5,18 @@ import (
 	"encoding/json"
 )
 
+type ParamMap map[string]interface{}
+
 type message struct {
-	User ID `json:"user"`
-	Kind string `json:"type"`
+	FromUser ID `json:"user"`
+	Kind MessageType `json:"type"`
 	Status GameStatus `json:"status"`
-	Params map[string]interface{} `json:"params"`
+	Params ParamMap `json:"params"`
 }
 
 type Message interface {
 	Type() MessageType
+	User() User
 	AddUser(u User)
 	Format() ([]byte, error)
 	Get(param string) (interface{}, error)
@@ -45,8 +48,14 @@ func (m *message) Format() ([]byte, error) {
 	return json.Marshal(m)
 }
 
+func (m *message) User() User {
+	return &user {
+		id: m.FromUser,
+	}
+}
+
 func (m *message) AddUser(u User) {
-	m.User = u.Id()
+	m.FromUser = u.Id()
 }
 
 func (m *message) Get(param string) (interface{}, error) {
@@ -139,4 +148,67 @@ var MessageTypes = []MessageType {
 	GameFinished,
 }
 
+func ConnectMessage(user User) Message {
+	return &message {
+		FromUser: user.Id(),
+		Kind: Connect,
+	}
+}
 
+func DisconnectMessage(user User) Message {
+	return &message {
+		FromUser: user.Id(),
+		Kind: Disconnect,
+	}
+}
+
+func StatusResponseMessage(g Game) Message {
+	return &message {
+		Kind: StatusResponse,
+		Status: g.Status(),
+	}
+}
+
+func ConfigChangedMessage() Message {
+	return nil
+}
+
+func UserJoinedMessage(user User) Message {
+	params := make(ParamMap)
+	params["username"] = user.Id()
+		
+	return &message {
+		Kind: UserJoined,
+		Params: params,
+	}
+}
+
+func UserLeftMessage(user User) Message {
+	params := make(ParamMap)
+	params["username"] = user.Id()
+	
+	return &message {
+		Kind: UserLeft,
+		Params: params,
+	}
+}
+
+func PlayerJoinedMessage() Message {
+	return nil
+}
+
+func PlayerLeftMessage() Message {
+	return nil
+}
+
+func ReadyChangedMessage() Message {
+	return nil
+}
+
+func TurnMessage() Message {
+	return nil
+}
+
+func GameFinishedMessage() Message {
+	return nil
+}

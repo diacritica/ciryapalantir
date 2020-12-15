@@ -1,7 +1,11 @@
 package app
 
-type Game struct {
+type game struct {
 	id ID
+}
+
+type Game interface {
+	Status() GameStatus
 }
 
 type PlayerStatus struct {
@@ -20,9 +24,21 @@ type GameConfig struct {
 type Board map[string]map[string][]string
 
 type GameStatus struct {
-	config GameConfig
-	players map[string]PlayerStatus
-	state string
-	moves []string
-	board Board
+	Config GameConfig `json:"config"`
+	Players map[string]PlayerStatus `json:"players"`
+	State string `json:"state"`
+	Moves []string `json:"moves"`
+	Board Board `json:"board"`
+}
+
+func NewGame(id ID) Game {
+	return &game {
+		id: id,
+	}
+}
+
+func (g *game) Status() GameStatus {
+	var status GameStatus
+
+	return status
 }

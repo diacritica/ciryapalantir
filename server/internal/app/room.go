@@ -2,26 +2,28 @@ package app
 
 type room struct {
 	id ID
+	game ID
 	channels map[ID]chan Message
 }
 
 type Room interface {
+	CurrentGame() ID
+
+	// Users
 	AddUser(u User)
 	RemoveUser(u User)
+
+	// Messaging
 	UserMessage(u User) chan Message
 	Broadcast(m Message)
-	HandleMessage(m Message)
 }
 
 func NewRoom() Room {
 	return &room {
 		id: "ROOM",
+		game: "GAME",
 		channels: make(map[ID]chan Message),
 	}
-}
-
-func (r *room) HandleMessage(m Message) {
-	r.Broadcast(m)
 }
 
 func (r *room) AddUser(u User) {
@@ -42,4 +44,8 @@ func (r *room) Broadcast(m Message) {
 	for _, ch := range r.channels {
 		ch <- m
 	}
+}
+
+func (r *room) CurrentGame() ID {
+	return r.game
 }
