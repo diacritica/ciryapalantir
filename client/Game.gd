@@ -2,6 +2,14 @@ extends Spatial
 
 onready var global = get_node("/root/Global")
 var ray_length = 100
+
+func _ready():
+    global.board_state[0][0] = [
+        $"light-cirya-basic".get_instance_id(),
+        $"light-cirya-basic2".get_instance_id(),
+        $"light-hallacirya-ship".get_instance_id()
+    ]
+    global.render_board()
         
 func _input(event):
     if (event is InputEventMouseButton and event.button_index == BUTTON_LEFT) or (event is InputEventMouseMotion and global.current_piece):
@@ -22,8 +30,6 @@ func _input(event):
             if event is InputEventMouseButton and event.button_index == BUTTON_LEFT:
                 if event.is_pressed() and cast.collider.collision_layer == 2:     
                     global.current_piece = cast.collider
-                    # global.current_piece.get_node('CollisionShape').set_disabled(true)
-                    
                     global.current_piece.axis_lock_linear_z = true
                     global.current_piece.axis_lock_linear_x = true
                     # global.current_piece.mode = RigidBody.MODE_STATIC

@@ -15,6 +15,7 @@ var tile = preload("res://Tile.tscn")
 
 # Called when the node enters the scene tree for the first time.
 func _ready():
+    global.board = self
     var centered = $Surface.centered
     var tiles = get_node_or_null("Tiles")
     
