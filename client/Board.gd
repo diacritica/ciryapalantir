@@ -10,7 +10,7 @@ var tile_size = 2.12
 var offset_width = tile_size + border_width
 var map_border = 2.58
 
-var tile = load("res://Tile.tscn")
+var tile = preload("res://Tile.tscn")
 
 # Called when the node enters the scene tree for the first time.
 func _ready():
