@@ -32,6 +32,9 @@ func _ready():
             if centered: 
                 tiles.translation.x = -(rows * offset_width) / 2 + (offset_width / 2)
                 tiles.translation.z = -(columns * offset_width) / 2 + (offset_width / 2)
+            
+            print('movee')    
+            tiles.translation.y = -2
         
         self.add_child(tiles)    
         tiles.set_owner(get_tree().edited_scene_root)
@@ -45,7 +48,7 @@ func _ready():
                 var new_tile = tile.instance()
                 new_tile.translation.x = row * offset_width
                 new_tile.translation.z = column * offset_width
-                new_tile.visible = false
+                new_tile.visible = true
                 new_tile.row = row
                 new_tile.column = column
                 tiles.add_child(new_tile)

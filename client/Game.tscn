@@ -31,7 +31,7 @@ environment = SubResource( 1 )
 transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, -4.32, 0, -4.32 )
 
 [node name="light-hallacirya-ship" parent="." instance=ExtResource( 4 )]
-transform = Transform( 0.75, 0, 0, 0, 0.75, 0, 0, 0, 0.75, 1.77206, 2.58386, 2.72424 )
+transform = Transform( 0.75, 0, 0, 0, 0.75, 0, 0, 0, 0.75, 1.77206, 2.14818, 2.72424 )
 
 [node name="light-cirya-basic" parent="." instance=ExtResource( 2 )]
 transform = Transform( 0.75, 0, 0, 0, 0.75, 0, 0, 0, 0.75, -4.52177, 2.78299, 0 )

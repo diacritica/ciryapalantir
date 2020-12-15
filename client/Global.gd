@@ -46,6 +46,16 @@ func valid_drop_tile(row, column):
     
 func init_drag_drop(piece): 
     current_piece = piece
+    current_piece.get_node("CollisionShape").disabled = true
     current_piece.axis_lock_linear_z = true
     current_piece.axis_lock_linear_x = true
+    current_piece.mode = RigidBody.MODE_STATIC
     piece_initial_position = piece.global_transform.origin
+    
+func stop_drag_drop():
+    current_piece.mode = RigidBody.MODE_RIGID
+    current_piece.get_node("CollisionShape").disabled = false
+    current_piece = null
+    
+func restore_initial_position():
+    current_piece.set_translation(piece_initial_position)
