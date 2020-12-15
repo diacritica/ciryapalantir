@@ -2,12 +2,12 @@
 
 importer="scene"
 type="PackedScene"
-path="res://.import/cyria.glb-51ee4686e7fcecb0a3fb9882fe582302.scn"
+path="res://.import/set-cirya-basic.glb-3a8819d225067589150545143287f310.scn"
 
 [deps]
 
-source_file="res://assets/cyria.glb"
-dest_files=[ "res://.import/cyria.glb-51ee4686e7fcecb0a3fb9882fe582302.scn" ]
+source_file="res://assets/set-cirya-basic.glb"
+dest_files=[ "res://.import/set-cirya-basic.glb-3a8819d225067589150545143287f310.scn" ]
 
 [params]
 

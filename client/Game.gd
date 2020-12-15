@@ -26,7 +26,7 @@ func _input(event):
         if current:
             exclude.append(current)
             
-        var cast = camera.get_world().direct_space_state.intersect_ray(from, to, exclude, $cirya.collision_mask, true, true)
+        var cast = camera.get_world().direct_space_state.intersect_ray(from, to, exclude, $Cirya.collision_mask, true, true)
 
         if not cast.empty():
             if event is InputEventMouseButton and event.button_index == BUTTON_LEFT:
@@ -35,9 +35,6 @@ func _input(event):
                 elif current and cast.collider.is_class("Area"):
                     var new_position = cast.collider.global_transform.origin
                     new_position.y = cast.position.y
-                    print('---------')
-                    print(cast.position.y)
-                    print(new_position.y)
                     current.set_translation(new_position)
                     # cast.collider.visible = true
                     current = null
