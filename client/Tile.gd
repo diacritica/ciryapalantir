@@ -30,6 +30,6 @@ func drop(piece):
     # piece.mode = RigidBody.MODE_RIGID
     
     piece.set_translation(new_position)
-    piece.apply_central_impulse(Vector3(0, -0.25, 0))
+    piece.apply_central_impulse(Vector3(0, -0.1, 0))
 
     # self.visible = true

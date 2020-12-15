@@ -37,3 +37,6 @@ func _input(event):
 
             elif global.current_piece and event is InputEventMouseMotion:
                 global.current_piece.set_translation(cast.position)
+    elif global.current_piece and Input.is_key_pressed(KEY_R):
+        global.current_piece.toggle_block()     
+    
