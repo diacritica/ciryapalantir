@@ -70,7 +70,7 @@ Action by default when you connect to the server. The server will send you back 
 
 ```json
 {
-    "type": "Status"
+    "type": "GetStatus"
 }
 ```
 => Will send back a **StatusResponse** to the User
@@ -148,8 +148,8 @@ TODO
     "status": {
         "config": { .. },
         "players": {
-            1: { "username: "USER_ID", "subset": "white", "ready": true },
-            2: { "username: "USER_ID", "subset": "black", "ready": true }
+            1: { "name: "Name1", "color": "white", "ready": true },
+            2: { "name: "Name2", "color": "black", "ready": true }
         },
         "state": "WAITING_1",
         "turn: 20,
@@ -295,7 +295,6 @@ When there is no entry for a row/column it means it's an empty position (so equi
 {
     "type": "Status"
     "status": {
-        "owner": "USER_ID",
         "config": { ... },
         "players": {},
         "state": "WAITING_PLAYERS"
@@ -309,10 +308,9 @@ When there is no entry for a row/column it means it's an empty position (so equi
 {
     "type": "Status"
     "status": {
-        "owner": "USER_ID",
         "config": { ... },
         "players": {
-            "2": { "username": "USER_ID", "subset": "white", "ready": false }
+            "2": { "name: "Name2", "color": "white", "ready": false }
         },
         "state": "WAITING_PLAYERS"
     }
@@ -328,8 +326,8 @@ When there is no entry for a row/column it means it's an empty position (so equi
         "owner": "USER_ID",
         "config": { ... },
         "players": {
-            "1": { "username": "USER_ID", "subset": "white", "ready": true },
-            "2": { "username": "USER_ID", "subset": "white", "ready": true }
+            "1": { "name: "Name1", "color": "white", "ready": true },
+            "2": { "name: "Name2", "color": "white", "ready": true }
         },
         "state": "TURN_1",
         "moves": [],

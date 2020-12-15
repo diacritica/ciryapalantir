@@ -6,12 +6,19 @@ import (
 	"log"
 	"net/url"
 	"net/http"
+	"bufio"
+	"os"
+	"strings"
 	"github.com/gorilla/websocket"
 )
 
 var user = flag.String("u", "default", "-u [user]")
 
 func main() {
+	var msg string
+	var player int
+	var turn int
+
 	flag.Parse()
 	
 	u := url.URL {
@@ -33,6 +40,7 @@ func main() {
 
 	defer c.Close()
 
+
 	go func() {
 		for {
 			_, message, err := c.ReadMessage()
@@ -41,21 +49,70 @@ func main() {
 		}
 	}()
 
-	for {
-		var input string
+	scanner := bufio.NewScanner(os.Stdin)
 
-		fmt.Print("> ")
+	for scanner.Scan() {
+		
+		input := scanner.Text()
 
-		_, err := fmt.Scanln(&input)
+		switch {
+		case input == "status":
+			msg = `{"type": "GetStatus"}`
 
-		if err != nil {
-			log.Print(err)
+		case input == "join1":
+			player = 1
+			msg = `{
+			  "type": "JoinGame",
+        "params": {
+          "player": 1,
+          "color": "white",
+          "name": "Player1"
+        }
+			}`
+
+		case input == "join2":
+			player = 2
+			msg = `{
+			  "type": "JoinGame",
+        "params": {
+          "player": 2,
+          "color": "black",
+          "name": "Player2"
+        }
+			}`
+
+		case input == "ready":
+			msg = fmt.Sprintf(`{
+        "type": "SetReady",
+        "params": {
+          "player": "%d",
+          "ready": true
+        }
+      }`, player)
+
+		case strings.HasPrefix(input, "move"):
+			args := strings.ReplaceAll(input, "move ", "")
+			msg = fmt.Sprintf(`{
+        "type": "SubmitTurn",
+        "params": {
+          "player": %d,
+          "turn": %d,
+          "move": "%s"
+        }
+      }`, player, turn, args)
+
+		default:
+			log.Print("No valid input")
 			continue
 		}
 
-		log.Printf("Sending %s", input)
-		err = c.WriteMessage(websocket.TextMessage, []byte(input))
+		fmt.Println("Sending:", input)
+		err = c.WriteMessage(websocket.TextMessage, []byte(msg))
 		if err != nil { log.Fatal(err) }
-
 	}
+
+	if err := scanner.Err(); err != nil {
+		os.Exit(1)
+	}
+
 }

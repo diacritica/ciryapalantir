@@ -13,10 +13,100 @@ import (
 
 const MSG_TYPE = websocket.TextMessage
 
+func (a *Api) GetRoomSocket(w http.ResponseWriter, r *http.Request) {
+	upgrader := websocket.Upgrader {}
+	upgrader.CheckOrigin = corsHandler
+
+	room, err := getRoom(r)
+
+	if err != nil {
+		log.Printf("Problem looking up the room", err)
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		w.WriteHeader(404)
+		io.WriteString(w, "Room not found")
+		return
+	}
+
+	user, err := getUser(r)
+
+	if err != nil {
+		log.Printf("Problem looking up the user")
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		w.WriteHeader(403)
+		io.WriteString(w, "User not allowed")
+		return
+	}
+
+	c, err := upgrader.Upgrade(w, r, nil);
+
+	if err != nil {
+		log.Print("Error on upgrade", err)
+		return
+	}
+
+	defer c.Close()
+
+	room.AddUser(user)
+	defer room.RemoveUser(user)
+
+	finish := make(chan interface{})
+
+	go func () {
+		for {
+			select {
+			case message := <- room.UserMessage(user):
+				bmsg, err := message.Format()
+
+				if err != nil {
+					log.Print("Error:", err)
+					finish <- true
+				}
+
+				err = c.WriteMessage(MSG_TYPE, bmsg)
+
+				if err != nil {
+					log.Print("Error:", err)
+					finish <- true
+				}
+
+			case _ = <- finish:
+				break
+			}
+		}
+	}()
+
+	for {
+		_, msg, err := c.ReadMessage()
+
+		if err != nil {
+			log.Print("Error reading message.", err)
+			// TODO RETURN ERROR TO CLIENT
+			continue
+		}
+
+		log.Print("Message:", string(msg))
+		message, err := app.ParseMessage(msg)
+
+		if err != nil {
+			log.Print("Cannot parse message:", err)
+			// TODO RETURN ERROR TO CLIENT
+			continue
+		}
+
+		log.Print("Parsed:", message)
+		message.AddUser(user)
+		room.HandleMessage(message)
+	}
+}
+
+
 func corsHandler(r *http.Request) bool {
 	return true
 }
 
+/*
+   Retrieves a Room given the request
+ */
 func getRoom(r *http.Request) (app.Room, error) {
 	vars := mux.Vars(r)
 	roomId, ok := vars["room"]
@@ -49,6 +139,9 @@ func getRoom(r *http.Request) (app.Room, error) {
 	return room, nil
 }
 
+/*
+   Extracts a User from the current request
+ */
 func getUser(r *http.Request) (app.User, error) {
 	cookie, err := r.Cookie("cirya-user")
 
@@ -59,70 +152,4 @@ func getUser(r *http.Request) (app.User, error) {
 	userId := cookie.Value
 
 	return app.NewUser(userId), nil
-}
-
-func (a *Api) GetRoomSocket(w http.ResponseWriter, r *http.Request) {
-	upgrader := websocket.Upgrader {}
-	upgrader.CheckOrigin = corsHandler
-
-	room, err := getRoom(r)
-
-	if err != nil {
-		log.Printf("Problem looking up the room", err)
-		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-		w.WriteHeader(404)
-		io.WriteString(w, "Room not found")
-		return
-	}
-	
-	user, err := getUser(r)
-
-	if err != nil {
-		log.Printf("Problem looking up the user")
-		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-		w.WriteHeader(403)
-		io.WriteString(w, "User not allowed")
-		return
-	}
-
-	c, err := upgrader.Upgrade(w, r, nil);
-
-	if err != nil {
-		log.Print("Error on upgrade", err)
-		return
-	}
-
-	defer c.Close()
-
-	room.AddUser(user)
-	defer room.RemoveUser(user)
-
-	finish := make(chan interface{})
-
-	go func () {
-		for {
-			select {
-			case message := <- room.UserMessage(user):
-				err = c.WriteMessage(MSG_TYPE, message.Format())
-
-			case _ = <- finish:
-				break
-			}
-		}
-	}()
-
-	for {
-		_, msg, err := c.ReadMessage()
-
-		if err != nil {
-			log.Print("Error reading message.", err)
-			finish <- true
-			break
-		}
-
-		log.Print("Message:", string(msg))
-		message := app.ParseMessage(msg)
-		message.AddUser(user)
-		room.HandleMessage(message)
-	}
 }
