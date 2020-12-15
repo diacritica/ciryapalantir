@@ -58,42 +58,72 @@ The general format to send actions notifications
 
 Action by default when you connect to the server. The server will send you back a notification of `Status` with the current state of the room.
 
-### RequestStatus
+=> Will send back a **StatusResponse** to the User
+=> Will send a **UserJoined** to the other users
+
+### (Disconnect)
+
+=> Will send a **UserLeft** to the other users
+=> If the user is a player will send a **PlayerLeft** as well
+
+### GetStatus
 
 ```json
 {
-    "type": "RequestStatus"
+    "type": "Status"
 }
 ```
+=> Will send back a **StatusResponse** to the User
 
-### RequestPlayer
+### ChangeConfig
+
+TODO
+
+### JoinGame
 
 ```json
 {
-    "type": "RequestPlayer",
+    "type": "JoinGame",
     "params": {
         "player": 1,
-        "set": "white"
+        "color": "white",
+        "name": "Anarion"
     }
 }
 ```
+=> Will send a "**PlayerJoined**" to the other users
 
-### Ready
+
+### LeaveGame
 
 ```json
 {
-    "type": "Ready",
+    "type": "LeaveGame",
     "params": {
         "player": 1
     }
 }
 ```
+=> Will send a "**PlayerLeft**" to the other users
 
-### SendTurn
+### SetReady
 
 ```json
 {
-    "type": "SendTurn",
+    "type": "SetReady",
+    "params": {
+        "player": 1,
+        "ready": false
+    }
+}
+```
+=> Will send a "**ReadyChanged**" to the other users
+
+### Submit
+
+```json
+{
+    "type": "SubmitTurn",
     "params": {
         "player": 1,
         "turn": 20,
@@ -102,34 +132,143 @@ Action by default when you connect to the server. The server will send you back 
 }
 ```
 
+=> Will calculate the game status and send either "**Turn**" or "**GameFinished**"
+=> If the turn is not valid the user will recive an "**InvalidTurn**" **notification**
+
+
+
+
 ## Notifications
 
-### Status
+### StatusResponse
 
 ```json
 {
-    "type": "Status"
-    "owner": "USER_ID",
-    "config": { .. },
-    "players": {
-        1: { "username: "USER_ID", "subset": "white", "ready": true },
-        2: { "username: "USER_ID", "subset": "black", "ready": true }
-    },
-    "status": "WAITING_1",
-    "turn: 20,
-    "moves": [ "a6 f6", ... ],
-    "board": {
-        "a": {
-            1: ["C1", "C2", "T1"]
+    "type": "StatusResponse",
+    "status": {
+        "config": { .. },
+        "players": {
+            1: { "username: "USER_ID", "subset": "white", "ready": true },
+            2: { "username: "USER_ID", "subset": "black", "ready": true }
         },
-        "d": {
-            3: ["H1"]
+        "state": "WAITING_1",
+        "turn: 20,
+        "moves": [ "a6 f6", ... ],
+        "board": {
+            "a": {
+                1: ["C1", "C2", "T1"]
+            },
+            "d": {
+                3: ["H1"]
+            }
         }
     }
 }
 ```
 
-#### Board representation
+### ConfigChanged
+
+TODO
+
+### UserJoined
+
+```json
+{
+    "type": "UserJoined",
+    "params: {
+        "username": "alan-turing"
+    }
+}
+```
+
+### UserLeft
+
+```json
+{
+    "type": "UserLeft",
+    "params: {
+        "username": "alan-turing"
+    }
+}
+```
+
+### PlayerJoined
+
+```json
+{
+    "type": "PlayerJoined",
+    "params": {
+        "name": "Alan Turing",
+        "player": 1,
+        "color": "white"
+    }
+}
+```
+
+### PlayerLeft
+
+```json
+{
+    "type": "PlayerLeft",
+    "params": {
+        "player": 1
+    }
+}
+```
+
+### ReadyChanged
+
+```json
+{
+    "type": "ReadyChanged",
+    "params": {
+        "player": 1,
+        "ready": true
+    }
+}
+```
+
+### Turn
+
+```json
+{
+    "type": "Turn",
+    "params": {
+        "player": 1,
+        "turn": 10,
+        "move": "a6 f6",
+        "next": 2
+    },
+    "status": { ... }
+}
+```
+
+### GameFinished
+
+```json
+{
+    "type": "GameFinished",
+    "params": {
+        "result": "WIN_1"
+        "turn": 10
+    },
+    "status": { ... }
+}
+```
+
+## Normal game flow
+
+This will be a "normal" game flow. After the room has been created the users will join the room by connecting to the Websocket for that room. Everyone player that connects will receive a "**Status**" and the rest of the users will receive a notification "UserJoined".
+
+After that, we need both players. Two of the users should send messages "**RequestPlayer**" with both slots (player 1/2).
+
+Every player need to send a "**Ready**" message before the game can start. When both players send a "**Ready**" the game status will change to show the turn of the first player and a "**TurnPlayer**" will be send to all peers indicating that the system is waiting for the turn of the player.
+
+Only the player whose turn is now can send the message "SendTurn" with his next move. The game will process the turn and eventually will notify the "TurnPlayer" with the next player and the new board state.
+
+One after the other both players send turns until one of them wins the match and a message "GameFinished" is send.
+
+## Board representation
 
 A game board is a square grid where the corner bottom/left is "a1". The opposite corner depends on the board size. For a board of 5x5 is 5e and for 7x7 is 7g
 
@@ -141,7 +280,7 @@ The format of every stone is "TYPE+PLAYER" where Type is: C (Cirya), S (Tampa), 
 
 When there is no entry for a row/column it means it's an empty position (so equivalent to []).
 
-#### Game statuses
+## Game states
 
 * WAITING_PLAYERS: Status given to the game when it's first initialized. Will change once the game is ready
 * TURN_1/TURN_2: Turn for the player 1/2 will reject movements given by the other player
@@ -196,75 +335,5 @@ When there is no entry for a row/column it means it's an empty position (so equi
         "moves": [],
         "board": {}
     }
-}
-```
-
-### UserJoined
-
-```json
-{
-    "type": "UserJoined",
-    "params: {
-        "username": "alan-turing"
-    }
-}
-```
-
-### PlayerJoined
-
-```json
-{
-    "type": "PlayerJoined",
-    "params": {
-        "username": "alan-turing",
-        "player": 1,
-        "color": "white"
-    }
-}
-```
-
-### PlayerReady
-
-```json
-{
-    "type": "PlayerReady",
-    "params": {
-        "player": 1
-    }
-}
-```
-
-### StartGame
-
-```json
-{
-    "type": "StartGame"
-}
-```
-
-### TurnPlayed
-
-```json
-{
-    "type": "TurnPlayed",
-    "params": {
-        "player": "1"
-        "turn": 10,
-        "next": 2
-    },
-    "status": { ... }
-}
-```
-
-### GameFinished
-
-```json
-{
-    "type": "GameFinished",
-    "params": {
-        "result": "WIN_1"
-        "turn": 10
-    },
-    "status": { ... }
 }
 ```
