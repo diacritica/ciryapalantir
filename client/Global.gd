@@ -6,6 +6,7 @@ extends Node
 # Board: 3 | 1,2,3
 
 var current_piece = null
+var piece_initial_position = null
 var board_state = []
 var cirya_height = 0.102
 var board = null
@@ -19,8 +20,7 @@ func render_board():
                 var piece_id = row[column_index][piece_index]
                 var piece = instance_from_id(piece_id)
                 var tile = get_tile(row_index, column_index)
-                print( column.size())
-                
+
                 var new_position = tile.global_transform.origin
                 new_position.y = column.size() * cirya_height
                 
@@ -28,9 +28,24 @@ func render_board():
 
 func get_tile(row, column):
     var tiles = board.get_node('Tiles').get_children()
-    
-    print(tiles[0])
 
     for node in tiles:
         if node.row == row and node.column == column:
             return node
+
+func valid_drop_tile(row, column):
+    var tile = board_state[row][column]
+    
+    for piece_id in tile:
+        var piece = instance_from_id(piece_id)
+        
+        if piece.block:
+            return false
+            
+    return true
+    
+func init_drag_drop(piece): 
+    current_piece = piece
+    current_piece.axis_lock_linear_z = true
+    current_piece.axis_lock_linear_x = true
+    piece_initial_position = piece.global_transform.origin

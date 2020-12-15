@@ -28,10 +28,8 @@ func _input(event):
 
         if not cast.empty():
             if event is InputEventMouseButton and event.button_index == BUTTON_LEFT:
-                if event.is_pressed() and cast.collider.collision_layer == 2:     
-                    global.current_piece = cast.collider
-                    global.current_piece.axis_lock_linear_z = true
-                    global.current_piece.axis_lock_linear_x = true
+                if event.is_pressed() and cast.collider.collision_layer == 2: 
+                    global.init_drag_drop(cast.collider)    
                     # global.current_piece.mode = RigidBody.MODE_STATIC
                 elif global.current_piece and cast.collider.is_class("Area"):
                     cast.collider.drop(global.current_piece)

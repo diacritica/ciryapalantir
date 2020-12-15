@@ -16,11 +16,15 @@ func _on_body_entered(_body_id, _body, _body_shape, _area):
 
 func drop(piece):
     print('drop in', row, ' ', column)
-
-    global.board_state[row][column].append(piece.get_instance_id())
     
     var new_position = self.global_transform.origin
-    new_position.y = global.board_state[row][column].size() * global.cirya_height + 5
+    
+    if !global.valid_drop_tile(row, column):
+        print('not valid')
+        new_position = global.piece_initial_position
+    else:
+        global.board_state[row][column].append(piece.get_instance_id())
+        new_position.y = global.board_state[row][column].size() * global.cirya_height + 5
     
     # piece.get_node('CollisionShape').set_disabled(false)
     # piece.mode = RigidBody.MODE_RIGID
