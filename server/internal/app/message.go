@@ -8,19 +8,71 @@ import (
 type ParamMap map[string]interface{}
 
 type message struct {
-	FromUser ID `json:"user"`
-	Kind MessageType `json:"type"`
-	Status GameStatus `json:"status"`
-	Params ParamMap `json:"params"`
+	FromUser ID `json:"user,omitempty"`
+	Kind MessageType `json:"type,omitempty"`
+	Params ParamMap `json:"params,omitempty"`
+	Status *GameStatus `json:"status,omitempty"`
 }
 
 type Message interface {
 	Type() MessageType
 	User() User
-	AddUser(u User)
 	Format() ([]byte, error)
-	Get(param string) (interface{}, error)
 	Validate() error
+
+	AddUser(u User)
+	AddStatus(s GameStatus)
+
+	// Params access
+	GetString(param string) (string, error)
+	GetInt(param string) (int, error)
+	GetBool(param string) (bool, error)
+}
+
+// Types
+type MessageType string
+
+const (
+	Connect MessageType = "Connect"
+	Disconnect = "Disconnect"
+	GetStatus = "GetStatus"
+	ChangeConfig = "ChangeConfig"
+	JoinGame = "JoinGame"
+	LeaveGame = "LeaveGame"
+	SetReady = "SetReady"
+	SubmitTurn = "SubmitTurn"
+
+	// Notifications
+	StatusResponse = "StatusResponse"
+	ConfigChanged = "ConfigChanged"
+	UserJoined = "UserJoined"
+	UserLeft = "UserLeft"
+	PlayerJoined = "PlayerJoined"
+	PlayerLeft = "PlayerLeft"
+	ReadyChanged = "ReadyChanged"
+	StartGame = "StartGame"
+	Turn = "Turn"
+	GameFinished = "GameFinished"
+)
+
+var MessageTypes = []MessageType {
+	Connect,
+	Disconnect,
+	GetStatus,
+	ChangeConfig,
+	JoinGame,
+	LeaveGame,
+	SetReady,
+	SubmitTurn,
+	StatusResponse,
+	ConfigChanged,
+	UserJoined,
+	UserLeft,
+	PlayerJoined,
+	PlayerLeft,
+	ReadyChanged,
+	Turn,
+	GameFinished,
 }
 
 func ParseMessage(data []byte) (Message, error) {
@@ -45,7 +97,7 @@ func (m *message) Type() MessageType {
 }
 
 func (m *message) Format() ([]byte, error) {
-	return json.Marshal(m)
+	return json.MarshalIndent(m, "", "  ")
 }
 
 func (m *message) User() User {
@@ -103,112 +155,56 @@ func (m *message) String() string {
 	return string(ret)
 }
 
-// Types
-type MessageType string
 
-const (
-	Connect MessageType = "Connect"
-	Disconnect = "Disconnect"
-	GetStatus = "GetStatus"
-	ChangeConfig = "ChangeConfig"
-	JoinGame = "JoinGame"
-	LeaveGame = "LeaveGame"
-	SetReady = "SetReady"
-	SubmitTurn = "SubmitTurn"
-
-	// Notifications
-	StatusResponse = "StatusResponse"
-	ConfigChanged = "ConfigChanged"
-	UserJoined = "UserJoined"
-	UserLeft = "UserLeft"
-	PlayerJoined = "PlayerJoined"
-	PlayerLeft = "PlayerLeft"
-	ReadyChanged = "ReadyChanged"
-	Turn = "Turn"
-	GameFinished = "GameFinished"
-)
-
-var MessageTypes = []MessageType {
-	Connect,
-	Disconnect,
-	GetStatus,
-	ChangeConfig,
-	JoinGame,
-	LeaveGame,
-	SetReady,
-	SubmitTurn,
-	StatusResponse,
-	ConfigChanged,
-	UserJoined,
-	UserLeft,
-	PlayerJoined,
-	PlayerLeft,
-	ReadyChanged,
-	Turn,
-	GameFinished,
+func (m *message) AddStatus(s GameStatus) {
+	m.Status = &s
 }
 
-func ConnectMessage(user User) Message {
-	return &message {
-		FromUser: user.Id(),
-		Kind: Connect,
+func (m *message) GetString(param string) (string, error) {
+	val, ok := m.Params[param]
+
+	if !ok {
+		return "", fmt.Errorf("Cannot find param %s", param)
 	}
-}
 
-func DisconnectMessage(user User) Message {
-	return &message {
-		FromUser: user.Id(),
-		Kind: Disconnect,
+	result, ok := val.(string)
+
+	if !ok {
+		return "", fmt.Errorf("Parameter %s is not a string", param)
 	}
+
+	return result, nil
 }
 
-func StatusResponseMessage(g Game) Message {
-	return &message {
-		Kind: StatusResponse,
-		Status: g.Status(),
+func (m *message) GetInt(param string) (int, error) {
+	val, ok := m.Params[param]
+
+	if !ok {
+		return 0, fmt.Errorf("Cannot find param %s", param)
 	}
-}
 
-func ConfigChangedMessage() Message {
-	return nil
-}
+	result, ok := val.(float64)
 
-func UserJoinedMessage(user User) Message {
-	params := make(ParamMap)
-	params["username"] = user.Id()
-		
-	return &message {
-		Kind: UserJoined,
-		Params: params,
+	if !ok {
+		return 0, fmt.Errorf("Parameter %s is not a number. Is %s", param, fmt.Sprintf("%T\n", val))
 	}
+
+	return int(result), nil
 }
 
-func UserLeftMessage(user User) Message {
-	params := make(ParamMap)
-	params["username"] = user.Id()
-	
-	return &message {
-		Kind: UserLeft,
-		Params: params,
+func (m *message) GetBool(param string) (bool, error) {
+	val, ok := m.Params[param]
+
+	if !ok {
+		return false, fmt.Errorf("Cannot find param %s", param)
 	}
+
+	result, ok := val.(bool)
+
+	if !ok {
+		return false, fmt.Errorf("Parameter %s is not a string", param)
+	}
+
+	return result, nil
 }
 
-func PlayerJoinedMessage() Message {
-	return nil
-}
-
-func PlayerLeftMessage() Message {
-	return nil
-}
-
-func ReadyChangedMessage() Message {
-	return nil
-}
-
-func TurnMessage() Message {
-	return nil
-}
-
-func GameFinishedMessage() Message {
-	return nil
-}
