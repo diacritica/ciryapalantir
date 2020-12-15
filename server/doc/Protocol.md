@@ -20,8 +20,8 @@ If the response is OK will retrieve a `Set-Cookie` that will allow the user to c
 
 ```json
 {
-    "ambient": "ROYAL", // ROYAL, TAVERN
-    "pieces": "WOOD", // "WOOD", "GLOSSY"
+    "ambient": "ROYAL",
+    "pieces": "WOOD",
     "size": 5
 }
 ```
@@ -71,8 +71,10 @@ Action by default when you connect to the server. The server will send you back 
 ```json
 {
     "type": "RequestPlayer",
-    "player": 1,
-    "set": "white"
+    "params": {
+        "player": 1,
+        "set": "white"
+    }
 }
 ```
 
@@ -80,7 +82,10 @@ Action by default when you connect to the server. The server will send you back 
 
 ```json
 {
-    "type": "Ready"
+    "type": "Ready",
+    "params": {
+        "player": 1
+    }
 }
 ```
 
@@ -89,9 +94,11 @@ Action by default when you connect to the server. The server will send you back 
 ```json
 {
     "type": "SendTurn",
-    "player": 1,
-    "turn": 20,
-    "move": "a6 f6"
+    "params": {
+        "player": 1,
+        "turn": 20,
+        "move": "a6 f6"
+    }
 }
 ```
 
@@ -101,21 +108,22 @@ Action by default when you connect to the server. The server will send you back 
 
 ```json
 {
+    "type": "Status"
     "owner": "USER_ID",
     "config": { .. },
     "players": {
-        "1": { "username: "USER_ID", "subset": "white", "ready": true },
-        "2": { "username: "USER_ID", "subset": "black", "ready": true }
+        1: { "username: "USER_ID", "subset": "white", "ready": true },
+        2: { "username: "USER_ID", "subset": "black", "ready": true }
     },
     "status": "WAITING_1",
     "turn: 20,
     "moves": [ "a6 f6", ... ],
     "board": {
         "a": {
-            "1": ["C1", "C2", "T1"]
+            1: ["C1", "C2", "T1"]
         },
         "d": {
-            "3": ["H1"]
+            3: ["H1"]
         }
     }
 }
@@ -146,10 +154,13 @@ When there is no entry for a row/column it means it's an empty position (so equi
 
 ```json
 {
-    "owner": "USER_ID",
-    "config": { ... },
-    "players": {},
-    "status": "WAITING_PLAYERS"
+    "type": "Status"
+    "status": {
+        "owner": "USER_ID",
+        "config": { ... },
+        "players": {},
+        "state": "WAITING_PLAYERS"
+    }
 }
 ```
 
@@ -157,12 +168,15 @@ When there is no entry for a row/column it means it's an empty position (so equi
 
 ```json
 {
-    "owner": "USER_ID",
-    "config": { ... },
-    "players": {
-        "2": { "username": "USER_ID", "subset": "white", "ready": false }
-    },
-    "status": "WAITING_PLAYERS"
+    "type": "Status"
+    "status": {
+        "owner": "USER_ID",
+        "config": { ... },
+        "players": {
+            "2": { "username": "USER_ID", "subset": "white", "ready": false }
+        },
+        "state": "WAITING_PLAYERS"
+    }
 }
 ```
 
@@ -170,24 +184,87 @@ When there is no entry for a row/column it means it's an empty position (so equi
 
 ```json
 {
-    "owner": "USER_ID",
-    "config": { ... },
-    "players": {
-        "1": { "username": "USER_ID", "subset": "white", "ready": true },
-        "2": { "username": "USER_ID", "subset": "white", "ready": true }
-    },
-    "status": "TURN_1",
-    "moves": [],
-    "board": {}
+    "type": "Status"
+    "status": {
+        "owner": "USER_ID",
+        "config": { ... },
+        "players": {
+            "1": { "username": "USER_ID", "subset": "white", "ready": true },
+            "2": { "username": "USER_ID", "subset": "white", "ready": true }
+        },
+        "state": "TURN_1",
+        "moves": [],
+        "board": {}
+    }
 }
 ```
 
 ### UserJoined
 
+```json
+{
+    "type": "UserJoined",
+    "params: {
+        "username": "alan-turing"
+    }
+}
+```
+
 ### PlayerJoined
+
+```json
+{
+    "type": "PlayerJoined",
+    "params": {
+        "username": "alan-turing",
+        "player": 1,
+        "color": "white"
+    }
+}
+```
 
 ### PlayerReady
 
+```json
+{
+    "type": "PlayerReady",
+    "params": {
+        "player": 1
+    }
+}
+```
+
 ### StartGame
 
+```json
+{
+    "type": "StartGame"
+}
+```
+
 ### TurnPlayed
+
+```json
+{
+    "type": "TurnPlayed",
+    "params": {
+        "player": "1"
+        "turn": 10,
+        "next": 2
+    },
+    "status": { ... }
+}
+```
+
+### GameFinished
+
+```json
+{
+    "type": "GameFinished",
+    "params": {
+        "result": "WIN_1"
+        "turn": 10
+    },
+    "status": { ... }
+}
+```
