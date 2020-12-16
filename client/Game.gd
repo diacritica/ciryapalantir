@@ -83,7 +83,7 @@ func _input(event):
                         global.move_to(piece, self)                                 
                         global.init_drag_drop([piece])    
                     else:
-                        var pieces = global.get_pieces_tile(tile.row, tile.column)
+                        var pieces = global.get_top_pieces(piece.get_instance_id())
                         global.init_drag_drop(pieces)    
                         
                 # stop drag

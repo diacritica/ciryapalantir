@@ -59,7 +59,20 @@ func get_piece_tile(piece_id):
                 
     return null
     
-func get_pieces_tile(row, column):
+func get_top_pieces(piece_id):
+    var tile = get_piece_tile(piece_id)
+    var piece_ids = board_state[tile.row][tile.column]
+    var pieces = []
+    
+    var pice_index = piece_ids.find(piece_id, 0)
+    piece_ids = piece_ids.slice(pice_index, piece_ids.size())
+    
+    for piece_id in piece_ids:
+        pieces.append(instance_from_id(piece_id))
+    
+    return pieces    
+    
+func get_tile_pieces(row, column):
     var piece_ids = board_state[row][column]
     var pieces = []
     
