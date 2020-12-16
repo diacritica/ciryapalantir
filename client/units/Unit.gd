@@ -29,3 +29,10 @@ func get_height():
 
     return $CollisionShape.scale.z * 2
         
+func show_outline():
+    if $Outline:
+        $Outline.visible = true
+
+func hide_outline():
+    if $Outline:
+        $Outline.visible = false

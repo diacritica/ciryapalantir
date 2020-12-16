@@ -30,7 +30,7 @@ func _ready():
         if auto:            
             tiles.translation.x = -(rows * offset_width) / 2 + (offset_width / 2)
             tiles.translation.z = -(columns * offset_width) / 2 + (offset_width / 2)
-            tiles.translation.y = -2
+            tiles.translation.y = -0.7
         
         self.add_child(tiles)    
         tiles.set_owner(get_tree().edited_scene_root)

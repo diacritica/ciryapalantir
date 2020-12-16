@@ -1,7 +1,8 @@
-[gd_scene load_steps=5 format=2]
+[gd_scene load_steps=6 format=2]
 
 [ext_resource path="res://assets/light/hallacirya-ship/light-wood.material" type="Material" id=1]
 [ext_resource path="res://units/Unit.gd" type="Script" id=2]
+[ext_resource path="res://units/outline.tres" type="Material" id=3]
 
 [sub_resource type="ArrayMesh" id=1]
 resource_name = "Circle001"
@@ -31,6 +32,12 @@ type = "HALLACIRYA"
 transform = Transform( -4.54415e-08, 0, 1.03958, 0, 1.03958, 0, -1.03958, 0, -4.54415e-08, 0, 0, 0 )
 mesh = SubResource( 1 )
 material/0 = null
+
+[node name="Outline" type="MeshInstance" parent="."]
+transform = Transform( -4.54415e-08, 0, 1.03958, 0, 1.03958, 0, -1.03958, 0, -4.54415e-08, 0, 0, 0 )
+visible = false
+mesh = SubResource( 1 )
+material/0 = ExtResource( 3 )
 
 [node name="CollisionShape" type="CollisionShape" parent="."]
 transform = Transform( 1, 0, 0, 0, 1.175, 0, 0, 0, 1, 0, 1.18377, 0 )
