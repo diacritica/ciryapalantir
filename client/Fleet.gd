@@ -111,13 +111,13 @@ func removeCiryafromFleet(pieceid):
         
 # Called when the node enters the scene tree for the first time.
 func _ready():
-    var piece = null
     var aTray = load(trays[traysize][0]).instance()
     add_child(aTray)
     
     var originalstartZ = startZ
     
     var pieceid = 1
+    var pieces = []
     for r in trays[traysize][1]:
        
         for s in r:
@@ -132,11 +132,12 @@ func _ready():
                     var x = sX + rand_range(-0.002, 0.002)
                     var z = sZ + rand_range(-0.02, 0.02)
                     var y = sY + heightOffset*st
-                    c.translation.x = x
+                    c.translation.x = x 
                     c.translation.z = z
                     c.translation.y = y
                     c.rotation.y = randi()%5+1
                     add_child(c)
+                    pieces.append(c)
                     onestack.append(c)
                     st +=1
                     pieceid +=1
@@ -155,6 +156,7 @@ func _ready():
                 c.rotation.y = randi()%5+1
                 
                 add_child(c)
+                pieces.append(c)
                 c.fleetSelectable = true
                 stacks.append([c])
                 st +=1
@@ -164,4 +166,3 @@ func _ready():
         startX += rowsOffset
         startZ = originalstartZ
     
-    print(stacks,stacks.size())

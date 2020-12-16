@@ -5,13 +5,14 @@ extends Node
 # Piece: 2 | 1,2
 # Board: 3 | 1,2,3
 
-var current_piece = null
-var piece_initial_position = null
+var dragging_nosse = null
 var board_state = []
 var cirya_height = 0.102
 var board = null
 var game = null
 var ui = null
+var undo_state = {}
+var pieces = []
 
 func render_board():
     for row_index in  range(board_state.size()):
@@ -27,16 +28,37 @@ func render_board():
                 new_position.y = get_stack_height(row_index, column_index)
                 
                 piece.set_translation(new_position)
-                
-func get_stack_height(row, column, exclude = null):
-    var height = 0
 
-    for piece_id in board_state[row][column]:
-        if !exclude or exclude != piece_id:
-            var piece = instance_from_id(piece_id)
-            height = height + piece.get_height()
+func register_piece(piece): 
+    pieces.append(piece)                
+                
+func get_dragging_nosse_pieces_ids():
+    var pieces = dragging_nosse.get_children();
+    var pieces_ids = []
+    
+    for piece in pieces:
+        pieces_ids.append(piece.get_instance_id())
+    
+    return pieces_ids
+
+func get_pieces_height(pieces):
+    var height = 0
+    
+    for piece_id in pieces:
+        var piece = instance_from_id(piece_id)
+        height = height + piece.get_height()
         
     return height
+                
+func get_stack_height(row, column, exclude = []):
+    var height = 0
+    var pieces = []
+
+    for piece_id in board_state[row][column]:
+        if exclude.find(piece_id) == -1:
+            pieces.append(piece_id)
+        
+    return get_pieces_height(pieces)
     
 func get_piece_tile(piece_id):
     for row_index in  range(board_state.size()):
@@ -49,6 +71,28 @@ func get_piece_tile(piece_id):
                 return get_tile(row_index, column_index)
                 
     return null
+    
+func get_top_pieces(piece_id):
+    var tile = get_piece_tile(piece_id)
+    var piece_ids = board_state[tile.row][tile.column]
+    var pieces = []
+    
+    var pice_index = piece_ids.find(piece_id, 0)
+    piece_ids = piece_ids.slice(pice_index, piece_ids.size())
+    
+    for piece_id in piece_ids:
+        pieces.append(instance_from_id(piece_id))
+    
+    return pieces    
+    
+func get_tile_pieces(row, column):
+    var piece_ids = board_state[row][column]
+    var pieces = []
+    
+    for piece_id in piece_ids:
+        pieces.append(instance_from_id(piece_id))
+    
+    return pieces
 
 func get_tile(row, column):
     var tiles = board.get_node('Tiles').get_children()
@@ -72,32 +116,56 @@ func valid_drop_tile(row, column):
             return false
             
     return true
-    
-func init_drag_drop(piece): 
-    current_piece = piece
-    current_piece.get_node("CollisionShape").disabled = true
-    current_piece.axis_lock_linear_z = true
-    current_piece.axis_lock_linear_x = true
-    current_piece.mode = RigidBody.MODE_STATIC
-    piece_initial_position = piece.global_transform.origin
 
-func stop_drag_drop():
-    current_piece.mode = RigidBody.MODE_RIGID
-    current_piece.get_node("CollisionShape").disabled = false
-    current_piece = null
+func save_pieces_translation():
+    for piece in pieces:
+        undo_state[piece.get_instance_id()] = piece.translation    
+    
+func init_drag_drop(pieces): 
+    dragging_nosse = Spatial.new()
+    dragging_nosse.set_translation(pieces[0].get_translation())
+    
+    for piece_index in range(pieces.size()):
+        var piece = pieces[piece_index]
+        piece.get_node("CollisionShape").disabled = true
+        piece.axis_lock_linear_z = true
+        piece.axis_lock_linear_x = true
+        piece.mode = RigidBody.MODE_STATIC
+        piece.translation.x = 0
+        piece.translation.z = 0
+        
+        self.move_to(piece, dragging_nosse)
+
+    self.game.add_child(dragging_nosse)
+
+func stop_drag_drop(tile):                        
+    for piece in dragging_nosse.get_children():
+        piece.mode = RigidBody.MODE_RIGID
+        piece.get_node("CollisionShape").disabled = false
+        piece.translation.x = dragging_nosse.translation.x
+        piece.translation.z = dragging_nosse.translation.z
+        piece.translation.y = piece.global_transform.origin.y
+        
+        tile.drop(piece)
+        
+        self.move_to(piece, game)
+        
+    game.remove_child(dragging_nosse)
+    dragging_nosse = null
+    
+func restore_piece_position(piece_id):
+    var piece = instance_from_id(piece_id)
+    piece.translation = undo_state[piece.get_instance_id()]
     
 func restore_initial_position():
-    current_piece.set_translation(piece_initial_position)
+    for piece in pieces:
+        piece.translation = undo_state[piece.get_instance_id()]
     
-#fila: 0
-#columa: 1
-#
-#mueve a 
-#fila: 0
-#columa: 2
-#= 
-#5b>
-    
+func move_to(el, to):
+    el.get_parent().remove_child(el)
+    to.add_child(el)
+    el.set_owner(to)  
+      
 func notation(turn): 
     print('in turn ', turn)
     var letters = ['a', 'b', 'c', 'd', 'e', 'f', 'g']

@@ -11,7 +11,7 @@ export(bool) var fleetSelectable = false
 
 # Called when the node enters the scene tree for the first time.
 func _ready():
-    pass
+    global.register_piece(self)
     
 func toggle_block():
     if type == "CIRYA":

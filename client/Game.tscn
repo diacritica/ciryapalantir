@@ -57,6 +57,11 @@ size = 20.0
 near = 0.09
 far = 240.8
 
+[node name="Pieces" type="Spatial" parent="."]
+
+[node name="light-cirya-basic" parent="Pieces" instance=ExtResource( 2 )]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, -11.1909, 0, 0 )
+
 [node name="Camera2" type="Camera" parent="."]
 transform = Transform( 1, 0, 0, 0, -0.0225129, 0.999747, 0, -0.999747, -0.0225129, 0.344988, 17.3109, -0.0533897 )
 visible = false
@@ -101,6 +106,7 @@ spot_range = 29.2
 environment = SubResource( 2 )
 
 [node name="Board" parent="." instance=ExtResource( 1 )]
+transform = Transform( -1.62921e-07, 0, 1, 0, 1, 0, -1, 0, -1.62921e-07, 0.001, 0, 0 )
 
 [node name="Tiles" type="Spatial" parent="Board"]
 transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, -4.32, 0, -4.32 )
@@ -109,11 +115,6 @@ transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, -4.32, 0, -4.32 )
 transform = Transform( 0.0583241, 0.615758, -0.785774, -0.0455792, 0.787935, 0.614069, 0.997257, 1.02337e-11, 0.0740214, -16.3399, 8.87282, 3.51149 )
 visible = false
 script = ExtResource( 5 )
-
-[node name="GameUI" parent="DebugCamera" instance=ExtResource( 7 )]
-
-[node name="light-cirya-basic" parent="." instance=ExtResource( 2 )]
-transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, -11.191, 1, 0 )
 
 [node name="Fleet" parent="." instance=ExtResource( 4 )]
 transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 13.5, 0, 2.5 )
