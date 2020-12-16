@@ -75,9 +75,6 @@ func _input(event):
                 if event.is_pressed() and cast.collider.collision_layer == 2: 
                     var piece = cast.collider
                     var tile = global.get_piece_tile(piece.get_instance_id())
-#                    if tile:
-#                        var pieces = global.board_state[tile.row][tile.column]
-#                        print('siblings', pieces.size())
                         
                     if !tile: 
                         global.move_to(piece, self)                                 
@@ -119,7 +116,7 @@ func _input(event):
                 if piece_cast_tile:
                     var piece = global.dragging_nosse
                     
-                    new_position.y = global.get_stack_height(piece_cast_tile.collider.row, piece_cast_tile.collider.column, global.dragging_nosse.get_instance_id()) + 0.2
+                    new_position.y = global.get_stack_height(piece_cast_tile.collider.row, piece_cast_tile.collider.column, global.get_dragging_nosse_pieces_ids()) + 0.2
                 if new_position.y < 0.2:
                     new_position.y = 0.2
   

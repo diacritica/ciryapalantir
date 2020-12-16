@@ -27,6 +27,15 @@ func render_board():
                 new_position.y = get_stack_height(row_index, column_index)
                 
                 piece.set_translation(new_position)
+                
+func get_dragging_nosse_pieces_ids():
+    var pieces = dragging_nosse.get_children();
+    var pieces_ids = []
+    
+    for piece in pieces:
+        pieces_ids.append(piece.get_instance_id())
+    
+    return pieces_ids
 
 func get_pieces_height(pieces):
     var height = 0
@@ -37,12 +46,12 @@ func get_pieces_height(pieces):
         
     return height
                 
-func get_stack_height(row, column, exclude = null):
+func get_stack_height(row, column, exclude = []):
     var height = 0
     var pieces = []
 
     for piece_id in board_state[row][column]:
-        if !exclude or exclude != piece_id:
+        if exclude.find(piece_id) == -1:
             pieces.append(piece_id)
         
     return get_pieces_height(pieces)
