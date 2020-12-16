@@ -28,13 +28,11 @@ func render_board():
                 
 func get_stack_height(row, column, exclude = null):
     var height = 0
-    print('height for', row, column)
-    
+
     for piece_id in board_state[row][column]:
         if !exclude or exclude != piece_id:
             var piece = instance_from_id(piece_id)
             height = height + piece.get_height()
-            print('peice height', height)
         
     return height
 

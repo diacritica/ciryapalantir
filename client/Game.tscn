@@ -1,10 +1,11 @@
-[gd_scene load_steps=10 format=2]
+[gd_scene load_steps=11 format=2]
 
 [ext_resource path="res://Board.tscn" type="PackedScene" id=1]
 [ext_resource path="res://units/light-cirya-basic.tscn" type="PackedScene" id=2]
 [ext_resource path="res://Game.gd" type="Script" id=3]
 [ext_resource path="res://units/light-hallacirya-ship.tscn" type="PackedScene" id=4]
 [ext_resource path="res://camera.gd" type="Script" id=5]
+[ext_resource path="res://units/light-hallacirya-tree.tscn" type="PackedScene" id=6]
 
 [sub_resource type="ProceduralSky" id=1]
 
@@ -41,7 +42,7 @@ transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0.001, -0.5, 0 )
 transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, -4.32, 0, -4.32 )
 
 [node name="light-hallacirya-ship" parent="." instance=ExtResource( 4 )]
-transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 1.772, 0, 2.724 )
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 1.772, 0.873703, 3.24768 )
 
 [node name="light-cirya-basic" parent="." instance=ExtResource( 2 )]
 transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, -4.522, 1.30059, 0 )
@@ -80,3 +81,6 @@ material/0 = null
 [node name="CollisionShape" type="CollisionShape" parent="RigidBody2"]
 transform = Transform( 1, 0, 0, 0, 0.25, 0, 0, 0, 1, 0, 0, 0 )
 shape = SubResource( 4 )
+
+[node name="light-hallacirya-tree" parent="." instance=ExtResource( 6 )]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, -5.93004, 0.366901, 3.19795 )
