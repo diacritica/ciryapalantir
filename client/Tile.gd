@@ -17,6 +17,7 @@ func _on_body_entered(_body_id, _body, _body_shape, _area):
 func drop(piece):    
     var new_position = self.global_transform.origin
     
+    # todo
     if !global.valid_drop_tile(row, column):
         piece.set_translation(global.piece_initial_position)
     else:
