@@ -28,11 +28,11 @@ script = ExtResource( 2 )
 block = true
 type = "HALLACIRYA"
 
-[node name="Circle001" type="MeshInstance" parent="."]
+[node name="mesh" type="MeshInstance" parent="."]
 transform = Transform( 0, 0, 1.03958, 0, 1.03958, 0, -1.03958, 0, 0, 0, 0, 0 )
 mesh = SubResource( 1 )
 material/0 = null
 
-[node name="CollisionShape" type="CollisionShape" parent="."]
+[node name="collisionshape" type="CollisionShape" parent="."]
 transform = Transform( 0, 0, 1.03958, 0, 1.03958, 0, -1.03958, 0, 0, 0, 0, 0 )
 shape = SubResource( 2 )

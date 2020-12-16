@@ -24,9 +24,6 @@ transform = Transform( 0.739499, -0.459841, -0.491617, 0.641453, 0.702857, 0.307
 environment = SubResource( 1 )
 
 [node name="Board" parent="." instance=ExtResource( 1 )]
-columns = 5
-rows = 5
-auto = true
 
 [node name="Tiles" type="Spatial" parent="Board"]
 transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, -4.32, 0, -4.32 )
