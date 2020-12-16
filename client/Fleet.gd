@@ -1,5 +1,8 @@
 tool
+
 extends Spatial
+
+onready var global = get_node("/root/Global")
 
 var white = true
 var black = false
@@ -17,9 +20,9 @@ var startZ = -4
 var heightOffset = 0.3
 
 var trays = {5:["res://assets/tray/tray-5x5.tscn",[[3,3,3,-1],[3,3,3,3]]],6:["res://assets/tray/tray-6x6.tscn",[[3,3,-1],[3,3,3,3],[3,3,3,3]]],7:["res://assets/tray/tray-7x7.tscn",[[3,3,3,3,-1],[3,3,3,3,3],[3,3,3,3,1]]]}
-var traysize = 5
-var colour = "W"
-var style = "B"
+export(int) var traysize = 5
+export(String) var colour = "W"
+export(String) var style = "B"
 
 var stacks = []
 # These functions might not be needed
@@ -108,8 +111,6 @@ func removeCiryafromFleet(pieceid):
         
 # Called when the node enters the scene tree for the first time.
 func _ready():
-    
-
     var piece = null
     var aTray = load(trays[traysize][0]).instance()
     add_child(aTray)
@@ -135,7 +136,6 @@ func _ready():
                     c.translation.z = z
                     c.translation.y = y
                     c.rotation.y = randi()%5+1
-
                     add_child(c)
                     onestack.append(c)
                     st +=1
@@ -153,7 +153,7 @@ func _ready():
                 c.translation.z = z
                 c.translation.y = y
                 c.rotation.y = randi()%5+1
-
+                
                 add_child(c)
                 c.fleetSelectable = true
                 stacks.append([c])

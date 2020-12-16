@@ -10,6 +10,7 @@ var piece_initial_position = null
 var board_state = []
 var cirya_height = 0.102
 var board = null
+var game = null
 
 func render_board():
     for row_index in  range(board_state.size()):

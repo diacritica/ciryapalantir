@@ -4,18 +4,14 @@ onready var global = get_node("/root/Global")
 var ray_length = 100
 
 func _ready():
-    pass
-#    global.board_state[0][0] = [
-#        $"light-cirya-basic".get_instance_id(),
-#        $"light-cirya-basic2".get_instance_id(),
-#        $"light-hallacirya-ship".get_instance_id()
-#    ]
-#    global.render_board()
-      
-# Layers | Masks
-# Tile: 1 | 2
-# Piece: 2 | 1,2
-# Board: 3 | 1,2,3  
+    global.game = self
+    
+#    var fleet = load("res://Fleet.tscn").instance()
+#    fleet.setup(5,"W","B") # 5, 6 or 7, W or B (missing), and B or V
+#    fleet.translation.x = 22
+#    fleet.translation.y = 0
+#    fleet.translation.z = 4
+#    add_child(fleet)
 
 func get_mouse_cast(exclude_current_piece = true):  
     var mouse_raycast_collision = 2
@@ -70,7 +66,14 @@ func _input(event):
             if event is InputEventMouseButton and event.button_index == BUTTON_LEFT:
                 # init drag
                 if event.is_pressed() and cast.collider.collision_layer == 2: 
-                    global.init_drag_drop(cast.collider)    
+                    var target = cast.collider
+                    $Fleet.remove_child(target)
+
+                    target.set_translation(cast.position)
+                    self.add_child(target)
+                    self.set_owner(target)                    
+                                        
+                    global.init_drag_drop(target)    
                 # stop drag
                 elif global.current_piece and not piece_cast_tile.empty():
                     var piece = global.current_piece

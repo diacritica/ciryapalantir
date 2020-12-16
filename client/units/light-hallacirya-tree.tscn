@@ -34,7 +34,6 @@ mesh = SubResource( 1 )
 material/0 = null
 
 [node name="Outline" type="MeshInstance" parent="Mesh"]
-transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0 )
 visible = false
 mesh = SubResource( 1 )
 material/0 = ExtResource( 3 )

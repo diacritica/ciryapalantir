@@ -58,5 +58,5 @@ material/1 = null
 material/2 = null
 
 [node name="CollisionShape" type="CollisionShape" parent="."]
-transform = Transform( 17.6389, 0, 0, 0, 17.6389, 0, 0, 0, 17.6389, 0, 0, 0 )
+transform = Transform( 55.9848, 0, 0, 0, 17.6389, 0, 0, 0, 51.9483, 0, 0, 0 )
 shape = SubResource( 2 )
