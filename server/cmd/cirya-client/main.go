@@ -9,6 +9,8 @@ import (
 	"bufio"
 	"os"
 	"strings"
+	"encoding/json"
+	//"cirya.me/server/internal/app"
 	"github.com/gorilla/websocket"
 )
 
@@ -46,6 +48,23 @@ func main() {
 			_, message, err := c.ReadMessage()
 			if err != nil { log.Print(err) }
 			log.Printf("Received %s", message)
+
+			var data struct {
+				Params struct {
+					NextTurn int `json:"nextTurn"`
+				} `json:"params"`
+			}
+			json.Unmarshal(message, &data)
+
+
+			if data.Params.NextTurn > 0 {
+				turn = data.Params.NextTurn
+				log.Printf(">>> Turn: %d", turn)
+			}
+
+			//if (data.Params != nil && data.Params.NextTurn != nil) {
+			//	turn = *data.Params.NextTurn
+			//}
 		}
 	}()
 
@@ -85,7 +104,7 @@ func main() {
 			msg = fmt.Sprintf(`{
         "type": "SetReady",
         "params": {
-          "player": "%d",
+          "player": %d,
           "ready": true
         }
       }`, player)
@@ -102,7 +121,7 @@ func main() {
       }`, player, turn, args)
 
 		default:
-			log.Print("No valid input")
+			fmt.Println("")
 			continue
 		}
 

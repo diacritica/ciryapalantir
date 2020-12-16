@@ -118,6 +118,7 @@ TODO
 }
 ```
 => Will send a "**ReadyChanged**" to the other users
+=> If both players are ready a **
 
 ### Submit
 
@@ -134,8 +135,6 @@ TODO
 
 => Will calculate the game status and send either "**Turn**" or "**GameFinished**"
 => If the turn is not valid the user will recive an "**InvalidTurn**" **notification**
-
-
 
 
 ## Notifications
@@ -227,6 +226,18 @@ TODO
     }
 }
 ```
+### StartGame
+
+```json
+{
+    "type": "StartGame",
+    "params": {
+        "nextPlayer": 1,
+        "nextTurn": 1
+    },
+    "status": { ... }
+}
+```
 
 ### Turn
 
@@ -237,7 +248,8 @@ TODO
         "player": 1,
         "turn": 10,
         "move": "a6 f6",
-        "next": 2
+        "nextPlayer": 2,
+        "nextTurn": 2
     },
     "status": { ... }
 }
@@ -250,6 +262,7 @@ TODO
     "type": "GameFinished",
     "params": {
         "result": "WIN_1"
+        "winCondition": "LONDI",
         "turn": 10
     },
     "status": { ... }

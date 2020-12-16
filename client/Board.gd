@@ -6,7 +6,7 @@ export(int) var rows = 5
 export(bool) var auto = true
 
 var border_width = 0.04
-var tile_size = 2.12
+var tile_size = 2.35
 var offset_width = tile_size + border_width
 var map_border = 2.58
 
@@ -16,7 +16,6 @@ var tile = preload("res://Tile.tscn")
 # Called when the node enters the scene tree for the first time.
 func _ready():
     global.board = self
-    var centered = $Surface.centered
     var tiles = get_node_or_null("Tiles")
     
     if tiles && auto:
@@ -29,9 +28,9 @@ func _ready():
         tiles.name = 'Tiles'
         
         if auto:            
-            if centered: 
-                tiles.translation.x = -(rows * offset_width) / 2 + (offset_width / 2)
-                tiles.translation.z = -(columns * offset_width) / 2 + (offset_width / 2)
+            tiles.translation.x = -(rows * offset_width) / 2 + (offset_width / 2)
+            tiles.translation.z = -(columns * offset_width) / 2 + (offset_width / 2)
+            tiles.translation.y = -0.7
         
         self.add_child(tiles)    
         tiles.set_owner(get_tree().edited_scene_root)

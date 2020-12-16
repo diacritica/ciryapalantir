@@ -11,11 +11,28 @@ func _ready():
     pass
     
 func toggle_block():
-    print(type)
     if type == "CIRYA":
         block = !block
         
-        if block:
-            self.transform.basis = self.transform.basis.rotated(Vector3(1, 0, 0), PI/2)
+        var mesh = self.get_node('Mesh')
+        
+        if block:    
+            mesh.transform.basis = mesh.transform.basis.rotated(Vector3(1, 0, 0), PI/2)
+            mesh.transform.origin = Vector3(mesh.transform.origin.x, mesh.transform.origin.y + 1, mesh.transform.origin.z)
         else:
-            self.transform.basis = self.transform.basis.rotated(Vector3(-1, 0, 0), PI/2)
+            mesh.transform.basis = mesh.transform.basis.rotated(Vector3(-1, 0, 0), PI/2)
+            mesh.transform.origin = Vector3(mesh.transform.origin.x, mesh.transform.origin.y - 1, mesh.transform.origin.z)
+
+func get_height():
+    if type == "HALLACIRYA" or !block:
+        return $CollisionShape.scale.y * 2
+
+    return $CollisionShape.scale.z * 2
+        
+func show_outline():
+    if $Outline:
+        $Outline.visible = true
+
+func hide_outline():
+    if $Outline:
+        $Outline.visible = false

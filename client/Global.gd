@@ -22,9 +22,31 @@ func render_board():
                 var tile = get_tile(row_index, column_index)
 
                 var new_position = tile.global_transform.origin
-                new_position.y = column.size() * cirya_height
+                new_position.y = get_stack_height(row_index, column_index)
                 
                 piece.set_translation(new_position)
+                
+func get_stack_height(row, column, exclude = null):
+    var height = 0
+
+    for piece_id in board_state[row][column]:
+        if !exclude or exclude != piece_id:
+            var piece = instance_from_id(piece_id)
+            height = height + piece.get_height()
+        
+    return height
+    
+func get_piece_tile(piece_id):
+    for row_index in  range(board_state.size()):
+        var row = board_state[row_index]
+        for column_index in range(row.size()):
+            var column = row[column_index]
+            var piece_index = column.find(piece_id, 0)
+            
+            if piece_index != -1:
+                return get_tile(row_index, column_index)
+                
+    return null
 
 func get_tile(row, column):
     var tiles = board.get_node('Tiles').get_children()
@@ -32,6 +54,11 @@ func get_tile(row, column):
     for node in tiles:
         if node.row == row and node.column == column:
             return node
+            
+func remove_piece_from_state(piece_id):
+    for row in board_state:
+        for column in row:
+            column.erase(piece_id)
 
 func valid_drop_tile(row, column):
     var tile = board_state[row][column]
@@ -46,6 +73,16 @@ func valid_drop_tile(row, column):
     
 func init_drag_drop(piece): 
     current_piece = piece
+    current_piece.get_node("CollisionShape").disabled = true
     current_piece.axis_lock_linear_z = true
     current_piece.axis_lock_linear_x = true
+    current_piece.mode = RigidBody.MODE_STATIC
     piece_initial_position = piece.global_transform.origin
+
+func stop_drag_drop():
+    current_piece.mode = RigidBody.MODE_RIGID
+    current_piece.get_node("CollisionShape").disabled = false
+    current_piece = null
+    
+func restore_initial_position():
+    current_piece.set_translation(piece_initial_position)

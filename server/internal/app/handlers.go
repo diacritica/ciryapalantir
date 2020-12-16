@@ -53,7 +53,9 @@ func DoDisconnect(m Message, r Room, g Game) {
 
 func DoGetStatus(m Message, r Room, g Game) {
 	user := m.User()
-	r.UserMessage(user) <- StatusResponseMessage(g)
+	msg := StatusResponseMessage(g)
+	msg.AddStatus(g.Status())
+	r.UserMessage(user) <- msg
 }
 
 func DoChangeConfig(m Message, r Room, g Game) {
@@ -61,17 +63,65 @@ func DoChangeConfig(m Message, r Room, g Game) {
 }
 
 func DoJoinGame(m Message, r Room, g Game) {
-	log.Print("DoJoinGame")
+	// TODO Handle errors
+
+	name, _ := m.GetString("name")
+	player, _ := m.GetInt("player")
+	color, _ := m.GetString("color")
+
+	g.AddPlayer(name, player, color)
+
+	msg := PlayerJoinedMessage(name, player, color)
+	r.Broadcast(msg)
 }
 
 func DoLeaveGame(m Message, r Room, g Game) {
-	log.Print("DoLeaveGame")
+	player, _ := m.GetInt("player")
+	g.RemovePlayer(player)
+	msg := PlayerLeftMessage(player)
+	r.Broadcast(msg)
 }
 
 func DoSetReady(m Message, r Room, g Game) {
-	log.Print("DoSetReady")
+	player, _ := m.GetInt("player")
+	ready, _ := m.GetBool("ready")
+
+	g.SetReady(player, ready)
+	
+	msg := ReadyChangedMessage(player, ready)
+	r.Broadcast(msg)
+
+	// If both players are ready we can start the game
+	if g.ArePlayersReady() {
+		g.StartGame()
+
+		msg = StartGameMessage()
+		msg.AddStatus(g.Status())
+		r.Broadcast(msg)
+	}
 }
 
 func DoSubmitTurn(m Message, r Room, g Game) {
-	log.Print("DoSubmitTurn")
+	player, _ := m.GetInt("player")
+	turn, _ := m.GetInt("turn")
+	move, _ := m.GetString("move")
+
+	if player == g.CurrentPlayer() && turn == g.CurrentTurn() {
+		result := g.Turn(move)
+
+		var msg Message
+		if result.EndGame {
+			msg = GameFinishedMessage(result.State, result.WinCondition, turn)
+		} else {
+			msg = TurnMessage(player, turn, move, result.NextPlayer, result.NextTurn)
+		}
+
+		msg.AddStatus(g.Status())
+
+		r.Broadcast(msg)
+	}
+
+	// TODO: Handle error with turn or player
+	
+	
 }

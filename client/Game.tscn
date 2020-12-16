@@ -1,12 +1,16 @@
-[gd_scene load_steps=7 format=2]
+[gd_scene load_steps=9 format=2]
 
 [ext_resource path="res://Board.tscn" type="PackedScene" id=1]
 [ext_resource path="res://units/light-cirya-basic.tscn" type="PackedScene" id=2]
 [ext_resource path="res://Game.gd" type="Script" id=3]
 [ext_resource path="res://units/light-hallacirya-ship.tscn" type="PackedScene" id=4]
 [ext_resource path="res://camera.gd" type="Script" id=5]
+[ext_resource path="res://units/light-hallacirya-tree.tscn" type="PackedScene" id=6]
 
-[sub_resource type="Environment" id=1]
+[sub_resource type="ProceduralSky" id=1]
+
+[sub_resource type="Environment" id=2]
+background_sky = SubResource( 1 )
 
 [node name="Game" type="Spatial"]
 script = ExtResource( 3 )
@@ -18,26 +22,35 @@ transform = Transform( 0.941697, -0.118362, 0.314955, 0.0058345, 0.941685, 0.336
 transform = Transform( 1, 0, 0, 0, -0.0225129, 0.999747, 0, -0.999747, -0.0225129, 0.344988, 17.3109, -0.0533897 )
 
 [node name="DirectionalLight" type="DirectionalLight" parent="."]
-transform = Transform( 0.739499, -0.459841, -0.491617, 0.641453, 0.702857, 0.307458, 0.204155, -0.542714, 0.814728, -7.358, 20.958, 13.726 )
+transform = Transform( 0.520094, -0.726985, -0.448326, 0.845944, 0.366044, 0.387802, -0.117819, -0.580952, 0.805366, -7.55736, 1.49948, 13.726 )
+shadow_enabled = true
+shadow_bias = 0.25
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]
-environment = SubResource( 1 )
+environment = SubResource( 2 )
 
 [node name="Board" parent="." instance=ExtResource( 1 )]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0.001, -0.5, 0 )
 
 [node name="Tiles" type="Spatial" parent="Board"]
 transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, -4.32, 0, -4.32 )
 
 [node name="light-hallacirya-ship" parent="." instance=ExtResource( 4 )]
-transform = Transform( 0.75, 0, 0, 0, 0.75, 0, 0, 0, 0.75, 1.77206, 2.58386, 2.72424 )
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 1.772, 0.873703, 3.24768 )
 
 [node name="light-cirya-basic" parent="." instance=ExtResource( 2 )]
-transform = Transform( 0.75, 0, 0, 0, 0.75, 0, 0, 0, 0.75, -4.52177, 2.78299, 0 )
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, -4.522, 1.30059, 0 )
 
 [node name="light-cirya-basic2" parent="." instance=ExtResource( 2 )]
-transform = Transform( 0.75, 0, 0, 0, 0.75, 0, 0, 0, 0.75, 0.0772452, 2.78299, 0 )
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0.382802, 2.78299, 0 )
 
 [node name="DebugCamera" type="Camera" parent="."]
 transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.8476, 4.09103 )
 current = true
 script = ExtResource( 5 )
+
+[node name="light-cirya-basic3" parent="." instance=ExtResource( 2 )]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, -2.16407, 0, 2.10349 )
+
+[node name="light-hallacirya-tree" parent="." instance=ExtResource( 6 )]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, -5.93004, 0.366901, 3.19795 )

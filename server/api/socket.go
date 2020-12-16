@@ -69,7 +69,6 @@ func (a *Api) GetRoomSocket(w http.ResponseWriter, r *http.Request) {
 			break
 		}
 
-		log.Print("Message:", string(msg))
 		message, err := app.ParseMessage(msg)
 
 		if err != nil {
@@ -78,7 +77,7 @@ func (a *Api) GetRoomSocket(w http.ResponseWriter, r *http.Request) {
 			continue
 		}
 
-		log.Print("Parsed:", message)
+		log.Print("Received:", message)
 		message.AddUser(user)
 
 		// Delegates to handlers
