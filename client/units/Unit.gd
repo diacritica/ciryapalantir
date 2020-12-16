@@ -14,11 +14,14 @@ func toggle_block():
     if type == "CIRYA":
         block = !block
         
-        if block:
-            self.transform.basis = self.transform.basis.rotated(Vector3(1, 0, 0), PI/2)
-            self.transform.origin = Vector3(self.transform.origin.x, 1, self.transform.origin.z)
+        var mesh = self.get_node('Mesh')
+        
+        if block:    
+            mesh.transform.basis = mesh.transform.basis.rotated(Vector3(1, 0, 0), PI/2)
+            mesh.transform.origin = Vector3(mesh.transform.origin.x, mesh.transform.origin.y + 1, mesh.transform.origin.z)
         else:
-            self.transform.basis = self.transform.basis.rotated(Vector3(-1, 0, 0), PI/2)
+            mesh.transform.basis = mesh.transform.basis.rotated(Vector3(-1, 0, 0), PI/2)
+            mesh.transform.origin = Vector3(mesh.transform.origin.x, mesh.transform.origin.y - 1, mesh.transform.origin.z)
 
 func get_height():
     if type == "HALLACIRYA" or !block:
