@@ -1,0 +1,66 @@
+[gd_scene load_steps=2 format=2]
+
+[ext_resource path="res://UI.gd" type="Script" id=1]
+
+[node name="UI" type="Control"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+script = ExtResource( 1 )
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="ButtonContainer" type="Panel" parent="."]
+modulate = Color( 1, 1, 1, 0.501961 )
+margin_left = 17.0
+margin_top = 17.0
+margin_right = 226.0
+margin_bottom = 140.0
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="ConnectButton" type="Button" parent="ButtonContainer"]
+margin_left = 8.0
+margin_top = 9.0
+margin_right = 197.0
+margin_bottom = 36.0
+rect_pivot_offset = Vector2( 94.5, 27 )
+text = "CONNECT"
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="PlayerButton" type="Button" parent="ButtonContainer"]
+margin_left = 8.0
+margin_top = 46.8403
+margin_right = 197.0
+margin_bottom = 73.8403
+rect_pivot_offset = Vector2( 94.5, 27 )
+disabled = true
+text = "PLAYER 1"
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="ReadyButton" type="Button" parent="ButtonContainer"]
+margin_left = 8.0
+margin_top = 83.8398
+margin_right = 197.0
+margin_bottom = 110.84
+rect_pivot_offset = Vector2( 94.5, 27 )
+disabled = true
+text = "READY"
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="Log" type="Panel" parent="."]
+modulate = Color( 1, 1, 1, 0.5 )
+margin_left = 17.0
+margin_top = 156.0
+margin_right = 226.0
+margin_bottom = 409.0
+__meta__ = {
+"_edit_use_anchors_": false
+}
