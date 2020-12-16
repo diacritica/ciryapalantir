@@ -50,32 +50,50 @@ func _physics_process(delta):
         elif current_outline:
             current_outline = null
       
+var piece_cast_tile = null    
+var piece_source_tile = null
+
 func _input(event):
     if (event is InputEventMouseButton and event.button_index == BUTTON_LEFT) or (event is InputEventMouseMotion and global.current_piece):    
-        var piece_cast = null
-        
+        if piece_cast_tile and piece_cast_tile.collider != piece_source_tile:
+            piece_cast_tile.collider.hideHighlight()
+            
         if global.current_piece:          
             var space_state = get_world().direct_space_state
-            piece_cast = space_state.intersect_ray(global.current_piece.global_transform.origin, Vector3(0, -ray_length, 0), [], 2147483647, false, true)
+            piece_cast_tile = space_state.intersect_ray(global.current_piece.global_transform.origin, Vector3(0, -ray_length, 0), [], 2147483647, false, true)
+            if piece_cast_tile:
+                piece_cast_tile.collider.showHighlight()
         
         var cast = get_mouse_cast()
 
         if not cast.empty():
             if event is InputEventMouseButton and event.button_index == BUTTON_LEFT:
+                # init drag
                 if event.is_pressed() and cast.collider.collision_layer == 2: 
                     global.init_drag_drop(cast.collider)    
-                elif global.current_piece and not piece_cast.empty():
+                    if piece_cast_tile:
+                        piece_source_tile = piece_cast_tile.collider
+                        piece_source_tile.showHighlight()
+                # stop drag
+                elif global.current_piece and not piece_cast_tile.empty():
                     var piece = global.current_piece
                     global.stop_drag_drop()    
-                    piece_cast.collider.drop(piece)
+                    piece_cast_tile.collider.drop(piece)
+                    
+                    piece_cast_tile.collider.hideHighlight()
+                    
+                    if piece_source_tile:
+                        piece_source_tile.hideHighlight()
+                        piece_source_tile = null
+            # drag movement
             elif global.current_piece and event is InputEventMouseMotion:
                 var new_position = cast.position
                 var min_height = global.current_piece.get_height()
                 
-                if piece_cast:
+                if piece_cast_tile:
                     var piece = global.current_piece
                     
-                    new_position.y = global.get_stack_height(piece_cast.collider.row, piece_cast.collider.column, global.current_piece.get_instance_id()) + 0.2
+                    new_position.y = global.get_stack_height(piece_cast_tile.collider.row, piece_cast_tile.collider.column, global.current_piece.get_instance_id()) + 0.2
                 if new_position.y < 0.2:
                     new_position.y = 0.2
   

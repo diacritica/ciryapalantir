@@ -35,6 +35,18 @@ func get_stack_height(row, column, exclude = null):
             height = height + piece.get_height()
         
     return height
+    
+func get_piece_tile(piece_id):
+    for row_index in  range(board_state.size()):
+        var row = board_state[row_index]
+        for column_index in range(row.size()):
+            var column = row[column_index]
+            var piece_index = column.find(piece_id, 0)
+            
+            if piece_index != -1:
+                return get_tile(row_index, column_index)
+                
+    return null
 
 func get_tile(row, column):
     var tiles = board.get_node('Tiles').get_children()
@@ -66,7 +78,7 @@ func init_drag_drop(piece):
     current_piece.axis_lock_linear_x = true
     current_piece.mode = RigidBody.MODE_STATIC
     piece_initial_position = piece.global_transform.origin
-    
+
 func stop_drag_drop():
     current_piece.mode = RigidBody.MODE_RIGID
     current_piece.get_node("CollisionShape").disabled = false

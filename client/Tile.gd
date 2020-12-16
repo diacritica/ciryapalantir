@@ -14,13 +14,10 @@ func _on_body_entered(_body_id, _body, _body_shape, _area):
     #     print(row, ' - ', column)
     pass
 
-func drop(piece):
-    print('drop in ', row, ' ', column)
-    
+func drop(piece):    
     var new_position = self.global_transform.origin
     
     if !global.valid_drop_tile(row, column):
-        print('not valid')
         piece.set_translation(global.piece_initial_position)
     else:
         global.remove_piece_from_state(piece.get_instance_id())
@@ -30,3 +27,9 @@ func drop(piece):
         piece.apply_central_impulse(Vector3(0, -0.1, 0))
     
     # self.visible = true
+
+func showHighlight():
+    self.visible = true
+    
+func hideHighlight():
+    self.visible = false
