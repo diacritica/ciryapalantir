@@ -98,8 +98,8 @@ func _input(event):
                     var piece = global.current_piece
                     
                     new_position.y = global.get_stack_height(piece_cast_tile.collider.row, piece_cast_tile.collider.column, global.current_piece.get_instance_id()) + 0.2
-                if new_position.y < 0.2:
-                    new_position.y = 0.2
+                if new_position.y < 2.2:
+                    new_position.y = 2.2
   
                 global.current_piece.set_translation(new_position)
         elif global.current_piece:
