@@ -69,7 +69,7 @@ type Game interface {
 
 	CurrentPlayer() int
 	CurrentTurn() int
-	Turn(move string) TurnResult
+	Turn(move string) (TurnResult, error)
 }
 
 type PlayerStatus struct {
@@ -157,10 +157,9 @@ func (g *game) CurrentTurn() int {
 	return g.turn
 }
 
-func (g *game) Turn(move string) TurnResult {
+func (g *game) Turn(move string) (TurnResult, error) {
 	var result TurnResult
 
-	g.moves = append(g.moves, move)
 	
 	if (move == "fin") {
 		result.State = WIN_1
@@ -171,10 +170,14 @@ func (g *game) Turn(move string) TurnResult {
 		g.turn = 0
 		g.player = 0
 		
-		return result
+		return result, nil
 	}
 
-	g.board.ProcessMove(g.player, move)
+	err := g.board.ProcessMove(g.player, move)
+
+	if err != nil {
+		return result, err
+	}
 
 	fmt.Println(g.board.String())
 
@@ -193,6 +196,7 @@ func (g *game) Turn(move string) TurnResult {
 	g.state = result.State
 	g.turn = result.NextTurn
 	g.player = result.NextPlayer
+	g.moves = append(g.moves, move)
 	
-	return result
+	return result, nil
 }

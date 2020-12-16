@@ -113,3 +113,13 @@ func GameFinishedMessage(state GameState, winCondition WinCondition, turn int) M
 		Params: params,
 	}
 }
+
+func InvalidTurnMessage(error string) Message {
+	params := make(ParamMap)
+	params["error"] = error
+	
+	return &message {
+		Kind: InvalidTurn,
+		Params: params,
+	}
+}

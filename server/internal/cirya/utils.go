@@ -14,13 +14,21 @@ func idx(v string, s []string) int {
 }
 
 func checkBound(idx int, size int) (int, error) {
-	if idx > size {
-		return 0, fmt.Errorf("Out of bounds %d > %d", idx, size)
+	if idx >= size {
+		return 0, fmt.Errorf("Out of bounds %d >= %d", idx, size)
 	}
 	if idx < 0 {
 		return 0, fmt.Errorf("Out of bounds %d < 0", idx)
 	}
 	return idx, nil
+}
+
+func checkRank(rank string, size int) bool {
+	return idx(rank, ranks[:size]) != -1
+}
+
+func checkFile(file string, size int) bool {
+	return idx(file, files[:size]) != -1
 }
 
 func reverse(s []string) []string {
@@ -50,7 +58,7 @@ func next(rank string, file string, size int, direction MoveDirection) (string, 
 			return rank, file, err
 		}
 		
-		return ranks[next], file, nil
+		return ranks[:size][next], file, nil
 		
 	case RIGHT:
 		next, err := checkBound(idx(file, files[:size]) + 1, size)
@@ -60,7 +68,7 @@ func next(rank string, file string, size int, direction MoveDirection) (string, 
 			return rank, file, err
 		}
 		
-		return rank, files[next], nil
+		return rank, files[:size][next], nil
 		
 	case DOWN:
 		next, err := checkBound(idx(rank, ranks[:size]) - 1, size)
@@ -69,7 +77,7 @@ func next(rank string, file string, size int, direction MoveDirection) (string, 
 			return rank, file, err
 		}
 		
-		return ranks[next], file, nil
+		return ranks[:size][next], file, nil
 		
 	case LEFT:
 		next, err := checkBound(idx(file, files[:size]) - 1, size)
@@ -78,7 +86,7 @@ func next(rank string, file string, size int, direction MoveDirection) (string, 
 			return rank, file, err
 		}
 		
-		return rank, files[next], nil
+		return rank, files[:size][next], nil
 	}
 
 	return rank, file, nil

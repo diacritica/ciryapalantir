@@ -107,9 +107,16 @@ func DoSubmitTurn(m Message, r Room, g Game) {
 	move, _ := m.GetString("move")
 
 	if player == g.CurrentPlayer() && turn == g.CurrentTurn() {
-		result := g.Turn(move)
+		result, err := g.Turn(move)
 
 		var msg Message
+
+		if err != nil {
+			user := m.User()
+			r.UserMessage(user) <- InvalidTurnMessage(err.Error())
+			return
+		}
+
 		if result.EndGame {
 			msg = GameFinishedMessage(result.State, result.WinCondition, turn)
 		} else {
@@ -121,7 +128,4 @@ func DoSubmitTurn(m Message, r Room, g Game) {
 		r.Broadcast(msg)
 	}
 
-	// TODO: Handle error with turn or player
-	
-	
 }

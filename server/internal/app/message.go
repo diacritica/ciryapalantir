@@ -53,6 +53,7 @@ const (
 	StartGame = "StartGame"
 	Turn = "Turn"
 	GameFinished = "GameFinished"
+	InvalidTurn = "InvalidTurn"
 )
 
 var MessageTypes = []MessageType {

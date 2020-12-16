@@ -33,21 +33,27 @@ func MakeBoard(size int) *Board {
 }
 
 func (b *Board) PlaceStone(player int, stone string, position string) error {
-	rankKey, fileKey := parsePosition(position)
+	rank, file := parsePosition(position)
 	entry := fmt.Sprintf("%s%d", stone, player)
 
-	if !b.empty(rankKey, fileKey) {
+	if !b.empty(rank, file) {
 		err := fmt.Errorf("Cannot place stone in occupied position %s", position)
 		return err
 	}
 
-	b.set(rankKey, fileKey, []string { entry })
+	if !checkRank(rank, b.Size) || !checkFile(file, b.Size) {
+		err := fmt.Errorf("Invalid position %s", position)
+		return err
+	}
+
+	b.set(rank, file, []string { entry })
+
 	return nil
 }
 
 func (b *Board) ControlingPlayer(position string) int {
-	rankKey, fileKey := parsePosition(position)
-	stones := b.get(rankKey, fileKey)
+	rank, file := parsePosition(position)
+	stones := b.get(rank, file)
 
 	if len(stones) == 0 {
 		return 0
@@ -60,12 +66,13 @@ func (b *Board) ControlingPlayer(position string) int {
 }
 
 func (b *Board) StonesInPosition(position string) int {
-	rankKey, fileKey := parsePosition(position)
-	return len(b.get(rankKey, fileKey))
+	rank, file := parsePosition(position)
+	return len(b.get(rank, file))
 }
 
 func (b *Board) MoveStones(player int, position string, count int, direction MoveDirection, drops []int) error {
-
+	var err error
+	
 	if b.ControlingPlayer(position) != player {
 		return fmt.Errorf("Player %d doesnt' control the position %s", player, position)
 	}
@@ -74,32 +81,47 @@ func (b *Board) MoveStones(player int, position string, count int, direction Mov
 		return fmt.Errorf("Not enough stones in position %s. Expected at least %d, found %d", position, count, b.StonesInPosition(position))
 	}
 
-	rankKey, fileKey := parsePosition(position)
+	rank, file := parsePosition(position)
 
-	current := b.get(rankKey, fileKey)
-	toDrop := current[len(current)-count:]
+	// Validate the drop squares before changing anything in the board
 
-	b.set(rankKey, fileKey, current[:len(current) - count])
-
-	for _, drop := range drops {
-		var err error
-		rankKey, fileKey, err = next(rankKey, fileKey, b.Size, direction)
+	for range drops {
+		rank, file, err = next(rank, file, b.Size, direction)
 
 		if err != nil {
 			return err
 		}
 
-		old := b.get(rankKey, fileKey)
-
-		if len(old) > 0 && strings.HasPrefix(old[len(old) - 1], "H") {
-			return fmt.Errorf("Cannot put a nose over a Hallacirya")
+		if !checkRank(rank, b.Size) || !checkFile(file, b.Size) {
+			return fmt.Errorf("Drop position %s%s is not valid", rank, file)
 		}
 
-		if len(old) > 0 && strings.HasPrefix(old[len(old) - 1], "T") {
-			return fmt.Errorf("Cannot put a nose over a Tampar")
+		current := b.get(rank, file)
+		var head string
+
+		if len(current) > 0 {
+			head = current[len(current) - 1]
 		}
-		
-		b.set(rankKey, fileKey, append(old, toDrop[:drop]...))
+
+		if strings.HasPrefix(head, "H") {
+			return fmt.Errorf("Cannot put stones over a Hallacirya")
+		}
+
+		if strings.HasPrefix(head, "T") {
+			return fmt.Errorf("Cannot put stones over Tampar")
+		}
+	}
+
+	rank, file = parsePosition(position)
+	current := b.get(rank, file)
+	toDrop := current[len(current)-count:]
+
+	b.set(rank, file, current[:len(current) - count])
+
+	for _, drop := range drops {
+		rank, file, _ = next(rank, file, b.Size, direction)
+		current := b.get(rank, file)
+		b.set(rank, file, append(current, toDrop[:drop]...))
 		toDrop = toDrop[drop:]
 	}
 
@@ -110,7 +132,7 @@ func (b *Board) String() string {
 	var sb strings.Builder
 
 	sb.WriteString("   ")
-	for _, file := range files {
+	for _, file := range files[:b.Size] {
 		sb.WriteString(fmt.Sprintf("%6s", file))
 	}
 

@@ -9,13 +9,22 @@ import (
 
 func TestPlaceOne(t *testing.T) {
 	var board = cirya.MakeBoard(9)
-	board.ProcessMove(1, "a1")
-	board.ProcessMove(2, "Hi9")
-	board.ProcessMove(1, "Td4")
+	err1 := board.ProcessMove(1, "a1")
+	err2 := board.ProcessMove(2, "Hi9")
+	err3 := board.ProcessMove(1, "Td4")
+	err4 := board.ProcessMove(1, "x1")
+	err5 := board.ProcessMove(1, "a0")
+
+	assert.Nil(t, err1)
+	assert.Nil(t, err2)
+	assert.Nil(t, err3)
 
 	assert.Equal(t, board.Data["a"]["1"], []string{ "C1" })
 	assert.Equal(t, board.Data["i"]["9"], []string{ "H2" })
 	assert.Equal(t, board.Data["d"]["4"], []string{ "T1" })
+
+	assert.NotNil(t, err4)
+	assert.NotNil(t, err5)
 }
 
 func TestPlaceOverExistingFails(t *testing.T) {
@@ -102,4 +111,36 @@ func TestMove(t *testing.T) {
 
 	assert.Equal(t, board.Data["e"]["3"], []string { "C1" })
 	assert.Equal(t, board.Data["e"]["2"], []string { "C2", "C2" })
+}
+
+func TestMoveOutsideBounds(t *testing.T) {
+	var board = &cirya.Board {
+		Data: cirya.BoardData {
+			"a": {
+				"1": []string { "C1", "C1", "C1" },
+			},
+
+			"i": {
+				"9": []string { "C1", "C1", "C1" },
+			},
+		},
+		Size: 9,
+	}
+
+	assert.NotNil(t, board.ProcessMove(1, "a1<"))
+	assert.NotNil(t, board.ProcessMove(1, "3a1<"))
+	assert.NotNil(t, board.ProcessMove(1, "3a1<111"))
+
+	assert.NotNil(t, board.ProcessMove(1, "a1-"))
+	assert.NotNil(t, board.ProcessMove(1, "3a1-"))
+	assert.NotNil(t, board.ProcessMove(1, "3a1-111"))
+
+	assert.NotNil(t, board.ProcessMove(1, "i9>"))
+	assert.NotNil(t, board.ProcessMove(1, "3i9>"))
+	assert.NotNil(t, board.ProcessMove(1, "3i9>111"))
+
+	assert.NotNil(t, board.ProcessMove(1, "i9+"))
+	assert.NotNil(t, board.ProcessMove(1, "3i9+"))
+	assert.NotNil(t, board.ProcessMove(1, "3i9+111"))
+
 }
