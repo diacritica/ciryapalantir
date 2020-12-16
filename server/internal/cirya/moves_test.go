@@ -79,7 +79,6 @@ func TestMove(t *testing.T) {
 	assert.Equal(t, board.Data["b"]["3"], []string { "C2" })
 	assert.Equal(t, board.Data["b"]["4"], []string { "C1" })
 
-	/*
 	board.ProcessMove(1, "2e4-2")
 	fmt.Printf(" == %s ==\n", "2e4-2")
 	fmt.Println(board.String())
@@ -101,8 +100,6 @@ func TestMove(t *testing.T) {
 	fmt.Printf(" == %s ==\n", "3e4<12")
 	fmt.Println(board.String())
 
-	assert.Equal(t, board.Data["e"]["2"], []string { "C1" })
-	assert.Equal(t, board.Data["e"]["3"], []string { "C2", "C2" })
-
-	*/
+	assert.Equal(t, board.Data["e"]["3"], []string { "C1" })
+	assert.Equal(t, board.Data["e"]["2"], []string { "C2", "C2" })
 }

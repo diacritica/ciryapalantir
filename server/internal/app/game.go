@@ -1,17 +1,17 @@
 package app
 
 import (
+	"fmt"
 	"strconv"
+	"cirya.me/server/internal/cirya"
 )
-
-type Board map[string]map[string][]string
 
 type GameStatus struct {
 	Config GameConfig `json:"config,omitempty"`
 	Players map[string]PlayerStatus `json:"players,omitempty"`
 	State GameState `json:"state,omitempty"`
 	Moves []string `json:"moves,omitempty"`
-	Board Board `json:"board,omitempty"`
+	Board cirya.BoardData `json:"board,omitempty"`
 	Turn *int `json:"turn,omitempty"`
 	Player *int `json:"currentPlayer,omitempty"`
 }
@@ -22,7 +22,7 @@ type game struct {
 	players map[string]PlayerStatus
 	state GameState
 	moves []string
-	board Board
+	board *cirya.Board
 	turn int
 	player int
 }
@@ -95,7 +95,7 @@ func NewGame(id ID) Game {
 		players: make(map[string]PlayerStatus),
 		state: NOT_STARTED,
 		moves: make([]string, 0),
-		board: make(Board),
+		board: cirya.MakeBoard(5),
 		turn: 1,
 		player: 1,
 	}
@@ -110,7 +110,7 @@ func (g *game) Status() GameStatus {
 
 	if g.state != NOT_STARTED {
 		status.Moves = g.moves
-		status.Board = g.board
+		status.Board = g.board.Data
 		status.Turn = &g.turn
 		status.Player = &g.player
 	}
@@ -146,6 +146,7 @@ func (g *game) StartGame() {
 	g.state = TURN_1
 	g.turn = 1
 	g.player = 1
+	g.board = cirya.MakeBoard(g.config.Size)
 }
 
 func (g *game) CurrentPlayer() int {
@@ -172,6 +173,10 @@ func (g *game) Turn(move string) TurnResult {
 		
 		return result
 	}
+
+	g.board.ProcessMove(g.player, move)
+
+	fmt.Println(g.board.String())
 
 	if g.state == TURN_1 {
 		result.State = TURN_2
