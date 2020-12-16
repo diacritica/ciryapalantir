@@ -1,9 +1,0 @@
-[gd_scene load_steps=3 format=2]
-
-[ext_resource path="res://assets/light/vip-cirya/light-vip-cirya-basic.glb" type="PackedScene" id=1]
-[ext_resource path="res://CiryaLB.gd" type="Script" id=2]
-
-[node name="CiryaLV" type="Spatial"]
-script = ExtResource( 2 )
-
-[node name="piece" parent="." instance=ExtResource( 1 )]

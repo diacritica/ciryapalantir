@@ -1,9 +1,29 @@
 [gd_scene load_steps=3 format=2]
 
 [ext_resource path="res://assets/light/vip-hallacirya-tree/light-vip-hallacirya-tree.glb" type="PackedScene" id=1]
-[ext_resource path="res://Hallacirya.gd" type="Script" id=2]
+
+[sub_resource type="GDScript" id=1]
+script/source = "extends Spatial
+
+var hallaciryaid = null
+# Declare member variables here. Examples:
+# var a = 2
+# var b = \"text\"
+
+
+# Called when the node enters the scene tree for the first time.
+func _ready():
+    print(\"I'm piece# \",hallaciryaid)
+    print(\"My ID is \",self.get_instance_id())
+    print($Piece.get_instance_id())
+
+
+# Called every frame. 'delta' is the elapsed time since the previous frame.
+#func _process(delta):
+#    pass
+"
 
 [node name="HallaciryaLV" type="Spatial"]
-script = ExtResource( 2 )
+script = SubResource( 1 )
 
 [node name="piece" parent="." instance=ExtResource( 1 )]
