@@ -6,12 +6,13 @@ onready var PlayerButton = get_node("ButtonContainer/PlayerButton")
 onready var ReadyButton = get_node("ButtonContainer/ReadyButton")
 
 func _ready():
-    ConnectButton.connect("pressed", self, "connect_pressed")
-    PlayerButton.connect("pressed", self, "player_pressed")
-    ReadyButton.connect("pressed", self, "ready_pressed")
+    #ConnectButton.connect("pressed", self, "connect_pressed")
+    #PlayerButton.connect("pressed", self, "player_pressed")
+    #ReadyButton.connect("pressed", self, "ready_pressed")
     
-    Server.connect("connection_success", self, "on_connection_success")
-    Server.connect("connection_error", self, "on_connection_error")
+    #Server.connect("connection_success", self, "on_connection_success")
+    #Server.connect("connection_error", self, "on_connection_error")
+    pass
 
 func connection_error():
     ConnectButton.disabled = false

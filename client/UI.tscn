@@ -1,66 +1,411 @@
-[gd_scene load_steps=2 format=2]
+[gd_scene load_steps=23 format=2]
 
 [ext_resource path="res://UI.gd" type="Script" id=1]
+[ext_resource path="res://assets/interface/logo.png" type="Texture" id=2]
+[ext_resource path="res://assets/interface/ribbon-medium.svg" type="Texture" id=3]
+[ext_resource path="res://assets/interface/background_inactive.tres" type="StyleBox" id=4]
+[ext_resource path="res://assets/interface/Alegreya-Regular.ttf" type="DynamicFontData" id=5]
+[ext_resource path="res://assets/interface/black-icon.png" type="Texture" id=6]
+[ext_resource path="res://assets/interface/white-icon.png" type="Texture" id=7]
+[ext_resource path="res://assets/interface/background_active.tres" type="StyleBox" id=9]
+[ext_resource path="res://assets/interface/WorkSans-Regular.ttf" type="DynamicFontData" id=10]
+[ext_resource path="res://assets/interface/opacity_gradient.tres" type="Material" id=11]
+[ext_resource path="res://assets/interface/Theme.tres" type="Theme" id=12]
+[ext_resource path="res://assets/interface/button_style.tres" type="StyleBox" id=13]
+[ext_resource path="res://assets/interface/button_style_hover.tres" type="StyleBox" id=14]
+[ext_resource path="res://assets/interface/ribbon-btn.svg" type="Texture" id=15]
+[ext_resource path="res://assets/interface/ribbon-small.svg" type="Texture" id=16]
+
+[sub_resource type="DynamicFont" id=3]
+size = 18
+font_data = ExtResource( 5 )
+
+[sub_resource type="DynamicFont" id=5]
+size = 14
+font_data = ExtResource( 10 )
+
+[sub_resource type="DynamicFont" id=4]
+size = 18
+font_data = ExtResource( 5 )
+
+[sub_resource type="StyleBoxFlat" id=6]
+bg_color = Color( 0, 0, 0, 0.4 )
+border_color = Color( 0.482353, 0.223529, 0.0392157, 1 )
+
+[sub_resource type="StyleBoxFlat" id=7]
+bg_color = Color( 0.6, 0.6, 0.6, 0 )
+
+[sub_resource type="DynamicFont" id=8]
+size = 14
+font_data = ExtResource( 10 )
+
+[sub_resource type="DynamicFont" id=9]
+size = 18
+font_data = ExtResource( 5 )
 
 [node name="UI" type="Control"]
 anchor_right = 1.0
 anchor_bottom = 1.0
+theme = ExtResource( 12 )
 script = ExtResource( 1 )
 __meta__ = {
-"_edit_use_anchors_": false
+"_edit_lock_": true,
+"_edit_use_anchors_": true
 }
 
-[node name="ButtonContainer" type="Panel" parent="."]
-modulate = Color( 1, 1, 1, 0.501961 )
-margin_left = 17.0
-margin_top = 17.0
-margin_right = 226.0
-margin_bottom = 140.0
+[node name="Panel" type="Panel" parent="."]
+margin_left = 39.0
+margin_top = 40.0
+margin_right = 359.0
+margin_bottom = 106.0
+custom_styles/panel = ExtResource( 9 )
 __meta__ = {
 "_edit_use_anchors_": false
 }
 
-[node name="ConnectButton" type="Button" parent="ButtonContainer"]
-margin_left = 8.0
+[node name="TextureRect2" type="TextureRect" parent="Panel"]
+margin_left = 6.0
 margin_top = 9.0
-margin_right = 197.0
-margin_bottom = 36.0
-rect_pivot_offset = Vector2( 94.5, 27 )
-text = "CONNECT"
+margin_right = 56.0
+margin_bottom = 59.0
+texture = ExtResource( 7 )
+expand = true
+stretch_mode = 1
 __meta__ = {
 "_edit_use_anchors_": false
 }
 
-[node name="PlayerButton" type="Button" parent="ButtonContainer"]
-margin_left = 8.0
-margin_top = 46.8403
-margin_right = 197.0
-margin_bottom = 73.8403
-rect_pivot_offset = Vector2( 94.5, 27 )
-disabled = true
-text = "PLAYER 1"
+[node name="Label" type="Label" parent="Panel"]
+anchor_top = 0.5
+anchor_bottom = 0.5
+margin_left = 73.0
+margin_top = -17.0
+margin_right = 101.0
+margin_bottom = 17.0
+text = "Username"
 __meta__ = {
 "_edit_use_anchors_": false
 }
 
-[node name="ReadyButton" type="Button" parent="ButtonContainer"]
-margin_left = 8.0
-margin_top = 83.8398
-margin_right = 197.0
-margin_bottom = 110.84
-rect_pivot_offset = Vector2( 94.5, 27 )
-disabled = true
-text = "READY"
+[node name="Label2" type="Label" parent="Panel"]
+anchor_top = 0.5
+anchor_bottom = 0.5
+margin_left = 203.495
+margin_top = -12.1305
+margin_right = 304.495
+margin_bottom = 13.8695
+custom_fonts/font = SubResource( 3 )
+custom_colors/font_color = Color( 1, 0.690196, 0.258824, 1 )
+text = "Ninquë"
 __meta__ = {
 "_edit_use_anchors_": false
 }
 
-[node name="Log" type="Panel" parent="."]
-modulate = Color( 1, 1, 1, 0.5 )
-margin_left = 17.0
-margin_top = 156.0
-margin_right = 226.0
-margin_bottom = 409.0
+[node name="TextureRect" type="TextureRect" parent="Panel"]
+margin_left = 308.831
+margin_top = -7.5323
+margin_right = 366.831
+margin_bottom = 73.4677
+texture = ExtResource( 15 )
+expand = true
+stretch_mode = 1
+flip_v = true
 __meta__ = {
 "_edit_use_anchors_": false
 }
+
+[node name="Panel2" type="Panel" parent="."]
+margin_left = 39.0
+margin_top = 126.0
+margin_right = 359.0
+margin_bottom = 192.0
+custom_styles/panel = ExtResource( 4 )
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="TextureRect3" type="TextureRect" parent="Panel2"]
+margin_left = 6.0
+margin_top = 8.0
+margin_right = 56.0
+margin_bottom = 58.0
+texture = ExtResource( 6 )
+expand = true
+stretch_mode = 1
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="Label2" type="Label" parent="Panel2"]
+anchor_top = 0.5
+anchor_bottom = 0.5
+margin_left = 73.0
+margin_top = -17.0
+margin_right = 101.0
+margin_bottom = 17.0
+text = "Username"
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="Label3" type="Label" parent="Panel2"]
+anchor_top = 0.5
+anchor_bottom = 0.5
+margin_left = 203.495
+margin_top = -11.2287
+margin_right = 304.495
+margin_bottom = 14.7713
+custom_fonts/font = SubResource( 3 )
+custom_colors/font_color = Color( 1, 0.690196, 0.258824, 1 )
+text = "Morqua"
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="TextureRect2" type="TextureRect" parent="Panel2"]
+margin_left = 308.831
+margin_top = -7.81257
+margin_right = 366.831
+margin_bottom = 73.1874
+texture = ExtResource( 15 )
+expand = true
+stretch_mode = 1
+flip_v = true
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="Panel3" type="Panel" parent="."]
+material = ExtResource( 11 )
+margin_left = 39.0
+margin_top = 241.0
+margin_right = 359.0
+margin_bottom = 710.0
+custom_styles/panel = ExtResource( 4 )
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="TextureRect" type="TextureRect" parent="Panel3"]
+margin_left = 14.8325
+margin_top = 12.5359
+margin_right = 304.832
+margin_bottom = 43.5359
+texture = ExtResource( 3 )
+expand = true
+stretch_mode = 1
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="Label2" type="Label" parent="Panel3/TextureRect"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+custom_fonts/font = SubResource( 5 )
+custom_colors/font_color = Color( 1, 0.690196, 0.258824, 1 )
+text = "Movimientos"
+align = 1
+valign = 1
+clip_text = true
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="Label" type="Label" parent="Panel3"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+margin_left = 33.8108
+margin_top = 60.0
+margin_right = -36.1892
+custom_fonts/font = SubResource( 4 )
+custom_colors/font_color = Color( 0.631373, 0.631373, 0.631373, 1 )
+text = " 1.   a1      b2
+ 2.   a1      b2
+ 3.   a1      b2
+ 4.   a1      b2
+ 5.   a1      b2
+ 6.   a1      b2
+ 7.   a1      b2"
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="AdvicePanel" type="Panel" parent="."]
+visible = false
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+margin_left = -268.0
+margin_top = -205.0
+margin_right = 268.0
+margin_bottom = -150.0
+custom_styles/panel = SubResource( 6 )
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="AdviceLavel" type="Label" parent="AdvicePanel"]
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+margin_left = -244.5
+margin_top = -17.0
+margin_right = 244.5
+margin_bottom = 17.0
+text = "Toma una cirya de tu oponente y ubícala en un sat"
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="TurnPanel" type="Panel" parent="."]
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+margin_left = -345.5
+margin_top = -244.0
+margin_right = 345.5
+margin_bottom = -122.0
+custom_styles/panel = SubResource( 6 )
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="Button" type="Button" parent="TurnPanel"]
+margin_left = 41.5
+margin_top = 39.0
+margin_right = 242.5
+margin_bottom = 89.0
+custom_styles/normal = SubResource( 7 )
+custom_colors/font_color = Color( 1, 0.690196, 0.258824, 1 )
+text = "Deshacer"
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="Button2" type="Button" parent="TurnPanel"]
+margin_left = 326.278
+margin_top = 39.0
+margin_right = 625.278
+margin_bottom = 89.0
+custom_styles/hover = ExtResource( 14 )
+custom_styles/pressed = ExtResource( 14 )
+custom_styles/focus = ExtResource( 13 )
+custom_styles/disabled = ExtResource( 13 )
+custom_styles/normal = ExtResource( 13 )
+custom_colors/font_color = Color( 1, 0.690196, 0.258824, 1 )
+text = "Confirmar Movimiento"
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="TextureRect" type="TextureRect" parent="TurnPanel/Button2"]
+margin_left = 289.99
+margin_top = -7.96613
+margin_right = 338.99
+margin_bottom = 56.0339
+texture = ExtResource( 15 )
+expand = true
+stretch_mode = 1
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="TextureRect2" type="TextureRect" parent="TurnPanel/Button2"]
+margin_left = -40.0529
+margin_top = -7.96613
+margin_right = 8.94714
+margin_bottom = 56.0339
+texture = ExtResource( 15 )
+expand = true
+stretch_mode = 1
+flip_h = true
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="Panel4" type="Panel" parent="."]
+material = ExtResource( 11 )
+anchor_left = 1.0
+anchor_right = 1.0
+margin_left = -279.402
+margin_top = 97.9094
+margin_right = -43.4023
+margin_bottom = 375.91
+custom_styles/panel = ExtResource( 4 )
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="logo" type="Sprite" parent="Panel4"]
+position = Vector2( 103.182, -9.3731 )
+scale = Vector2( 0.479721, 0.479721 )
+texture = ExtResource( 2 )
+
+[node name="TextureRect" type="TextureRect" parent="Panel4"]
+margin_left = 16.2245
+margin_top = 75.8619
+margin_right = 223.225
+margin_bottom = 106.862
+texture = ExtResource( 16 )
+expand = true
+stretch_mode = 1
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="Label" type="Label" parent="Panel4/TextureRect"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+custom_fonts/font = SubResource( 8 )
+custom_colors/font_color = Color( 1, 0.690196, 0.258824, 1 )
+text = "Comparte el enlace"
+align = 1
+valign = 1
+autowrap = true
+
+[node name="Label2" type="Label" parent="Panel4/TextureRect"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+margin_top = 35.0
+margin_bottom = 38.0
+custom_fonts/font = SubResource( 9 )
+text = "play.cirya.me"
+align = 1
+valign = 1
+clip_text = true
+
+[node name="TextureRect2" type="TextureRect" parent="Panel4"]
+margin_left = 16.2245
+margin_top = 166.862
+margin_right = 223.225
+margin_bottom = 197.862
+texture = ExtResource( 16 )
+expand = true
+stretch_mode = 1
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="Label" type="Label" parent="Panel4/TextureRect2"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+custom_fonts/font = SubResource( 8 )
+custom_colors/font_color = Color( 1, 0.690196, 0.258824, 1 )
+text = "Código del juego"
+align = 1
+valign = 1
+autowrap = true
+
+[node name="Label2" type="Label" parent="Panel4/TextureRect2"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+margin_top = 35.0
+margin_bottom = 38.0
+custom_fonts/font = SubResource( 9 )
+text = "3312314123123"
+align = 1
+valign = 1
+clip_text = true
