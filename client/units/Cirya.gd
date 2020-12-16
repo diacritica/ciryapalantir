@@ -6,12 +6,12 @@ export(bool) var block = false
 
 export(String, "CIRYA", "HALLACIRYA") var type = "CIRYA"
 
-export(int) var ciryaid = 0
+export(int) var pieceid = 0
 export(bool) var fleetSelectable = false
 
 # Called when the node enters the scene tree for the first time.
 func _ready():
-    print("I'm piece# ",ciryaid)
+    print("I'm piece# ",pieceid)
     print("My ID is ",self.get_instance_id())
     
 func toggle_block():

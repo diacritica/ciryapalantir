@@ -21,6 +21,7 @@ var traysize = 5
 var colour = "W"
 var style = "B"
 
+var stacks = []
 # These functions might not be needed
 # just in case we keep them until 
 # we confirm basic attribute setting is enough
@@ -40,40 +41,40 @@ func setBlack():
     white = false
     black = true
 
-func getChosenCirya(ciryaid=null):
+func getChosenCirya(pieceid=null):
     var cirya = null
     if white:
         if basic:
             cirya = load("res://units/cirya-w-basic.tscn").instance()
-            cirya.ciryaid = ciryaid
+            cirya.pieceid = pieceid
         else:
             cirya = load("res://CiryaLV.tscn").instance()
-            cirya.ciryaid = ciryaid
+            cirya.pieceid = pieceid
     else: # so far, we reuse white
         if basic:
             cirya = load("res://CiryaLB.tscn").instance()
-            cirya.ciryaid = ciryaid
+            cirya.pieceid = pieceid
         else:
             cirya = load("res://CiryaLV.tscn").instance()
-            cirya.ciryaid = ciryaid
+            cirya.pieceid = pieceid
     return cirya
 
-func getChosenHallacirya(hallaciryaid=null):
+func getChosenHallacirya(pieceid=null):
     var hallacirya = null
     if white:
         if basic:
             hallacirya = load("res://units/hallacirya-w-basic.tscn").instance()
-            hallacirya.hallaciryaid = hallaciryaid
+            hallacirya.pieceid = pieceid
         else:
             hallacirya = load("res://HallaciryaLV.tscn").instance()
-            hallacirya.hallaciryaid = hallaciryaid
+            hallacirya.pieceid = pieceid
     else: # so far, we reuse white
         if basic:
             hallacirya = load("res://CiryaLB.tscn").instance()
-            hallacirya.hallaciryaid = hallaciryaid
+            hallacirya.pieceid = pieceid
         else:
             hallacirya = load("res://CiryaLV.tscn").instance()
-            hallacirya.hallaciryaid = hallaciryaid
+            hallacirya.pieceid = pieceid
     return hallacirya
 
 
@@ -89,18 +90,33 @@ func setup(ts,c,s):
         setBasic()
     else:
         setVIP()
+
+func removeCiryafromFleet(pieceid):
+    for s in stacks:
+        for p in s:
+            if p.fleetSelectable:
+                if p.pieceid == pieceid:
+                    print("Cirya has been removed")
+                    s.erase(p)
+                    if len(s) != 0:
+                        s[-1].fleetSelectable = true
+                    remove_child(p)
+                   
+                    break
+            else:
+                pass
         
 # Called when the node enters the scene tree for the first time.
 func _ready():
     
-    var stacks = []
+
     var piece = null
     var aTray = load(trays[traysize][0]).instance()
     add_child(aTray)
     
     var originalstartZ = startZ
     
-    var ciryaid = 1
+    var pieceid = 1
     for r in trays[traysize][1]:
        
         for s in r:
@@ -111,7 +127,7 @@ func _ready():
             if s > 0:
                 var onestack = []
                 for p in range(s):
-                    var c = getChosenCirya(ciryaid)
+                    var c = getChosenCirya(pieceid)
                     var x = sX + rand_range(-0.002, 0.002)
                     var z = sZ + rand_range(-0.02, 0.02)
                     var y = sY + heightOffset*st
@@ -123,13 +139,13 @@ func _ready():
                     add_child(c)
                     onestack.append(c)
                     st +=1
-                    ciryaid +=1
+                    pieceid +=1
                 
                 startZ += stackOffest
                 onestack[-1].fleetSelectable = true
                 stacks.append(onestack)
             else:
-                var c = getChosenHallacirya(ciryaid)
+                var c = getChosenHallacirya(pieceid)
                 var x = sX + rand_range(-0.002, 0.002)
                 var z = sZ + rand_range(-0.02, 0.02)
                 var y = sY + heightOffset*st
@@ -140,13 +156,12 @@ func _ready():
 
                 add_child(c)
                 c.fleetSelectable = true
-                stacks.append(c)
+                stacks.append([c])
                 st +=1
-                ciryaid +=1
+                pieceid +=1
                     
             
         startX += rowsOffset
         startZ = originalstartZ
     
     print(stacks,stacks.size())
-
