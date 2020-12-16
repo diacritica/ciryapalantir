@@ -6,6 +6,12 @@ var ray_length = 100
 func _ready():
     global.game = self
     
+    var camera = get_viewport().get_camera()
+    global.ui = camera.get_node('GameUI')
+    
+    global.ui
+    global.ui.connect("turn_confirmation", self, "_on_turn_confirmation")
+    
 #    var fleet = load("res://Fleet.tscn").instance()
 #    fleet.setup(5,"W","B") # 5, 6 or 7, W or B (missing), and B or V
 #    fleet.translation.x = 22
@@ -48,6 +54,7 @@ func _physics_process(delta):
       
 var piece_cast_tile = null    
 var piece_source_tile = null
+var last_turn = null
 
 func _input(event):
     if (event is InputEventMouseButton and event.button_index == BUTTON_LEFT) or (event is InputEventMouseMotion and global.current_piece):    
@@ -77,10 +84,19 @@ func _input(event):
                 # stop drag
                 elif global.current_piece and not piece_cast_tile.empty():
                     var piece = global.current_piece
+                    var old_tile = global.get_piece_tile(piece.get_instance_id())
+                    last_turn = {}
+                    
+                    if old_tile:
+                        last_turn.old = Vector2(old_tile.row, old_tile.column)    
+                    else:
+                        last_turn.old = null
+                    
                     global.stop_drag_drop()    
                     piece_cast_tile.collider.drop(piece)
-                    
                     piece_cast_tile.collider.hideHighlight()
+                    
+                    last_turn.new = Vector2(piece_cast_tile.collider.row, piece_cast_tile.collider.column)        
                     
                     if piece_source_tile:
                         piece_source_tile.hideHighlight()
@@ -108,3 +124,5 @@ func _input(event):
     elif global.current_piece and Input.is_key_pressed(KEY_R):
         global.current_piece.toggle_block()     
     
+func _on_turn_confirmation(value):
+    print(value)

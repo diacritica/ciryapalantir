@@ -1,0 +1,66 @@
+[gd_scene load_steps=3 format=2]
+
+[ext_resource path="res://GameUI.gd" type="Script" id=1]
+
+[sub_resource type="StyleBoxFlat" id=1]
+bg_color = Color( 0.152941, 0.207843, 0.564706, 1 )
+
+[node name="GameUI" type="Control"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+script = ExtResource( 1 )
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="ConfirmTurn" type="CenterContainer" parent="."]
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+margin_top = -100.0
+margin_bottom = -50.0
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="VBoxContainer" type="VBoxContainer" parent="ConfirmTurn"]
+margin_left = 1144.0
+margin_top = 5.0
+margin_right = 1416.0
+margin_bottom = 45.0
+rect_min_size = Vector2( 0, 40 )
+
+[node name="HBoxContainer" type="HBoxContainer" parent="ConfirmTurn/VBoxContainer"]
+margin_right = 272.0
+margin_bottom = 40.0
+size_flags_vertical = 3
+custom_constants/separation = 20
+alignment = 1
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="Undo" type="Button" parent="ConfirmTurn/VBoxContainer/HBoxContainer"]
+margin_right = 72.0
+margin_bottom = 40.0
+size_flags_horizontal = 3
+size_flags_vertical = 3
+text = "Deshacer"
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="Confirm" type="Button" parent="ConfirmTurn/VBoxContainer/HBoxContainer"]
+margin_left = 92.0
+margin_right = 272.0
+margin_bottom = 40.0
+rect_min_size = Vector2( 180, 0 )
+size_flags_horizontal = 3
+size_flags_vertical = 3
+custom_styles/normal = SubResource( 1 )
+text = "Confirmar movimiento"
+__meta__ = {
+"_edit_use_anchors_": false
+}
+[connection signal="pressed" from="ConfirmTurn/VBoxContainer/HBoxContainer/Undo" to="." method="_on_Undo_pressed"]
+[connection signal="pressed" from="ConfirmTurn/VBoxContainer/HBoxContainer/Confirm" to="." method="_on_Confirm_pressed"]
