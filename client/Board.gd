@@ -44,7 +44,7 @@ func _ready():
                 var new_tile = tile.instance()
                 new_tile.translation.x = row * offset_width
                 new_tile.translation.z = column * offset_width
-                new_tile.visible = true
+                new_tile.visible = false
                 new_tile.row = row
                 new_tile.column = column
                 tiles.add_child(new_tile)

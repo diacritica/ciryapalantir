@@ -47,7 +47,11 @@ func _input(event):
             elif global.current_piece and event is InputEventMouseMotion:
                 var new_position = cast.position
                 if piece_cast:
-                    new_position.y = global.get_stack_height(piece_cast.collider.row, piece_cast.collider.column) + 0.2
+                    new_position.y = global.get_stack_height(piece_cast.collider.row, piece_cast.collider.column, global.current_piece.get_instance_id()) + 0.2
+                    # piece_cast.collider.visible = true
+                if new_position.y < 0.2:
+                    new_position.y = 0.2
+                print('new height: ', new_position.y)
                 global.current_piece.set_translation(new_position)
         elif global.current_piece:
             global.restore_initial_position()

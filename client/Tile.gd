@@ -25,7 +25,7 @@ func drop(piece):
     else:
         global.remove_piece_from_state(piece.get_instance_id())
         global.board_state[row][column].append(piece.get_instance_id())
-        new_position.y = global.board_state[row][column].size() * global.cirya_height + 5
+        new_position.y = piece.translation.y
         piece.set_translation(new_position)
         piece.apply_central_impulse(Vector3(0, -0.1, 0))
     

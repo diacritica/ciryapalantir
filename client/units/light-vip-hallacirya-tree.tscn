@@ -24,7 +24,7 @@ points = PoolVector3Array( -0.11525, 0.995573, -0.0110057, -0.109484, 0.991255, 
 collision_layer = 2
 collision_mask = 6
 
-[node name="Vert001" type="MeshInstance" parent="."]
+[node name="Mesh" type="MeshInstance" parent="."]
 transform = Transform( 1.20362, 0, 0.798213, 0, 1.44425, 0, -0.798213, 0, 1.20362, 0, 0, 0 )
 mesh = SubResource( 1 )
 material/0 = null

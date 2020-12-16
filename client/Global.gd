@@ -26,9 +26,17 @@ func render_board():
                 
                 piece.set_translation(new_position)
                 
-func get_stack_height(row, column):
-    var pieces = board_state[row][column]
-    return pieces.size() * cirya_height
+func get_stack_height(row, column, exclude = null):
+    var height = 0
+    print('height for', row, column)
+    
+    for piece_id in board_state[row][column]:
+        if !exclude or exclude != piece_id:
+            var piece = instance_from_id(piece_id)
+            height = height + piece.get_height()
+            print('peice height', height)
+        
+    return height
 
 func get_tile(row, column):
     var tiles = board.get_node('Tiles').get_children()
