@@ -88,3 +88,51 @@ func stop_drag_drop():
     
 func restore_initial_position():
     current_piece.set_translation(piece_initial_position)
+    
+#fila: 0
+#columa: 1
+#
+#mueve a 
+#fila: 0
+#columa: 2
+#= 
+#5b>
+    
+func notation(turn): 
+    print('in turn ', turn)
+    var letters = ['a', 'b', 'c', 'd', 'e', 'f', 'g']
+    var new_notation = ''
+    var old_notation = ''
+    # letters.invert()
+
+    if turn.old != null:
+        var from_column = letters[turn.old.y]
+        var from_row = turn.old.x + 1
+        old_notation = str(from_column) + str(from_row)
+        
+    if turn.new != null:
+        var to_column = letters[turn.new.y]
+        var to_row = turn.new.x + 1
+        new_notation = str(to_column) + str(to_row)
+        
+    if turn.old == null:
+        if turn.piece_type != 'C':
+            return turn.piece_type + new_notation
+        else:
+            return new_notation
+        
+    var move_symbol = null
+    
+    if turn.old.x < turn.new.x:
+        move_symbol = '+'
+    elif turn.old.x < turn.new.x:
+        move_symbol = '-'
+    elif turn.old.y < turn.new.y:    
+        move_symbol = '>'
+    else:
+        move_symbol = '<'
+        
+    old_notation  += move_symbol
+        
+    return old_notation
+    

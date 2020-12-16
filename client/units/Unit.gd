@@ -40,3 +40,11 @@ func show_outline():
 func hide_outline():
     if $Mesh/Outline:
         $Mesh/Outline.visible = false
+
+func get_notation_name():
+    if type == "HALLACIRYA":
+        return 'H'
+    elif block:
+        return 'T'
+    
+    return 'C'

@@ -37,7 +37,7 @@ transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0.001, -0.5, 0 )
 transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, -4.32, 0, -4.32 )
 
 [node name="DebugCamera" type="Camera" parent="."]
-transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.8476, 4.09103 )
+transform = Transform( 0.0583241, 0.615758, -0.785774, -0.0455792, 0.787935, 0.614069, 0.997257, 1.02337e-11, 0.0740214, -16.3399, 8.87282, 3.51149 )
 current = true
 script = ExtResource( 5 )
 
@@ -50,3 +50,4 @@ transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, -11.1909, 0, 0 )
 transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 13.0248, 0, 0 )
 
 [node name="UI" parent="." instance=ExtResource( 6 )]
+visible = false

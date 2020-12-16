@@ -96,7 +96,8 @@ func _input(event):
                     piece_cast_tile.collider.drop(piece)
                     piece_cast_tile.collider.hideHighlight()
                     
-                    last_turn.new = Vector2(piece_cast_tile.collider.row, piece_cast_tile.collider.column)        
+                    last_turn.new = Vector2(piece_cast_tile.collider.row, piece_cast_tile.collider.column)       
+                    last_turn.piece_type = piece.get_notation_name()
                     
                     if piece_source_tile:
                         piece_source_tile.hideHighlight()
@@ -125,4 +126,4 @@ func _input(event):
         global.current_piece.toggle_block()     
     
 func _on_turn_confirmation(value):
-    print(value)
+    print(global.notation(last_turn))
