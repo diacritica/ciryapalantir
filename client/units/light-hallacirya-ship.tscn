@@ -33,8 +33,8 @@ transform = Transform( -4.54415e-08, 0, 1.03958, 0, 1.03958, 0, -1.03958, 0, -4.
 mesh = SubResource( 1 )
 material/0 = null
 
-[node name="Outline" type="MeshInstance" parent="."]
-transform = Transform( -4.54415e-08, 0, 1.03958, 0, 1.03958, 0, -1.03958, 0, -4.54415e-08, 0, 0, 0 )
+[node name="Outline" type="MeshInstance" parent="Mesh"]
+transform = Transform( 1, 0, -3.55271e-15, 0, 1, 0, 3.55271e-15, 0, 1, 0, 0, 0 )
 visible = false
 mesh = SubResource( 1 )
 material/0 = ExtResource( 3 )

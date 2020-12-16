@@ -15,13 +15,14 @@ func toggle_block():
         block = !block
         
         var mesh = self.get_node('Mesh')
+        var outline_mesh = self.get_node('Mesh')
         
         if block:    
             mesh.transform.basis = mesh.transform.basis.rotated(Vector3(1, 0, 0), PI/2)
             mesh.transform.origin = Vector3(mesh.transform.origin.x, mesh.transform.origin.y + 1, mesh.transform.origin.z)
         else:
             mesh.transform.basis = mesh.transform.basis.rotated(Vector3(-1, 0, 0), PI/2)
-            mesh.transform.origin = Vector3(mesh.transform.origin.x, mesh.transform.origin.y - 1, mesh.transform.origin.z)
+            mesh.transform.origin = Vector3(mesh.transform.origin.x, mesh.transform.origin.y - 1, mesh.transform.origin.z)      
 
 func get_height():
     if type == "HALLACIRYA" or !block:
@@ -30,9 +31,9 @@ func get_height():
     return $CollisionShape.scale.z * 2
         
 func show_outline():
-    if $Outline:
-        $Outline.visible = true
+    if $Mesh/Outline:
+        $Mesh/Outline.visible = true
 
 func hide_outline():
-    if $Outline:
-        $Outline.visible = false
+    if $Mesh/Outline:
+        $Mesh/Outline.visible = false
