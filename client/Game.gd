@@ -71,9 +71,6 @@ func _input(event):
                 # init drag
                 if event.is_pressed() and cast.collider.collision_layer == 2: 
                     global.init_drag_drop(cast.collider)    
-                    if piece_cast_tile:
-                        piece_source_tile = piece_cast_tile.collider
-                        piece_source_tile.showHighlight()
                 # stop drag
                 elif global.current_piece and not piece_cast_tile.empty():
                     var piece = global.current_piece
@@ -87,6 +84,10 @@ func _input(event):
                         piece_source_tile = null
             # drag movement
             elif global.current_piece and event is InputEventMouseMotion:
+                if not piece_source_tile and piece_cast_tile:
+                    piece_source_tile = piece_cast_tile.collider
+                    piece_source_tile.showHighlight()
+                        
                 var new_position = cast.position
                 var min_height = global.current_piece.get_height()
                 
