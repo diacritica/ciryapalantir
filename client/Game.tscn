@@ -47,7 +47,7 @@ script = ExtResource( 5 )
 transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, -11.1909, 0, 0 )
 
 [node name="Fleet" parent="." instance=ExtResource( 4 )]
-transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 13.0248, 0, 0 )
+transform = Transform( 0.0112048, 0, 0.999937, 0, 1, 0, -0.999937, 0, 0.0112048, -1.28329, 0, -13.8974 )
 
 [node name="UI" parent="." instance=ExtResource( 6 )]
 visible = false
