@@ -38,7 +38,7 @@ propagation = 0.75
 [node name="Game" type="Spatial"]
 script = ExtResource( 3 )
 
-[node name="Camera" type="Camera" parent="."]
+[node name="CameraPlayer1" type="Camera" parent="."]
 transform = Transform( 0.818429, -0.230064, 0.526541, -0.142244, 0.806707, 0.573577, -0.556724, -0.544329, 0.627507, 40, 45, 50 )
 keep_aspect = 0
 current = true
@@ -47,8 +47,17 @@ size = 20.0
 near = 0.09
 far = 240.8
 
+[node name="CameraPlayer2" type="Camera" parent="."]
+transform = Transform( -0.825442, 0.229969, -0.515519, -0.136313, 0.80502, 0.577375, 0.547781, 0.546862, -0.633149, -38.6149, 45, -50.8618 )
+keep_aspect = 0
+fov = 22.0
+size = 20.0
+near = 0.09
+far = 240.8
+
 [node name="Camera2" type="Camera" parent="."]
 transform = Transform( 1, 0, 0, 0, -0.0225129, 0.999747, 0, -0.999747, -0.0225129, 0.344988, 17.3109, -0.0533897 )
+visible = false
 
 [node name="SpotLight" type="SpotLight" parent="."]
 transform = Transform( 0.377408, 0.867381, -0.324366, 0.654092, -0.00173511, 0.756413, -0.655536, 0.497641, 0.568002, -5.7253, 18.2717, 10.8316 )
