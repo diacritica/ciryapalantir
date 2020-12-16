@@ -73,14 +73,18 @@ func _input(event):
             if event is InputEventMouseButton and event.button_index == BUTTON_LEFT:
                 # init drag
                 if event.is_pressed() and cast.collider.collision_layer == 2: 
-                    var target = cast.collider
-                    $Fleet.remove_child(target)
-
-                    target.set_translation(cast.position)
-                    self.add_child(target)
-                    self.set_owner(target)                    
+                    var piece = cast.collider
+                    var tile = global.get_piece_tile(piece.get_instance_id())
+                    if tile:
+                        var pieces = global.board_state[tile.row][tile.column]
+                        print('siblings', pieces.size())
+                    $Fleet.remove_child(piece)
+                    
+                    piece.set_translation(cast.position)
+                    self.add_child(piece)
+                    self.set_owner(piece)                    
                                         
-                    global.init_drag_drop(target)    
+                    global.init_drag_drop(piece)    
                 # stop drag
                 elif global.current_piece and not piece_cast_tile.empty():
                     var piece = global.current_piece
