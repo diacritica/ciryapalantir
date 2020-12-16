@@ -12,7 +12,7 @@ func _ready():
     global.render_board()
 
     var fleet = load("res://Fleet.tscn").instance()
-    fleet.setup(5,"W","V") # 5, 6 or 7, W or B (missing), and B or V
+    fleet.setup(5,"W","B") # 5, 6 or 7, W or B (missing), and B or V
     fleet.translation.x = 12
     fleet.translation.y = 0
     fleet.translation.z = 4

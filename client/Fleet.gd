@@ -11,12 +11,12 @@ var stackOffest = 2.2
 var rowsOffset = -2.5
 
 var startX = 2
-var startY = 0.2
+var startY = 2
 var startZ = -4
 
 var heightOffset = 0.3
 
-var trays = {5:["res://Tray5.tscn",[[3,3,3,-1],[3,3,3,3]]],6:["res://Tray5.tscn",[[3,3,-1],[3,3,3,3],[3,3,3,3]]],7:["res://Tray5.tscn",[[3,3,3,3,-1],[3,3,3,3,3],[3,3,3,3,1]]]}
+var trays = {5:["res://assets/tray/tray-5x5.tscn",[[3,3,3,-1],[3,3,3,3]]],6:["res://assets/tray/tray-6x6.tscn",[[3,3,-1],[3,3,3,3],[3,3,3,3]]],7:["res://assets/tray/tray-7x7.tscn",[[3,3,3,3,-1],[3,3,3,3,3],[3,3,3,3,1]]]}
 var traysize = 5
 var colour = "W"
 var style = "B"
@@ -93,7 +93,7 @@ func setup(ts,c,s):
 # Called when the node enters the scene tree for the first time.
 func _ready():
     
-    var ciryar = []
+    var stacks = []
     var piece = null
     var aTray = load(trays[traysize][0]).instance()
     add_child(aTray)
@@ -109,6 +109,7 @@ func _ready():
             var sY = startY
             var sZ = startZ
             if s > 0:
+                var onestack = []
                 for p in range(s):
                     var c = getChosenCirya(ciryaid)
                     var x = sX + rand_range(-0.002, 0.002)
@@ -120,11 +121,13 @@ func _ready():
                     c.rotation.y = randi()%5+1
 
                     add_child(c)
-                    ciryar.append(c)
+                    onestack.append(c)
                     st +=1
                     ciryaid +=1
                 
                 startZ += stackOffest
+                onestack[-1].fleetSelectable = true
+                stacks.append(onestack)
             else:
                 var c = getChosenHallacirya(ciryaid)
                 var x = sX + rand_range(-0.002, 0.002)
@@ -136,7 +139,8 @@ func _ready():
                 c.rotation.y = randi()%5+1
 
                 add_child(c)
-                ciryar.append(c)
+                c.fleetSelectable = true
+                stacks.append(c)
                 st +=1
                 ciryaid +=1
                     
@@ -144,4 +148,5 @@ func _ready():
         startX += rowsOffset
         startZ = originalstartZ
     
-    print(ciryar,ciryar.size())
+    print(stacks,stacks.size())
+

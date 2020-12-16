@@ -2,12 +2,12 @@
 
 importer="scene"
 type="PackedScene"
-path="res://.import/tray.glb-1829e36e2c26baeb5f58ff33ac33ce67.scn"
+path="res://.import/tray-7x7.glb-91bfaef9eabf58f90abfd9ef8b1d2327.scn"
 
 [deps]
 
-source_file="res://assets/light/tray/tray.glb"
-dest_files=[ "res://.import/tray.glb-1829e36e2c26baeb5f58ff33ac33ce67.scn" ]
+source_file="res://assets/tray/tray-7x7.glb"
+dest_files=[ "res://.import/tray-7x7.glb-91bfaef9eabf58f90abfd9ef8b1d2327.scn" ]
 
 [params]
 
@@ -24,6 +24,7 @@ meshes/ensure_tangents=true
 meshes/storage=0
 meshes/light_baking=0
 meshes/lightmap_texel_size=0.1
+skins/use_named_skins=true
 external_files/store_in_subdir=false
 animation/import=true
 animation/fps=15
