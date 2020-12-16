@@ -1,0 +1,25 @@
+[gd_scene load_steps=4 format=2]
+
+[ext_resource path="res://Fleet.gd" type="Script" id=1]
+[ext_resource path="res://FleetDebugCamera.gd" type="Script" id=4]
+
+[sub_resource type="BoxShape" id=1]
+
+[node name="Fleet" type="Spatial"]
+script = ExtResource( 1 )
+
+[node name="Camera" type="Camera" parent="."]
+transform = Transform( -1.62921e-07, -0.996195, 0.0871556, 0, 0.0871556, 0.996195, -1, 1.62301e-07, -1.41994e-08, 1, 10, 0 )
+current = true
+script = ExtResource( 4 )
+
+[node name="testCamera" type="Camera" parent="."]
+transform = Transform( -1.62921e-07, -0.866025, 0.5, 0, 0.5, 0.866025, -1, 1.41093e-07, -8.14603e-08, 5, 7, 0 )
+visible = false
+
+[node name="StaticBody" type="StaticBody" parent="."]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.3, 0 )
+
+[node name="CollisionShape" type="CollisionShape" parent="StaticBody"]
+transform = Transform( 10, 0, 0, 0, 0.3, 0, 0, 0, 10, 0, -0.5, 0 )
+shape = SubResource( 1 )
