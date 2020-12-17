@@ -1,9 +1,10 @@
-[gd_scene load_steps=14 format=2]
+[gd_scene load_steps=18 format=2]
 
 [ext_resource path="res://Board.tscn" type="PackedScene" id=1]
 [ext_resource path="res://units/cirya-w-basic.tscn" type="PackedScene" id=2]
 [ext_resource path="res://Game.gd" type="Script" id=3]
 [ext_resource path="res://Fleet.tscn" type="PackedScene" id=4]
+[ext_resource path="res://assets/dust.jpg" type="Texture" id=5]
 [ext_resource path="res://UI.tscn" type="PackedScene" id=6]
 [ext_resource path="res://GameUI.tscn" type="PackedScene" id=7]
 [ext_resource path="res://assets/environment/bg.material" type="Material" id=9]
@@ -54,6 +55,26 @@ dynamic_range = 4
 bias = 1.5
 normal_bias = 0.0
 propagation = 0.75
+
+[sub_resource type="SpatialMaterial" id=4]
+flags_transparent = true
+flags_unshaded = true
+flags_albedo_tex_force_srgb = true
+vertex_color_use_as_albedo = true
+params_blend_mode = 1
+params_billboard_mode = 3
+particles_anim_h_frames = 1
+particles_anim_v_frames = 1
+particles_anim_loop = false
+albedo_color = Color( 0.929412, 0.745098, 0.529412, 0.0784314 )
+albedo_texture = ExtResource( 5 )
+
+[sub_resource type="ParticlesMaterial" id=5]
+emission_shape = 2
+emission_box_extents = Vector3( 1, 1, 1 )
+gravity = Vector3( 0, -0.11, 0 )
+
+[sub_resource type="QuadMesh" id=6]
 
 [node name="Game" type="Spatial"]
 script = ExtResource( 3 )
@@ -186,6 +207,16 @@ transform = Transform( 1.7075, 0, -1.22465, 0, 2.10127, 0, 1.22465, 0, 1.7075, 3
 use_in_baked_light = true
 
 [node name="Pieces" type="Spatial" parent="."]
+
+[node name="Particles" type="Particles" parent="."]
+transform = Transform( -2.33257, 0.0135155, 0, -0.0042608, -0.735348, 0, 0, 0, 2.78824, 43.0896, 53.7048, 55.9459 )
+material_override = SubResource( 4 )
+use_in_baked_light = true
+preprocess = 0.61
+speed_scale = 0.1
+explosiveness = 1.0
+process_material = SubResource( 5 )
+draw_pass_1 = SubResource( 6 )
 
 [editable path="table-tavern"]
 
