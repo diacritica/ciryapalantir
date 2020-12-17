@@ -26,8 +26,8 @@ Server="*res://Server.tscn"
 
 [display]
 
-window/size/width=1760
-window/size/height=990
+window/size/width=1920
+window/size/height=1080
 
 [rendering]
 
