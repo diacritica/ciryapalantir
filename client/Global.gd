@@ -186,9 +186,9 @@ func move_piece(piece_id, row, column):
     
 func data_received(data):
     print(data)
-    
-    if "move" in data and data.nextPlayer == self.player:
-        print(data.move)
+    if "move" in data.params and int(data.params.player) != self.player:
+        var player = int(data.params.player)
+        notation_movement(player, data.params.move)
      
 func unassigned_piece(player, stone):
     for piece in pieces:
@@ -202,6 +202,8 @@ func unassigned_piece(player, stone):
     return null
     
 func notation_movement(player, move):
+    print('player: ', player)
+    print('move: ', move)
     var regex = RegEx.new()
     regex.compile("^(?P<stone>[HT])?(?P<position>[a-j][1-9])$")
     
