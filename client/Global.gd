@@ -193,7 +193,6 @@ func move_piece(piece_id, row, column):
     board_state[row][column].append(piece_id)
     
 func data_received(data):
-    print(data)
     if "move" in data.params and int(data.params.player) != self.player:
         print('data received: ', data.params)
         turn = int(data.params.turn) + 1
@@ -237,20 +236,29 @@ func notation_movement(player, move):
             
             var dropCounts = result.get_string("dropCounts")
             if !dropCounts:
-                dropCounts = [1]
- 
+                dropCounts = [int(result.get_string("count"))]
+            
+            print('dropCounts: ', dropCounts)
+            print('pieces above ', pieces.size())
             for drop in dropCounts:
                 drop = int(drop)
+                print('drop: ', drop)
                 var to_drop = pieces.slice(0, drop - 1)
-                pieces = pieces.slice(to_drop.size(), pieces.size() - 1)
+                pieces = pieces.slice(to_drop.size(), pieces.size())
                 
-                if result.get_string("direction") == '>':
+                for piece in pieces:
+                    print('remain ', piece.get_notation_name())                
+                
+                for piece in to_drop:
+                    print('dropping ', piece.get_notation_name())
+                    
+                if result.get_string("direction") == '+':
                     origin.x += 1
-                elif result.get_string("direction") == '<':
-                    origin.x -= 1
-                elif result.get_string("direction") == '+':
-                    origin.y += 1
                 elif result.get_string("direction") == '-':
+                    origin.x -= 1
+                elif result.get_string("direction") == '>':
+                    origin.y += 1
+                elif result.get_string("direction") == '<':
                     origin.y -= 1     
                 
                 for piece_to_drop in to_drop:
@@ -302,13 +310,13 @@ func notation(turn):
     var move_symbol = null
 
     if origin.from.x < origin.to.x:
-        move_symbol = '>'
-    elif  origin.from.x < origin.to.x:
-        move_symbol = '<'
-    elif origin.from.y < origin.to.y:    
         move_symbol = '+'
-    else:
+    elif  origin.from.x > origin.to.x:
         move_symbol = '-'
+    elif origin.from.y < origin.to.y:    
+        move_symbol = '>'
+    else:
+        move_symbol = '<'
         
     new_notation += move_symbol
     
