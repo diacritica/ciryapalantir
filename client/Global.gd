@@ -244,13 +244,16 @@ func notation_movement(player, move):
                 var to_drop = pieces.slice(0, drop - 1)
                 pieces = pieces.slice(to_drop.size(), pieces.size() - 1)
                 
-                if result.get_string("direction") == '>':
+                for piece in pieces:
+                    print('drop ', piece.get_notation_name())
+                    
+                if result.get_string("direction") == '+':
                     origin.x += 1
-                elif result.get_string("direction") == '<':
-                    origin.x -= 1
-                elif result.get_string("direction") == '+':
-                    origin.y += 1
                 elif result.get_string("direction") == '-':
+                    origin.x -= 1
+                elif result.get_string("direction") == '>':
+                    origin.y += 1
+                elif result.get_string("direction") == '<':
                     origin.y -= 1     
                 
                 for piece_to_drop in to_drop:
@@ -302,13 +305,13 @@ func notation(turn):
     var move_symbol = null
 
     if origin.from.x < origin.to.x:
-        move_symbol = '>'
-    elif  origin.from.x < origin.to.x:
-        move_symbol = '<'
-    elif origin.from.y < origin.to.y:    
         move_symbol = '+'
-    else:
+    elif  origin.from.x > origin.to.x:
         move_symbol = '-'
+    elif origin.from.y < origin.to.y:    
+        move_symbol = '>'
+    else:
+        move_symbol = '<'
         
     new_notation += move_symbol
     

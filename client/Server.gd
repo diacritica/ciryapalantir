@@ -24,7 +24,7 @@ func _ready():
     $HttpClient.connect("request_completed", self, "on_user_request", [], CONNECT_ONESHOT)
     var url = "http://{host}:{port}/users".format(context)
     $HttpClient.request(url, [], false, HTTPClient.METHOD_PUT)
-    
+
 func on_user_request(result, response_code, headers, body):
     if response_code == 200:
         var msg = JSON.parse(body.get_string_from_utf8())
@@ -32,12 +32,12 @@ func on_user_request(result, response_code, headers, body):
     else:
         # TODO: Show error message
         print("ERROR HTTP CONNECTION", response_code, body)
-        
+
 func create_room():
     $HttpClient.connect("request_completed", self, "on_room_request", [], CONNECT_ONESHOT)
     var url = "http://{host}:{port}/rooms".format(context)
     $HttpClient.request(url, [], false, HTTPClient.METHOD_PUT)
-    
+
 func on_room_request(result, response_code, headers, body):
     if response_code == 200:
         var msg = JSON.parse(body.get_string_from_utf8())
@@ -53,29 +53,29 @@ func join_room(room_id):
 
     ws = WebSocketClient.new()
     ws.verify_ssl = false
-    
+
     ws.connect("connection_closed", self, "ws_closed")
     ws.connect("connection_error", self, "ws_error")
     ws.connect("connection_established", self, "ws_connected")
     ws.connect("data_received", self, "ws_data_received")
 
     var ws_url = "ws://{host}:{port}/rooms/{room_id}".format(context)
-    
+
     print("Connecting to %s" % ws_url)
     var err = ws.connect_to_url(ws_url, [], false, ["Cookie: cirya-user={user_id}".format(context)])
-    
+
     if err != OK:
         print("Cannot connect to URL %s" % ws_url)
         set_process(false)
         emit_signal("connection_error", "Cannot connect to URL %s" )
-        
+
 func ws_closed(clean = false):
     set_process(false)
-    
+
 func ws_error():
     set_process(false)
     emit_signal("connection_error", "Error connecting to websocket" )
-    
+
 func ws_connected(proto = ""):
     emit_signal("connection_success")
 
@@ -85,11 +85,11 @@ func ws_data_received():
     var data = JSON.parse(msg)
     global.data_received(data.result)
     emit_signal("notification_received", data.result)
-    
+
 func _process(delta):
     if ws != null:
         ws.poll()
-        
+
 func get_player():
     return context["player"]
 
@@ -115,7 +115,7 @@ func send_join_player(player, color, name):
     context["color"] = color
     context["turn"] = 1
     ws_send_message(msg)
-    
+
 func send_set_ready(is_ready):
     var msg = {
         "type": "SetReady",
