@@ -39,13 +39,13 @@ propagation = 0.75
 script = ExtResource( 3 )
 
 [node name="CameraPlayer1" type="Camera" parent="."]
-transform = Transform( 0.818429, -0.230064, 0.526541, -0.142244, 0.806707, 0.573577, -0.556724, -0.544329, 0.627507, 40, 45, 50 )
+transform = Transform( 0.840379, -0.228049, 0.491689, -0.138682, 0.786502, 0.601815, -0.523958, -0.57394, 0.629334, 38, 47, 50 )
 keep_aspect = 0
 current = true
-fov = 22.0
+fov = 23.0
 size = 20.0
-near = 0.09
-far = 240.8
+near = 1.0
+far = 150.0
 
 [node name="CameraPlayer2" type="Camera" parent="."]
 transform = Transform( -0.825442, 0.229969, -0.515519, -0.136313, 0.80502, 0.577375, 0.547781, 0.546862, -0.633149, -38.6149, 45, -50.8618 )
