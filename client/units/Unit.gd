@@ -8,6 +8,7 @@ export(String, "CIRYA", "HALLACIRYA") var type = "CIRYA"
 
 export(int) var pieceid = 0
 export(bool) var fleetSelectable = false
+export(int) var player = 0
 
 # Called when the node enters the scene tree for the first time.
 func _ready():

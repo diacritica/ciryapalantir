@@ -49,6 +49,7 @@ func getChosenCirya(pieceid=null):
     if white:
         if basic:
             cirya = load("res://units/cirya-w-basic.tscn").instance()
+            cirya.player = 1
             cirya.pieceid = pieceid
         else:
             cirya = load("res://CiryaLV.tscn").instance()
@@ -56,6 +57,7 @@ func getChosenCirya(pieceid=null):
     else: # so far, we reuse white
         if basic:
             cirya = load("res://units/cirya-b-basic.tscn").instance()
+            cirya.player = 2
             cirya.pieceid = pieceid
         else:
             cirya = load("res://CiryaLV.tscn").instance()
@@ -67,6 +69,7 @@ func getChosenHallacirya(pieceid=null):
     if white:
         if basic:
             hallacirya = load("res://units/hallacirya-w-basic.tscn").instance()
+            hallacirya.player = 1
             hallacirya.pieceid = pieceid
         else:
             hallacirya = load("res://HallaciryaLV.tscn").instance()
@@ -74,6 +77,7 @@ func getChosenHallacirya(pieceid=null):
     else: # so far, we reuse white
         if basic:
             hallacirya = load("res://units/hallacirya-b-basic.tscn").instance()
+            hallacirya.player = 2
             hallacirya.pieceid = pieceid
         else:
             hallacirya = load("res://CiryaLV.tscn").instance()
