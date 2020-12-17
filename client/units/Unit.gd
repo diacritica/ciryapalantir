@@ -9,6 +9,7 @@ export(String, "CIRYA", "HALLACIRYA") var type = "CIRYA"
 export(int) var pieceid = 0
 export(bool) var fleetSelectable = false
 export(int) var player = 0
+export(bool) var selected = false
 
 # Called when the node enters the scene tree for the first time.
 func _ready():
@@ -34,15 +35,33 @@ func get_height():
 
     return $CollisionShape.scale.z * 2
 
+func show_hover():
+    var m = $Mesh.mesh.surface_get_material(0)
+    var m2 = m.duplicate(true)
+    m2.emission_enabled = true
+    m2.emission_energy = 0.2
+    m2.emission = Color(0.63,0.34,0.84)
+    print(m2)
+    $Mesh.mesh.surface_set_material(0,m2)
+   
+    
+func hide_hover():
+    var m = $Mesh.mesh.surface_get_material(0)
+    var m2 = m.duplicate(true)
+    m2.emission_enabled = false
+    print(m2)
+    $Mesh.mesh.surface_set_material(0,m2)
+
 func show_selected():
     var m = $Mesh.mesh.surface_get_material(0)
     var m2 = m.duplicate(true)
     m2.emission_enabled = true
-    m2.emission_energy = 0.5
-    m2.emission = Color(0.5,0.2,0.05)
+    m2.emission_energy = 0.4
+    m2.emission = Color(0.62,0.27,0.0)
     print(m2)
     $Mesh.mesh.surface_set_material(0,m2)
-
+    
+    
 func hide_selected():
     var m = $Mesh.mesh.surface_get_material(0)
     var m2 = m.duplicate(true)
@@ -56,11 +75,7 @@ func show_outline():
         #$Mesh/Outline.visible = true
 
 func hide_outline():
-    var m = $Mesh.mesh.surface_get_material(0)
-    var m2 = m.duplicate(true)
-    m2.emission_enabled = false
-    print(m2)
-    $Mesh.mesh.surface_set_material(0,m2)
+    pass
         
 func get_notation_name():
     if type == "HALLACIRYA":

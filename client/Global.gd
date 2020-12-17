@@ -134,6 +134,7 @@ func init_drag_drop(pieces):
         piece.mode = RigidBody.MODE_STATIC
         piece.translation.x = 0
         piece.translation.z = 0
+        piece.show_selected()
         
         self.move_to(piece, dragging_nosse)
 
@@ -146,7 +147,7 @@ func stop_drag_drop(tile):
         piece.translation.x = dragging_nosse.translation.x
         piece.translation.z = dragging_nosse.translation.z
         piece.translation.y = piece.global_transform.origin.y
-        
+        piece.hide_selected()
         tile.drop(piece)
         
         self.move_to(piece, game)

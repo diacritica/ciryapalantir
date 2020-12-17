@@ -1,0 +1,21 @@
+[remap]
+
+importer="wav"
+type="AudioStreamSample"
+path="res://.import/Shelter+Song+-+320bit.wav-0b4e1a6d72c14435f0912c6d8addb59a.sample"
+
+[deps]
+
+source_file="res://assets/music/Shelter+Song+-+320bit.wav"
+dest_files=[ "res://.import/Shelter+Song+-+320bit.wav-0b4e1a6d72c14435f0912c6d8addb59a.sample" ]
+
+[params]
+
+force/8_bit=false
+force/mono=false
+force/max_rate=false
+force/max_rate_hz=44100
+edit/trim=false
+edit/normalize=false
+edit/loop=false
+compress/mode=0
