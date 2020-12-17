@@ -17,6 +17,7 @@ _global_script_class_icons={
 
 config/name="Cirya Online"
 run/main_scene="res://Game.tscn"
+boot_splash/image="res://assets/interface/cirya-start-blur.png"
 config/icon="res://assets/sat.png"
 
 [autoload]
