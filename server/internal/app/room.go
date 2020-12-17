@@ -18,10 +18,10 @@ type Room interface {
 	Broadcast(m Message)
 }
 
-func NewRoom() Room {
+func NewRoom(id ID) Room {
 	return &room {
-		id: "ROOM",
-		game: "GAME",
+		id: id,
+		game: GenerateCode(),
 		channels: make(map[ID]chan Message),
 	}
 }

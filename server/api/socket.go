@@ -143,8 +143,9 @@ func getRoom(r *http.Request) (app.Room, error) {
 	var room app.Room
 	
 	if result == nil {
-		room = app.NewRoom()
-		store.Save(app.ID(roomId), room)
+		id := app.ID(roomId)
+		room = app.NewRoom(id)
+		store.Save(id, room)
 	} else {
 		room, ok = result.(app.Room)
 

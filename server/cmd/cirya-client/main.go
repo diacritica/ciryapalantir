@@ -14,7 +14,9 @@ import (
 	"github.com/gorilla/websocket"
 )
 
+var host = flag.String("h", "127.0.0.1:3333", "-h [host]")
 var user = flag.String("u", "default", "-u [user]")
+var room = flag.String("r", "test", "-r [room]")
 
 func main() {
 	var msg string
@@ -25,8 +27,8 @@ func main() {
 	
 	u := url.URL {
 		Scheme: "ws",
-		Host: "127.0.0.1:3333",
-		Path: "rooms/test",
+		Host: *host,
+		Path: fmt.Sprintf("rooms/%s", *room),
 	}
 
 	log.Printf("Conecting to %s", u.String())
