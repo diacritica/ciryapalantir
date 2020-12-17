@@ -193,7 +193,6 @@ func move_piece(piece_id, row, column):
     board_state[row][column].append(piece_id)
     
 func data_received(data):
-    print(data)
     if "move" in data.params and int(data.params.player) != self.player:
         print('data received: ', data.params)
         turn = int(data.params.turn) + 1
@@ -237,15 +236,21 @@ func notation_movement(player, move):
             
             var dropCounts = result.get_string("dropCounts")
             if !dropCounts:
-                dropCounts = [1]
- 
+                dropCounts = [int(result.get_string("count"))]
+            
+            print('dropCounts: ', dropCounts)
+            print('pieces above ', pieces.size())
             for drop in dropCounts:
                 drop = int(drop)
+                print('drop: ', drop)
                 var to_drop = pieces.slice(0, drop - 1)
-                pieces = pieces.slice(to_drop.size(), pieces.size() - 1)
+                pieces = pieces.slice(to_drop.size(), pieces.size())
                 
                 for piece in pieces:
-                    print('drop ', piece.get_notation_name())
+                    print('remain ', piece.get_notation_name())                
+                
+                for piece in to_drop:
+                    print('dropping ', piece.get_notation_name())
                     
                 if result.get_string("direction") == '+':
                     origin.x += 1
