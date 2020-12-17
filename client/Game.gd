@@ -3,6 +3,8 @@ extends Spatial
 onready var global = get_node("/root/Global")
 var ray_length = 100
 
+var hover_selected = []
+
 func _ready():
     global.game = self
 
@@ -87,20 +89,35 @@ func get_mouse_cast(exclude_current_piece = true):
 var current_outline = null
 func _physics_process(delta):
     if current_outline:
-        current_outline.hide_outline()
+        var piece = current_outline
+        if not hover_selected.has(piece):
+            #piece.show_outline()
+            piece.show_hover()
+            hover_selected.append(piece)
+#        for i in range(hover_selected.size()):
+#            var p = hover_selected.pop_back()
+#            p.hide_selected()
 
     if global.dragging_nosse:
         for piece in global.dragging_nosse.get_children():
-            piece.show_outline()
+            if not hover_selected.has(piece):
+                #piece.show_outline()
+                piece.show_hover()
+                hover_selected.append(piece)
     else:
         var cast = get_mouse_cast()
 
         if not cast.empty() and cast.collider.collision_layer == 2:
             current_outline = cast.collider
-            current_outline.show_outline()
+            var piece = cast.collider
+            if not hover_selected.has(piece):
+                piece.show_hover()
+                hover_selected.append(piece)
         elif current_outline:
             current_outline = null
-
+            for i in range(hover_selected.size()):
+                var piece = hover_selected.pop_back()
+                piece.hide_hover()
 var piece_cast_tile = null
 var piece_source_tile = null
 var movements = []
@@ -125,6 +142,7 @@ func _input(event):
 
                 # init drag
                 if event.is_pressed() and cast.collider.collision_layer == 2:
+                    get_node("select").play()
                     var piece = cast.collider
                     var tile = global.get_piece_tile(piece.get_instance_id())
 
@@ -137,6 +155,8 @@ func _input(event):
 
                 # stop drag
                 elif global.dragging_nosse and not piece_cast_tile.empty():
+                    
+                        
                     var wrapper = global.dragging_nosse
                     var pieces_ids = global.get_dragging_nosse_pieces_ids()
                     var old_tile = global.get_piece_tile(pieces_ids[0])
@@ -175,10 +195,14 @@ func _input(event):
                     new_position.y = 2.2
 
                 global.dragging_nosse.set_translation(new_position)
+                
+               
+                
         elif global.dragging_nosse:
             global.restore_initial_position()
             global.stop_drag_drop(null)
     elif global.dragging_nosse and global.dragging_nosse.get_children().size() == 1 and Input.is_key_pressed(KEY_R):
+        get_node("piecerotation").play()
         var tile = global.get_piece_tile(global.dragging_nosse.get_children()[0].get_instance_id())
         if !tile:
             global.dragging_nosse.get_children()[0].toggle_block()

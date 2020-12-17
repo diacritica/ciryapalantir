@@ -5,6 +5,7 @@
 [ext_resource path="res://units/Unit.gd" type="Script" id=4]
 
 [sub_resource type="ArrayMesh" id=1]
+resource_local_to_scene = true
 resource_name = "horse"
 surfaces/0 = {
 "aabb": AABB( -0.594345, -0.928582, -1.45054, 1.23164, 1.39123, 1.72908 ),
@@ -19,7 +20,7 @@ surfaces/0 = {
 "vertex_count": 1282
 }
 
-[sub_resource type="BoxShape" id=3]
+[sub_resource type="BoxShape" id=2]
 
 [node name="hallacirya-b-basic" type="RigidBody"]
 collision_layer = 2
@@ -30,6 +31,7 @@ type = "HALLACIRYA"
 
 [node name="Mesh" type="MeshInstance" parent="."]
 transform = Transform( -1.52873, -2.49062e-07, -2.49061e-07, 2.49062e-07, -1.82239e-07, -1.52873, 2.49061e-07, -1.52873, 2.73358e-07, 0, 0.38504, 0 )
+use_in_baked_light = true
 mesh = SubResource( 1 )
 material/0 = null
 
@@ -41,4 +43,4 @@ material/0 = ExtResource( 1 )
 
 [node name="CollisionShape" type="CollisionShape" parent="."]
 transform = Transform( 1.1, 0, 0, 0, 1.2, 0, 0, 0, 1.05, 0, 1.184, 0.03 )
-shape = SubResource( 3 )
+shape = SubResource( 2 )

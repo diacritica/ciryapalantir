@@ -1,11 +1,11 @@
-[gd_scene load_steps=8 format=2]
+[gd_scene load_steps=7 format=2]
 
 [ext_resource path="res://assets/light/cyra/light-wood.material" type="Material" id=1]
-[ext_resource path="res://units/outline.tres" type="Material" id=2]
 [ext_resource path="res://assets/dark/cyra/wood_001.material" type="Material" id=3]
 [ext_resource path="res://units/Unit.gd" type="Script" id=4]
 
 [sub_resource type="ArrayMesh" id=1]
+resource_local_to_scene = true
 resource_name = "Cube009"
 surfaces/0 = {
 "aabb": AABB( -9.51175, -1.02912, -1, 19.0235, 3.06205, 2.00048 ),
@@ -21,6 +21,7 @@ surfaces/0 = {
 }
 
 [sub_resource type="ArrayMesh" id=2]
+resource_local_to_scene = true
 resource_name = "Cube004"
 surfaces/0 = {
 "aabb": AABB( -9.51175, -1.02912, -1, 19.0235, 3.06205, 2.00048 ),
@@ -45,6 +46,7 @@ script = ExtResource( 4 )
 
 [node name="Mesh" type="MeshInstance" parent="."]
 transform = Transform( 0.104602, 0, 0, 0, 0.102378, 0, 0, 0, 0.945855, 0, 0, 0 )
+use_in_baked_light = true
 mesh = SubResource( 1 )
 material/0 = null
 
@@ -52,7 +54,7 @@ material/0 = null
 visible = false
 use_in_baked_light = true
 mesh = SubResource( 2 )
-material/0 = ExtResource( 2 )
+material/0 = null
 
 [node name="CollisionShape" type="CollisionShape" parent="."]
 transform = Transform( 1, 0, 0, 0, 0.111, 0, 0, 0, 1, 0, 0.045, 0 )
