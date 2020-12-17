@@ -3,6 +3,8 @@ extends Node
 export var server_host = "127.0.0.1"
 export var server_port = 3333
 
+onready var global = get_node("/root/Global")
+
 signal connection_error(error)
 signal connection_success
 signal notification_received(message)
@@ -51,6 +53,7 @@ func ws_connected(proto = ""):
 func ws_data_received():
     var msg = ws.get_peer(1).get_packet().get_string_from_utf8()
     var data = JSON.parse(msg)
+    global.data_received(data.result)
     
 func _process(delta):
     if ws != null:

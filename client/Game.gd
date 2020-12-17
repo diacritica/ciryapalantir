@@ -9,8 +9,58 @@ func _ready():
     var camera = get_viewport().get_camera()
     global.ui = camera.get_node('GameUI')
     global.ui.connect("turn_confirmation", self, "_on_turn_confirmation")
+    
+    if camera.name == 'CameraPlayer2': 
+        global.player = 2
+    else:
+        global.player = 1
+        
+    $Server.connect("connection_success", self, "_on_connection_success")    
 
-    for piece in $Fleet.get_children():
+    move_fleet($Fleet)
+    move_fleet($Fleet2)
+            
+    if global.player == 2:
+        yield(get_tree().create_timer(2.0), "timeout")
+        global.notation_movement(1, 'a1')
+        yield(get_tree().create_timer(1.0), "timeout")
+        
+        global.notation_movement(2, 'a1')
+        yield(get_tree().create_timer(1.0), "timeout")
+        
+        global.notation_movement(1, 'a1')
+        yield(get_tree().create_timer(1.0), "timeout")
+        
+        global.notation_movement(2, 'b3')
+        yield(get_tree().create_timer(1.0), "timeout")
+        
+        global.notation_movement(1, 'b3')     
+        yield(get_tree().create_timer(1.0), "timeout")
+        
+        global.notation_movement(2, 'b3')                 
+        yield(get_tree().create_timer(1.0), "timeout")
+        
+        global.notation_movement(1, 'b3')                 
+        yield(get_tree().create_timer(1.0), "timeout")
+        
+        global.notation_movement(2, 'c2')                 
+        yield(get_tree().create_timer(1.0), "timeout")     
+        
+        global.notation_movement(1, 'Hb3')                 
+        yield(get_tree().create_timer(1.0), "timeout")        
+        
+        global.notation_movement(2, 'c3')                 
+        yield(get_tree().create_timer(1.0), "timeout")      
+        
+        global.notation_movement(1, '2a1+11')                 
+        yield(get_tree().create_timer(1.0), "timeout")       
+        
+        global.notation_movement(1, '3b3>211')                 
+        yield(get_tree().create_timer(1.0), "timeout")              
+        # $Server.join_room('test')
+
+func move_fleet(fleet):            
+    for piece in fleet.get_children():
         if piece.get('pieceid'):
             var position = piece.global_transform.origin
             global.move_to(piece, $Pieces)
@@ -139,4 +189,9 @@ func _on_turn_confirmation(value):
         global.save_pieces_translation()
     else:
         global.restore_initial_position()
+        
+func _on_connection_success():
+    $Server.send_join_player(2, 'black', 'Client')
+    yield(get_tree().create_timer(1.0), "timeout")
+    $Server.send_set_ready(true)
 

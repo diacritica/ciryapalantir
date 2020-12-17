@@ -1,7 +1,7 @@
 [gd_scene load_steps=18 format=2]
 
 [ext_resource path="res://Board.tscn" type="PackedScene" id=1]
-[ext_resource path="res://units/cirya-w-basic.tscn" type="PackedScene" id=2]
+[ext_resource path="res://Server.tscn" type="PackedScene" id=2]
 [ext_resource path="res://Game.gd" type="Script" id=3]
 [ext_resource path="res://Fleet.tscn" type="PackedScene" id=4]
 [ext_resource path="res://assets/dust.jpg" type="Texture" id=5]
@@ -94,10 +94,13 @@ far = 150.0
 [node name="CameraPlayer2" type="Camera" parent="."]
 transform = Transform( -0.859565, 0.215895, -0.463181, -0.136837, 0.77604, 0.615661, 0.492365, 0.592582, -0.637514, -43, 56, -58 )
 keep_aspect = 0
+current = true
 fov = 22.0
 size = 20.0
 near = 0.09
 far = 240.8
+
+[node name="GameUI" parent="CameraPlayer2" instance=ExtResource( 7 )]
 
 [node name="SpotLight" type="SpotLight" parent="."]
 transform = Transform( 0.377408, 0.867381, -0.324366, 0.654092, -0.00173511, 0.756413, -0.655536, 0.497641, 0.568002, -5.7253, 17.7615, 11.4055 )
@@ -153,8 +156,6 @@ transform = Transform( -1.62921e-07, 0, 1, 0, 1, 0, -1, 0, -1.62921e-07, 0.001, 
 transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, -4.32, 0, -4.32 )
 
 [node name="light-cirya-basic" parent="." instance=ExtResource( 2 )]
-transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, -11.191, 1, 0 )
-visible = false
 
 [node name="Fleet" parent="." instance=ExtResource( 4 )]
 transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 14.1913, -0.2, 3.39279 )
@@ -218,6 +219,8 @@ preprocess = 0.61
 speed_scale = 0.1
 process_material = SubResource( 5 )
 draw_pass_1 = SubResource( 6 )
+
+[node name="Server" parent="." instance=ExtResource( 2 )]
 
 [editable path="table-tavern"]
 
