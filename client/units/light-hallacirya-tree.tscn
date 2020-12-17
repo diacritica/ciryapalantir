@@ -20,6 +20,7 @@ surfaces/0 = {
 }
 
 [sub_resource type="BoxShape" id=2]
+extents = Vector3( 0.665321, 1, 0.718179 )
 
 [node name="light-hallacirya-tree" type="RigidBody"]
 collision_layer = 2
@@ -29,7 +30,7 @@ block = true
 type = "HALLACIRYA"
 
 [node name="Mesh" type="MeshInstance" parent="."]
-transform = Transform( 1.20362, 0, 0.798213, 0, 1.44425, 0, -0.798213, 0, 1.20362, 0, 0, 0 )
+transform = Transform( 1.08341, 0, 0.718491, 0, 1.3, 0, -0.718491, 0, 1.08341, 0, 0, 0 )
 mesh = SubResource( 1 )
 material/0 = null
 

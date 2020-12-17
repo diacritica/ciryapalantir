@@ -21,6 +21,7 @@ surfaces/0 = {
 }
 
 [sub_resource type="CylinderShape" id=2]
+radius = 0.8
 height = 2.52156
 
 [node name="cirya-w-basic" type="RigidBody"]

@@ -68,7 +68,9 @@ func getChosenHallacirya(pieceid=null):
     var hallacirya = null
     if white:
         if basic:
-            hallacirya = load("res://units/hallacirya-w-basic.tscn").instance()
+#            hallacirya = load("res://units/hallacirya-w-basic.tscn").instance()
+            hallacirya = load("res://units/light-hallacirya-tree.tscn").instance()
+
             hallacirya.player = 1
             hallacirya.pieceid = pieceid
         else:

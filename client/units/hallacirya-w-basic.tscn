@@ -29,7 +29,7 @@ block = true
 type = "HALLACIRYA"
 
 [node name="Mesh" type="MeshInstance" parent="."]
-transform = Transform( -4.54415e-08, 0, 1.03958, 0, 1.03958, 0, -1.03958, 0, -4.54415e-08, 0, 0, 0 )
+transform = Transform( -4.80825e-08, 0, 1.1, 0, 1.1, 0, -1.1, 0, -4.80825e-08, 0, 0, 0 )
 use_in_baked_light = true
 mesh = SubResource( 1 )
 material/0 = null
