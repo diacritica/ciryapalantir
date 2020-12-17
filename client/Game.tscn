@@ -1,7 +1,6 @@
-[gd_scene load_steps=15 format=2]
+[gd_scene load_steps=14 format=2]
 
 [ext_resource path="res://Board.tscn" type="PackedScene" id=1]
-[ext_resource path="res://units/cirya-w-basic.tscn" type="PackedScene" id=2]
 [ext_resource path="res://Game.gd" type="Script" id=3]
 [ext_resource path="res://Fleet.tscn" type="PackedScene" id=4]
 [ext_resource path="res://camera.gd" type="Script" id=5]
@@ -59,9 +58,6 @@ far = 240.8
 
 [node name="Pieces" type="Spatial" parent="."]
 
-[node name="light-cirya-basic" parent="Pieces" instance=ExtResource( 2 )]
-transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, -11.1909, 0, 0 )
-
 [node name="Camera2" type="Camera" parent="."]
 transform = Transform( 1, 0, 0, 0, -0.0225129, 0.999747, 0, -0.999747, -0.0225129, 0.344988, 17.3109, -0.0533897 )
 visible = false
@@ -118,6 +114,10 @@ script = ExtResource( 5 )
 
 [node name="Fleet" parent="." instance=ExtResource( 4 )]
 transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 13.5, 0, 2.5 )
+
+[node name="Fleet2" parent="." instance=ExtResource( 4 )]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, -11.6164, 0, 2.5 )
+colour = "B"
 
 [node name="UI" parent="." instance=ExtResource( 6 )]
 visible = false

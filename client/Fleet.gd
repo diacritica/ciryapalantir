@@ -55,7 +55,7 @@ func getChosenCirya(pieceid=null):
             cirya.pieceid = pieceid
     else: # so far, we reuse white
         if basic:
-            cirya = load("res://CiryaLB.tscn").instance()
+            cirya = load("res://units/cirya-b-basic.tscn").instance()
             cirya.pieceid = pieceid
         else:
             cirya = load("res://CiryaLV.tscn").instance()
@@ -73,7 +73,7 @@ func getChosenHallacirya(pieceid=null):
             hallacirya.pieceid = pieceid
     else: # so far, we reuse white
         if basic:
-            hallacirya = load("res://CiryaLB.tscn").instance()
+            hallacirya = load("res://units/hallacirya-b-basic.tscn").instance()
             hallacirya.pieceid = pieceid
         else:
             hallacirya = load("res://CiryaLV.tscn").instance()
@@ -81,14 +81,12 @@ func getChosenHallacirya(pieceid=null):
     return hallacirya
 
 
-func setup(ts,c,s):
-    traysize = ts
-    colour = c
+func setup():
     if colour == "W":
         setWhite()
     else:
         setBlack()
-    style = s
+
     if style == "B":
         setBasic()
     else:
@@ -111,6 +109,7 @@ func removeCiryafromFleet(pieceid):
         
 # Called when the node enters the scene tree for the first time.
 func _ready():
+    setup()
     var aTray = load(trays[traysize][0]).instance()
     add_child(aTray)
     
