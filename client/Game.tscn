@@ -66,13 +66,14 @@ params_billboard_mode = 3
 particles_anim_h_frames = 1
 particles_anim_v_frames = 1
 particles_anim_loop = false
-albedo_color = Color( 0.929412, 0.745098, 0.529412, 0.0784314 )
+albedo_color = Color( 0.929412, 0.745098, 0.529412, 0.0392157 )
 albedo_texture = ExtResource( 5 )
 
 [sub_resource type="ParticlesMaterial" id=5]
 emission_shape = 2
 emission_box_extents = Vector3( 1, 1, 1 )
-gravity = Vector3( 0, -0.11, 0 )
+gravity = Vector3( 0, 0.31, 0 )
+angular_velocity = 26.5
 
 [sub_resource type="QuadMesh" id=6]
 
@@ -212,9 +213,9 @@ use_in_baked_light = true
 transform = Transform( -2.33257, 0.0135155, 0, -0.0042608, -0.735348, 0, 0, 0, 2.78824, 43.0896, 53.7048, 55.9459 )
 material_override = SubResource( 4 )
 use_in_baked_light = true
+lifetime = 10.0
 preprocess = 0.61
 speed_scale = 0.1
-explosiveness = 1.0
 process_material = SubResource( 5 )
 draw_pass_1 = SubResource( 6 )
 
