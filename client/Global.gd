@@ -12,7 +12,9 @@ var board = null
 var game = null
 var ui = null
 var undo_state = null
+var player = null
 var pieces = []
+var turn = 1
 
 func render_board():
     for row_index in  range(board_state.size()):
@@ -58,7 +60,7 @@ func get_stack_height(row, column, exclude = []):
         if exclude.find(piece_id) == -1:
             pieces.append(piece_id)
         
-    return get_pieces_height(pieces)
+    return 0.5 + get_pieces_height(pieces)
     
 func get_piece_tile(piece_id):
     for row_index in  range(board_state.size()):
@@ -147,7 +149,8 @@ func stop_drag_drop(tile):
         piece.translation.z = dragging_nosse.translation.z
         piece.translation.y = piece.global_transform.origin.y
         
-        tile.drop(piece)
+        if tile:
+            tile.drop(piece)
         
         self.move_to(piece, game)
         
@@ -166,7 +169,94 @@ func move_to(el, to):
     el.get_parent().remove_child(el)
     to.add_child(el)
     el.set_owner(to)  
-      
+    
+func move_piece(piece_id, row, column):
+    # print(piece_id,' ' , row, ' ', column)
+    var piece = instance_from_id(piece_id)
+    var tile = get_tile(row, column)
+    
+    var new_position = tile.global_transform.origin
+    new_position.y = get_stack_height(row, column) + 0.2
+
+    if new_position.y < 1:
+        new_position.y = 1
+    piece.set_translation(new_position)
+    piece.apply_central_impulse(Vector3(0, -0.1, 0))
+    
+    remove_piece_from_state(piece_id)
+    board_state[row][column].append(piece_id)
+    
+func data_received(data):
+    print(data)
+    if "move" in data.params and int(data.params.player) != self.player:
+        print('data received: ', data.params)
+        turn = int(data.params.turn) + 1
+        var player = int(data.params.player)
+        notation_movement(player, data.params.move)
+     
+func unassigned_piece(player, stone):
+    for piece in pieces:
+        if piece.player == player and !get_piece_tile(piece.get_instance_id()):
+            if stone: 
+                if piece.get_notation_name() == stone:
+                    return piece
+            else:
+                return piece
+    
+    return null
+    
+func notation_movement(player, move):
+    var regex = RegEx.new()
+    regex.compile("^(?P<stone>[HT])?(?P<position>[a-j][1-9])$")
+    
+    var result = regex.search(move)
+    if result:
+        var piece = unassigned_piece(player, result.get_string("stone"))
+        var origin = notation_to_vector(result.get_string("position"))
+        if piece:
+            move_piece(piece.get_instance_id(), origin.x, origin.y)
+    else:
+        regex.compile("^(?P<count>[1-9])?(?P<position>[a-j][1-9])(?P<direction>[<>\\+\\-])(?P<dropCounts>[1-9]*)(?P<stone>[HT])?$")
+        result = regex.search(move)
+        
+        if result:         
+            var origin = notation_to_vector(result.get_string("position"))
+            
+            var pieces = get_tile_pieces(origin.x, origin.y)
+                
+            pieces.invert()
+            pieces = pieces.slice(0, int(result.get_string("count")) - 1)
+
+            pieces.invert()
+            
+            var dropCounts = result.get_string("dropCounts")
+            if !dropCounts:
+                dropCounts = [1]
+ 
+            for drop in dropCounts:
+                drop = int(drop)
+                var to_drop = pieces.slice(0, drop - 1)
+                pieces = pieces.slice(to_drop.size(), pieces.size() - 1)
+                
+                if result.get_string("direction") == '>':
+                    origin.x += 1
+                elif result.get_string("direction") == '<':
+                    origin.x -= 1
+                elif result.get_string("direction") == '+':
+                    origin.y += 1
+                elif result.get_string("direction") == '-':
+                    origin.y -= 1     
+                
+                for piece_to_drop in to_drop:
+                    move_piece(piece_to_drop.get_instance_id(), origin.x, origin.y)               
+            
+func notation_to_vector(notation):
+    var letters = ['a', 'b', 'c', 'd', 'e', 'f', 'g']  
+    var row = int(notation[1]) - 1
+    var column = letters.find(notation[0])
+    
+    return Vector2(row, column)
+
 func notation_tile(position):
     var letters = ['a', 'b', 'c', 'd', 'e', 'f', 'g']  
     var column = letters[position.y]
@@ -179,8 +269,6 @@ func notation_tile(position):
 # Take 5 stones from square b4 and move them right dropping 2 stones, 1 stone, then 2 stones as you come to each square.
 # 5b4>212
 func notation(turn): 
-    print('in turn ', turn)
-    
     var old_notation = ''
     var origin = turn[0]
     var count = origin.pieces.size()
@@ -208,13 +296,13 @@ func notation(turn):
     var move_symbol = null
 
     if origin.from.x < origin.to.x:
-        move_symbol = '+'
-    elif  origin.from.x < origin.to.x:
-        move_symbol = '-'
-    elif origin.from.y < origin.to.y:    
         move_symbol = '>'
-    else:
+    elif  origin.from.x < origin.to.x:
         move_symbol = '<'
+    elif origin.from.y < origin.to.y:    
+        move_symbol = '+'
+    else:
+        move_symbol = '-'
         
     new_notation += move_symbol
     
