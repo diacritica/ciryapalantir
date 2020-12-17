@@ -70,7 +70,7 @@ func _input(event):
             if event is InputEventMouseButton and event.button_index == BUTTON_LEFT:
                 if !global.undo_state:
                     global.save_pieces_translation()
-                
+
                 # init drag
                 if event.is_pressed() and cast.collider.collision_layer == 2:
                     var piece = cast.collider
@@ -93,17 +93,17 @@ func _input(event):
                         "to": null,
                         "pieces": pieces_ids
                     }
-                    
+
                     if old_tile:
                         last_turn.from = Vector2(old_tile.row, old_tile.column)
-                        
+
                     last_turn.to = Vector2(piece_cast_tile.collider.row, piece_cast_tile.collider.column)
                     movements.append(last_turn)
 
                     global.stop_drag_drop(piece_cast_tile.collider)
 
                     piece_cast_tile.collider.hideHighlight()
-                    
+
                     if piece_source_tile:
                         piece_source_tile.hideHighlight()
                         piece_source_tile = null
