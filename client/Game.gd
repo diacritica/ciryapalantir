@@ -51,7 +51,7 @@ func _physics_process(delta):
 
 var piece_cast_tile = null
 var piece_source_tile = null
-var last_turn = null
+var movements = []
 
 func _input(event):
     if (event is InputEventMouseButton and event.button_index == BUTTON_LEFT) or (event is InputEventMouseMotion and global.dragging_nosse):
@@ -68,6 +68,9 @@ func _input(event):
 
         if not cast.empty():
             if event is InputEventMouseButton and event.button_index == BUTTON_LEFT:
+                if !global.undo_state:
+                    global.save_pieces_translation()
+                
                 # init drag
                 if event.is_pressed() and cast.collider.collision_layer == 2:
                     var piece = cast.collider
@@ -83,24 +86,24 @@ func _input(event):
                 # stop drag
                 elif global.dragging_nosse and not piece_cast_tile.empty():
                     var wrapper = global.dragging_nosse
-                    var old_tile = global.get_piece_tile(wrapper.get_instance_id())
-                    last_turn = {}
-
+                    var pieces_ids = global.get_dragging_nosse_pieces_ids()
+                    var old_tile = global.get_piece_tile(pieces_ids[0])
+                    var last_turn = {
+                        "from": null,
+                        "to": null,
+                        "pieces": pieces_ids
+                    }
+                    
                     if old_tile:
-                        last_turn.old = Vector2(old_tile.row, old_tile.column)
-                    else:
-                        last_turn.old = null
+                        last_turn.from = Vector2(old_tile.row, old_tile.column)
+                        
+                    last_turn.to = Vector2(piece_cast_tile.collider.row, piece_cast_tile.collider.column)
+                    movements.append(last_turn)
 
                     global.stop_drag_drop(piece_cast_tile.collider)
 
                     piece_cast_tile.collider.hideHighlight()
                     
-                    print(Vector2(piece_cast_tile.collider.row, piece_cast_tile.collider.column))
-
-                    #todo
-                    #last_turn.new = Vector2(piece_cast_tile.collider.row, piece_cast_tile.collider.column)
-                    #last_turn.piece_type = piece.get_notation_name()
-
                     if piece_source_tile:
                         piece_source_tile.hideHighlight()
                         piece_source_tile = null
@@ -125,14 +128,15 @@ func _input(event):
             global.stop_drag_drop()
     elif global.dragging_nosse and global.dragging_nosse.get_children().size() == 1 and Input.is_key_pressed(KEY_R):
         var tile = global.get_piece_tile(global.dragging_nosse.get_children()[0].get_instance_id())
-
         if !tile:
             global.dragging_nosse.get_children()[0].toggle_block()
 
 func _on_turn_confirmation(value):
     if value:
+        print(movements)
+        print(global.notation(movements))
+        movements = []
         global.save_pieces_translation()
     else:
         global.restore_initial_position()
 
-    # print(global.notation(last_turn))

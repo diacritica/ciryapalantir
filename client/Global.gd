@@ -11,7 +11,7 @@ var cirya_height = 0.102
 var board = null
 var game = null
 var ui = null
-var undo_state = {}
+var undo_state = null
 var pieces = []
 
 func render_board():
@@ -118,6 +118,7 @@ func valid_drop_tile(row, column):
     return true
 
 func save_pieces_translation():
+    undo_state = {}
     for piece in pieces:
         undo_state[piece.get_instance_id()] = piece.translation    
     
@@ -166,41 +167,75 @@ func move_to(el, to):
     to.add_child(el)
     el.set_owner(to)  
       
+func notation_tile(position):
+    var letters = ['a', 'b', 'c', 'd', 'e', 'f', 'g']  
+    var column = letters[position.y]
+    var row = position.x + 1
+    
+    return column + str(row)
+    
+# [{from:(2, 4), pieces:[1559, 1552], to:(2, 3)}, {from:(2, 3), pieces:[1552], to:(2, 2)}]    
+# (count)(square)(direction)(drop counts)(stone)
+# Take 5 stones from square b4 and move them right dropping 2 stones, 1 stone, then 2 stones as you come to each square.
+# 5b4>212
 func notation(turn): 
     print('in turn ', turn)
-    var letters = ['a', 'b', 'c', 'd', 'e', 'f', 'g']
-    var new_notation = ''
-    var old_notation = ''
-    # letters.invert()
-
-    if turn.old != null:
-        var from_column = letters[turn.old.y]
-        var from_row = turn.old.x + 1
-        old_notation = str(from_column) + str(from_row)
-        
-    if turn.new != null:
-        var to_column = letters[turn.new.y]
-        var to_row = turn.new.x + 1
-        new_notation = str(to_column) + str(to_row)
-        
-    if turn.old == null:
-        if turn.piece_type != 'C':
-            return turn.piece_type + new_notation
-        else:
-            return new_notation
-        
-    var move_symbol = null
     
-    if turn.old.x < turn.new.x:
+    var old_notation = ''
+    var origin = turn[0]
+    var count = origin.pieces.size()
+
+    if origin.from == null:
+        var piece_from_tray = instance_from_id(origin.pieces[0])
+        var piece_type = piece_from_tray.get_notation_name()
+        
+        var notation = notation_tile(origin.to)
+        
+        if piece_type != 'C':
+            return piece_type + notation
+        else:
+            return notation
+           
+    var new_notation = ''
+    
+    if count > 1:
+        new_notation += str(count)
+        
+    var from_notation = notation_tile(origin.from)
+    
+    new_notation += from_notation
+    
+    var move_symbol = null
+
+    if origin.from.x < origin.to.x:
         move_symbol = '+'
-    elif turn.old.x < turn.new.x:
+    elif  origin.from.x < origin.to.x:
         move_symbol = '-'
-    elif turn.old.y < turn.new.y:    
+    elif origin.from.y < origin.to.y:    
         move_symbol = '>'
     else:
         move_symbol = '<'
         
-    old_notation  += move_symbol
-        
-    return old_notation
+    new_notation += move_symbol
     
+    if turn.size() > 1:
+        var exclude = []
+        var movement_drop_count = []
+        var movements = turn
+        movements.invert()
+        for movement in movements:
+            var dropped_count = 0
+            
+            for piece_id in movement.pieces:
+                if exclude.find(piece_id) == -1:
+                    dropped_count += 1
+                    exclude.append(piece_id)
+        
+            movement_drop_count.append(dropped_count)
+            
+        movement_drop_count.invert()
+        
+        for drop in movement_drop_count:
+            new_notation += str(drop)
+    
+    return new_notation
