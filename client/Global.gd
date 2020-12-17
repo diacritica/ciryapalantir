@@ -1,5 +1,7 @@
 extends Node
 
+onready var globalgame = get_node("/root/Game")
+
 # Layers | Masks
 # Tile: 1 | 2
 # Piece: 2 | 1,2
@@ -158,8 +160,10 @@ func stop_drag_drop(tile):
 func restore_piece_position(piece_id):
     var piece = instance_from_id(piece_id)
     piece.translation = undo_state[piece.get_instance_id()]
+    globalgame.get_node("undo").play()
     
 func restore_initial_position():
+    globalgame.get_node("undo").play()
     for piece in pieces:
         piece.translation = undo_state[piece.get_instance_id()]
     
