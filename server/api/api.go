@@ -47,5 +47,7 @@ func (a *Api) SetUser(w http.ResponseWriter, r *http.Request) {
 func (a *Api) CreateRoom(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Header().Add("Content-Type", "application/json")
-	w.Write([]byte(fmt.Sprintf(`{ "id": "%s"}`, app.GenerateCode())))
+
+	room_id := app.GenerateCode()
+	w.Write([]byte(fmt.Sprintf(`{ "id": "%s"}`, room_id[:5])))
 }

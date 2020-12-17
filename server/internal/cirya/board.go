@@ -22,8 +22,8 @@ const (
 	LEFT
 )
 
-var ranks = []string {"a", "b", "c", "d", "e", "f", "g", "h", "i" }
-var files = []string {"1", "2", "3", "4", "5", "6", "7", "8", "9" }
+var ranks = []string {"1", "2", "3", "4", "5", "6", "7", "8", "9" }
+var files = []string {"a", "b", "c", "d", "e", "f", "g", "h", "i" }
 
 func MakeBoard(size int) *Board {
 	return &Board {

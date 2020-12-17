@@ -44,8 +44,8 @@ func reverse(s []string) []string {
 }
 
 func parsePosition(position string) (string, string) {
-	rank := string(position[0])
-	file := string(position[1])
+	file := string(position[0])
+	rank := string(position[1])
 	return rank, file
 }
 
