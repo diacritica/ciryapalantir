@@ -5,6 +5,7 @@
 [ext_resource path="res://units/outline.tres" type="Material" id=3]
 
 [sub_resource type="ArrayMesh" id=2]
+resource_local_to_scene = true
 resource_name = "Cube004"
 surfaces/0 = {
 "aabb": AABB( -9.51175, -1.02912, -1, 19.0235, 3.06205, 2.00048 ),

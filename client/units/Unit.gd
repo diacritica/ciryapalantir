@@ -34,14 +34,34 @@ func get_height():
 
     return $CollisionShape.scale.z * 2
 
+func show_selected():
+    var m = $Mesh.mesh.surface_get_material(0)
+    var m2 = m.duplicate(true)
+    m2.emission_enabled = true
+    m2.emission_energy = 0.5
+    m2.emission = Color(0.5,0.2,0.05)
+    print(m2)
+    $Mesh.mesh.surface_set_material(0,m2)
+
+func hide_selected():
+    var m = $Mesh.mesh.surface_get_material(0)
+    var m2 = m.duplicate(true)
+    m2.emission_enabled = false
+    print(m2)
+    $Mesh.mesh.surface_set_material(0,m2)
+    
 func show_outline():
-    if $Mesh/Outline:
-        $Mesh/Outline.visible = true
+    pass
+#    if $Mesh/Outline:
+        #$Mesh/Outline.visible = true
 
 func hide_outline():
-    if $Mesh/Outline:
-        $Mesh/Outline.visible = false
-
+    var m = $Mesh.mesh.surface_get_material(0)
+    var m2 = m.duplicate(true)
+    m2.emission_enabled = false
+    print(m2)
+    $Mesh.mesh.surface_set_material(0,m2)
+        
 func get_notation_name():
     if type == "HALLACIRYA":
         return 'H'

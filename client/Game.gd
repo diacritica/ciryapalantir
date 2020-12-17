@@ -74,6 +74,7 @@ func _input(event):
                 # init drag
                 if event.is_pressed() and cast.collider.collision_layer == 2:
                     var piece = cast.collider
+                    piece.show_selected()
                     var tile = global.get_piece_tile(piece.get_instance_id())
 
                     if !tile:
