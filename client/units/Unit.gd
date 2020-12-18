@@ -53,7 +53,7 @@ func show_hover():
         var m2 = m.duplicate(true)
         m2.emission_enabled = true
         m2.emission_energy = 0.2
-        m2.emission = Color(0.63,0.34,0.84)
+        m2.emission = Color(0.62,0.27,0.0)
         $Mesh.mesh.surface_set_material(0,m2)
    
     
