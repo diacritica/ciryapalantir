@@ -6,10 +6,10 @@
 [ext_resource path="res://Fleet.tscn" type="PackedScene" id=4]
 [ext_resource path="res://assets/dust.jpg" type="Texture" id=5]
 [ext_resource path="res://UI.tscn" type="PackedScene" id=6]
+[ext_resource path="res://candle-tavern.tscn" type="PackedScene" id=7]
 [ext_resource path="res://assets/music/Shelter+Song+-+320bit.wav" type="AudioStream" id=8]
 [ext_resource path="res://assets/environment/bg.material" type="Material" id=9]
 [ext_resource path="res://environment/table-tavern.tscn" type="PackedScene" id=10]
-[ext_resource path="res://assets/environment/candle-tavern.glb" type="PackedScene" id=11]
 [ext_resource path="res://environment/wood-mug.tscn" type="PackedScene" id=12]
 [ext_resource path="res://assets/sounds/undo.wav" type="AudioStream" id=13]
 [ext_resource path="res://assets/sounds/rotation.wav" type="AudioStream" id=14]
@@ -136,12 +136,14 @@ shadow_enabled = true
 transform = Transform( 0.794083, -0.242187, 0.557474, -0.503252, -0.776303, 0.379594, 0.340836, -0.581979, -0.73833, 7.89064, 4.87363, -8.75398 )
 light_color = Color( 0.145098, 0.203922, 0.235294, 1 )
 light_energy = 15.0
+light_bake_mode = 2
 spot_range = 29.2
 
 [node name="light5" type="SpotLight" parent="."]
 transform = Transform( 0.794083, -0.242187, 0.557474, -0.503252, -0.776303, 0.379594, 0.340836, -0.581979, -0.73833, -9.28696, 4.87363, -12.5739 )
 light_color = Color( 0.235294, 0.192157, 0.145098, 1 )
 light_energy = 8.0
+light_bake_mode = 2
 spot_range = 29.2
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]
@@ -165,31 +167,20 @@ colour = "B"
 [node name="UI" parent="." instance=ExtResource( 6 )]
 
 [node name="GIProbe" type="GIProbe" parent="."]
-transform = Transform( 1, 0, 0, 0, -1, 0, 0, 0, 1, 0.789945, 0, 0.743479 )
+transform = Transform( -1, 0, 0, 0, 1, 0, 0, 0, -1, 0.119643, 3.30822, -0.793503 )
 subdiv = 3
-extents = Vector3( 36.1759, 34.5423, 34.7832 )
+extents = Vector3( 8, 7, 8 )
 propagation = 0.75
 data = SubResource( 3 )
+
+[node name="BakedLightmap" type="BakedLightmap" parent="."]
+bake_propagation = 0.75
+bake_extents = Vector3( 70, 70, 70 )
 
 [node name="table-tavern" parent="." instance=ExtResource( 10 )]
 
 [node name="table-tavern" parent="table-tavern" index="0"]
-use_in_baked_light = true
 material/0 = ExtResource( 9 )
-
-[node name="candle-tavern" parent="." instance=ExtResource( 11 )]
-transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, -24.4843, 2.3, -24.1766 )
-
-[node name="Cylinder" parent="candle-tavern" index="0"]
-transform = Transform( 0.486124, 0, 0.22751, 0, 2.52389, 0, -0.22751, 0, 0.486124, 1.92322, 0.0590763, 19.7999 )
-use_in_baked_light = true
-
-[node name="candle-tavern2" parent="." instance=ExtResource( 11 )]
-transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 9.20522, 2.39131, -12.7279 )
-
-[node name="Cylinder" parent="candle-tavern2" index="0"]
-transform = Transform( 0.486124, 0, 0.22751, 0, 2.52389, 0, -0.22751, 0, 0.486124, -0.0295372, 0.118153, -1.77229 )
-use_in_baked_light = true
 
 [node name="wood-mug" parent="." instance=ExtResource( 12 )]
 transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, -19.3356, 2.2, 0.23552 )
@@ -247,11 +238,13 @@ attenuation_model = 3
 max_db = -1.1
 autoplay = true
 
+[node name="candle-tavern3" parent="." instance=ExtResource( 7 )]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, -22.5509, 2.3, -4.3134 )
+
+[node name="candle-tavern4" parent="." instance=ExtResource( 7 )]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 9.25644, 2.3, -14.4021 )
+
 [editable path="table-tavern"]
-
-[editable path="candle-tavern"]
-
-[editable path="candle-tavern2"]
 
 [editable path="wood-mug"]
 

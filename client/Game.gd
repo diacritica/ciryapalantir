@@ -18,6 +18,8 @@ func _ready():
         
     global.player = 1
     
+    Engine.set_target_fps(120)
+    
     if global.player == 1:
         $CameraPlayer1.current = true
         self.remove_child($CameraPlayer2)
