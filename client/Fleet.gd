@@ -85,6 +85,7 @@ func getChosenHallacirya(pieceid=null):
         else:
             hallacirya = load("res://CiryaLV.tscn").instance()
             hallacirya.pieceid = pieceid
+    hallacirya.fleet = self
     return hallacirya
 
 
