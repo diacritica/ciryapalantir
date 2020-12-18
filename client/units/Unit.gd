@@ -15,9 +15,17 @@ export(bool) var selected = false
 func _ready():
     global.register_piece(self)
     self.connect("mouse_entered", self, "_on_mouse_entered")
+    self.connect("mouse_exited", self, "_on_mouse_exited")
+    
+    # global.dragging_nosse
     
 func _on_mouse_entered():
-    print('eee')
+    if global.get_dragging_nosse_pieces_ids().find(self.get_instance_id()) == -1:
+        self.show_hover()
+
+func _on_mouse_exited():
+    if global.get_dragging_nosse_pieces_ids().find(self.get_instance_id()) == -1:
+        self.hide_hover()
 
 func toggle_block():
     if type == "CIRYA":
@@ -62,7 +70,6 @@ func show_selected():
     m2.emission_enabled = true
     m2.emission_energy = 0.4
     m2.emission = Color(0.62,0.27,0.0)
-    print(m2)
     $Mesh.mesh.surface_set_material(0,m2)
     
     
@@ -70,7 +77,6 @@ func hide_selected():
     var m = $Mesh.mesh.surface_get_material(0)
     var m2 = m.duplicate(true)
     m2.emission_enabled = false
-    print(m2)
     $Mesh.mesh.surface_set_material(0,m2)
     
 func show_outline():

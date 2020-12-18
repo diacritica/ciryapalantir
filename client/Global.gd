@@ -37,6 +37,8 @@ func register_piece(piece):
     pieces.append(piece)                
                 
 func get_dragging_nosse_pieces_ids():
+    if !dragging_nosse:
+        return []
     var pieces = dragging_nosse.get_children();
     var pieces_ids = []
     

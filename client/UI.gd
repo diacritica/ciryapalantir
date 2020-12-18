@@ -21,6 +21,8 @@ func _ready():
         
     get_node("TurnPanel/Confirm").connect("pressed", self, "on_confirm_turn")
     get_node("TurnPanel/Undo").connect("pressed", self, "on_undo_turn")
+    
+    self.mouse_filter = MOUSE_FILTER_IGNORE
 
 func on_confirm_turn():
     emit_signal("turn_confirmation", true)

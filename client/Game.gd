@@ -4,8 +4,6 @@ onready var Server = get_node("/root/Server")
 onready var global = get_node("/root/Global")
 var ray_length = 100
 
-var hover_selected = []
-
 func _ready():
     global.game = self
 
@@ -99,42 +97,15 @@ func get_mouse_cast(exclude_current_piece = true):
 
     # https://docs.godotengine.org/es/stable/classes/class_physicsdirectspacestate.html
     return camera.get_world().direct_space_state.intersect_ray(from, to, exclude, mouse_raycast_collision, true, false)
-
-var current_outline = null
-func _physics_process(delta):
-    if current_outline:
-        var piece = current_outline
-        if not hover_selected.has(piece):
-            #piece.show_outline()
-            piece.show_hover()
-            hover_selected.append(piece)
-#        for i in range(hover_selected.size()):
-#            var p = hover_selected.pop_back()
-#            p.hide_selected()
-
-    if global.dragging_nosse:
-        for piece in global.dragging_nosse.get_children():
-            if not hover_selected.has(piece):
-                #piece.show_outline()
-                piece.show_hover()
-                hover_selected.append(piece)
-    else:
-        var cast = get_mouse_cast()
-
-        if not cast.empty() and cast.collider.collision_layer == 2:
-            current_outline = cast.collider
-            var piece = cast.collider
-            if not hover_selected.has(piece):
-                piece.show_hover()
-                hover_selected.append(piece)
-        elif current_outline:
-            current_outline = null
-            for i in range(hover_selected.size()):
-                var piece = hover_selected.pop_back()
-                piece.hide_hover()
+                
 var piece_cast_tile = null
 var piece_source_tile = null
 var movements = []
+var show_fps = true
+
+func _process(delta):
+    if show_fps:
+        OS.set_window_title("Cirya Online | fps: " + str(Engine.get_frames_per_second()))
 
 func _input(event):
     if (event is InputEventMouseButton and event.button_index == BUTTON_LEFT) or (event is InputEventMouseMotion and global.dragging_nosse):
