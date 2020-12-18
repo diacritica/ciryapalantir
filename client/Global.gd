@@ -16,6 +16,7 @@ var undo_state = null
 var player = null
 var pieces = []
 var turn = 1
+var disable_move = false
 
 func render_board():
     for row_index in  range(board_state.size()):
@@ -201,6 +202,13 @@ func move_piece(piece_id, row, column):
     board_state[row][column].append(piece_id)
     
 func data_received(data):
+    print(data)
+    if "type" in data and data.type == 'StartGame' || data.type == 'Turn':
+        if data.params.nextPlayer == self.player:
+            self.disable_move = false
+        else: 
+            self.disable_move = true
+        
     if "move" in data.params and int(data.params.player) != self.player:
         #print('data received: ', data.params)
         turn = int(data.params.turn) + 1

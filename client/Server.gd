@@ -129,6 +129,7 @@ func send_join_player(player, color, name):
         }
     }
     context["player"] = player
+    global.player = player
     context["color"] = color
     context["turn"] = 1
     ws_send_message(msg)

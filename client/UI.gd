@@ -16,6 +16,8 @@ func _ready():
     set_turn_color("white")
     if Server.get_player() == 1:
         show_turn_buttons()
+    else:
+        hide_turn_buttons()
         
     get_node("TurnPanel/Confirm").connect("pressed", self, "on_confirm_turn")
     get_node("TurnPanel/Undo").connect("pressed", self, "on_undo_turn")

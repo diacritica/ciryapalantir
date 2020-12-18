@@ -12,23 +12,26 @@ func _ready():
     var camera = get_viewport().get_camera()
 
     $UI.connect("turn_confirmation", self, "_on_turn_confirmation")
+
+    #simulation()
+#    if 'connected' in Server && !Server.is_ws_connected():
+#        Server.connect("connection_success", self, "_on_connection_success")
+#        Server.join_room('test')
+        
+    global.player = 1
     
-    if camera.name == 'CameraPlayer2': 
-        global.player = 2
-        self.remove_child($CameraPlayer1)
-    else:
-        global.player = 1
+    if global.player == 1:
+        $CameraPlayer1.current = true
         self.remove_child($CameraPlayer2)
+        self.remove_child($Particles2)
+    else:
+        $CameraPlayer2.current = true
+        self.remove_child($CameraPlayer1)
+        self.remove_child($Particles)
         
     move_fleet($Fleet)
     move_fleet($Fleet2)
-    
-    #simulation()
-            
-    if !Server.is_ws_connected():
-        Server.connect("connection_success", self, "_on_connection_success")
-        Server.join_room('test')
-        
+
 func simulation():
     yield(get_tree().create_timer(2.0), "timeout")
     
@@ -152,7 +155,7 @@ func _input(event):
                     global.save_pieces_translation()
 
                 # init drag
-                if event.is_pressed() and cast.collider.collision_layer == 2:
+                if !global.disable_move and event.is_pressed() and cast.collider.collision_layer == 2 && cast.collider.player == global.player:
                     get_node("select").play()
                     var piece = cast.collider
                     var tile = global.get_piece_tile(piece.get_instance_id())
@@ -246,6 +249,7 @@ func _on_connection_success():
         set = 'black'
     
     Server.send_join_player(global.player, set, name)
+    
     yield(get_tree().create_timer(1.0), "timeout")
     Server.send_set_ready(true)
 
