@@ -159,7 +159,7 @@ func _ready():
                 c.translation.x = x
                 c.translation.z = z
                 c.translation.y = y
-                c.rotation.y = randi()%5+1
+                c.rotation.y = 110
                 
                 add_child(c)
                 pieces.append(c)
