@@ -1,4 +1,4 @@
-[gd_scene load_steps=22 format=2]
+[gd_scene load_steps=21 format=2]
 
 [ext_resource path="res://Board.tscn" type="PackedScene" id=1]
 [ext_resource path="res://Server.tscn" type="PackedScene" id=2]
@@ -6,7 +6,6 @@
 [ext_resource path="res://Fleet.tscn" type="PackedScene" id=4]
 [ext_resource path="res://assets/dust.jpg" type="Texture" id=5]
 [ext_resource path="res://UI.tscn" type="PackedScene" id=6]
-[ext_resource path="res://GameUI.tscn" type="PackedScene" id=7]
 [ext_resource path="res://assets/music/Shelter+Song+-+320bit.wav" type="AudioStream" id=8]
 [ext_resource path="res://assets/environment/bg.material" type="Material" id=9]
 [ext_resource path="res://environment/table-tavern.tscn" type="PackedScene" id=10]
@@ -93,8 +92,6 @@ size = 20.0
 near = 1.0
 far = 150.0
 
-[node name="GameUI" parent="CameraPlayer1" instance=ExtResource( 7 )]
-
 [node name="CameraPlayer2" type="Camera" parent="."]
 transform = Transform( -0.859565, 0.215895, -0.463181, -0.136837, 0.77604, 0.615661, 0.492365, 0.592582, -0.637514, -43, 56, -58 )
 keep_aspect = 0
@@ -102,8 +99,6 @@ fov = 22.0
 size = 20.0
 near = 0.09
 far = 240.8
-
-[node name="GameUI" parent="CameraPlayer2" instance=ExtResource( 7 )]
 
 [node name="SpotLight" type="SpotLight" parent="."]
 transform = Transform( 0.377408, 0.867381, -0.324366, 0.654092, -0.00173511, 0.756413, -0.655536, 0.497641, 0.568002, -5.7253, 17.7615, 11.4055 )
@@ -154,6 +149,9 @@ environment = SubResource( 2 )
 
 [node name="Board" parent="." instance=ExtResource( 1 )]
 transform = Transform( -1.62921e-07, 0, 1, 0, 1, 0, -1, 0, -1.62921e-07, 0.001, -0.4, 0 )
+columns = 5
+rows = 5
+auto = true
 
 [node name="Tiles" type="Spatial" parent="Board"]
 transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, -4.32, 0, -4.32 )
@@ -162,13 +160,17 @@ transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, -4.32, 0, -4.32 )
 
 [node name="Fleet" parent="." instance=ExtResource( 4 )]
 transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 14.1913, -0.2, 3.39279 )
+traysize = 5
+colour = "W"
+style = "B"
 
 [node name="Fleet2" parent="." instance=ExtResource( 4 )]
 transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, -14.3265, -0.2, -3.92337 )
+traysize = 5
 colour = "B"
+style = "B"
 
 [node name="UI" parent="." instance=ExtResource( 6 )]
-visible = false
 
 [node name="GIProbe" type="GIProbe" parent="."]
 transform = Transform( 1, 0, 0, 0, -1, 0, 0, 0, 1, 0.789945, 0, 0.743479 )
@@ -234,8 +236,6 @@ speed_scale = 0.1
 explosiveness = 0.5
 process_material = SubResource( 5 )
 draw_pass_1 = SubResource( 6 )
-
-[node name="Server" parent="." instance=ExtResource( 2 )]
 
 [node name="select" type="AudioStreamPlayer3D" parent="."]
 stream = ExtResource( 15 )
