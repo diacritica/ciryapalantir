@@ -14,6 +14,11 @@ import (
 const MSG_TYPE = websocket.TextMessage
 
 func (a *Api) GetRoomSocket(w http.ResponseWriter, r *http.Request) {
+	a.CorsHeaders(w)
+
+	if r.Method == http.MethodOptions {
+		return
+	}
 	upgrader := websocket.Upgrader {}
 	upgrader.CheckOrigin = corsHandler
 
@@ -187,13 +192,11 @@ func getGame(room app.Room) (app.Game, error){
    Extracts a User from the current request
  */
 func getUser(r *http.Request) (app.User, error) {
-	cookie, err := r.Cookie("cirya-user")
+	userId, err := GetUserCookieValue(r)
 
 	if err != nil {
 		return nil, fmt.Errorf("Error, user not present in cookie")
 	}
 	
-	userId := cookie.Value
-
 	return app.NewUser(userId), nil
 }

@@ -1,7 +1,10 @@
 extends Node
 
-export var server_host = "92.243.25.73"
-export var server_port = 3333
+export var server_host = "play.cirya.me"
+export var server_port = 80
+
+# export var server_host = "127.0.0.1"
+# export var server_port = 3333
 
 onready var global = get_node("/root/Global")
 
@@ -75,8 +78,13 @@ func join_room(room_id):
 
     var ws_url = "ws://{host}:{port}/rooms/{room_id}".format(context)
 
-    print("Connecting to %s" % ws_url)
-    var err = ws.connect_to_url(ws_url, [], false, ["Cookie: cirya-user={user_id}".format(context)])
+    print("Connecting to {url} with {user}".format({
+        "user": context["user_id"],
+        "url": ws_url
+    }))
+    var err = ws.connect_to_url(ws_url, [], false, [
+        "Cookie: cirya-user={user_id}; SameSite=None; Secure".format(context),
+    ])
 
     if err != OK:
         print("Cannot connect to URL %s" % ws_url)
