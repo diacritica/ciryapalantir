@@ -62,6 +62,7 @@ func getChosenCirya(pieceid=null):
         else:
             cirya = load("res://CiryaLV.tscn").instance()
             cirya.pieceid = pieceid
+    cirya.fleet = self
     return cirya
 
 func getChosenHallacirya(pieceid=null):
