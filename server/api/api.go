@@ -23,6 +23,7 @@ func New() Server {
 	r.HandleFunc("/users", api.SetUser).Methods("PUT")
 	r.HandleFunc("/rooms", api.CreateRoom).Methods("PUT")
 	r.HandleFunc("/rooms/{room}", api.GetRoomSocket)
+	r.Use(mux.CORSMethodMiddleware(r))
 
 	api.router = r
 

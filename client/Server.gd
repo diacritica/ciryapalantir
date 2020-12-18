@@ -104,7 +104,7 @@ func ws_data_received():
         context[color] = data.result["params"]["name"]
         
     if data.result["type"] == "StatusResponse":
-        var players = data.result["status"]["players"]
+        var players = data.result["status"].get("players", {})
         if players.get("1", null) != null:
             context[players["1"]["color"]] = players["1"]["name"]
         if players.get("2", null) != null:

@@ -58,7 +58,7 @@ func on_notification_received(message):
         get_tree().change_scene("res://Game.tscn")
         
     if message["type"] == "StatusResponse":
-        var players = message["status"]["players"]
+        var players = message["status"].get("players", {})
         if players.get("1", null) != null:
             set_player_name(WhiteButton, players["1"]["name"])
         if players.get("2", null) != null:
