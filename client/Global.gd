@@ -211,7 +211,7 @@ func data_received(data):
         else: 
             self.disable_move = true
         
-    if "move" in data.params and int(data.params.player) != self.player:
+    if "params" in data and "move" in data.params and int(data.params.player) != self.player:
         #print('data received: ', data.params)
         turn = int(data.params.turn) + 1
         var player = int(data.params.player)

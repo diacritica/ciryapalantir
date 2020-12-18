@@ -1,13 +1,20 @@
 extends Control
 
 onready var Server = get_node("/root/Server")
+onready var NewGameButton = get_node("Welcome/Panel/NewGameButton")
+onready var JoinGameButton = get_node("Welcome/Panel/JoinGameButton")
 onready var WhiteButton = get_node("/root/Menu/CreateGame/Panel/WhiteButton")
 onready var BlackButton = get_node("/root/Menu/CreateGame/Panel/BlackButton")
 onready var GameScene = preload("res://Game.tscn").instance()
 
 func _ready():
+    Server.connect("user_logged", self, "on_user_logged")
     connect_button(WhiteButton, BlackButton)
     connect_button(BlackButton, WhiteButton)
+    
+func on_user_logged():
+    NewGameButton.disabled = false
+    JoinGameButton.disabled = false
     
 func connect_button(button, other):
     button.connect("pressed", self, "on_color_pressed", [ button, other ])
@@ -49,6 +56,13 @@ func on_notification_received(message):
 
     if message["type"] == "StartGame":
         get_tree().change_scene("res://Game.tscn")
+        
+    if message["type"] == "StatusResponse":
+        var players = message["status"]["players"]
+        if players.get("1", null) != null:
+            set_player_name(WhiteButton, players["1"]["name"])
+        if players.get("2", null) != null:
+            set_player_name(BlackButton, players["2"]["name"])
 
 func _on_JoinGameButton_pressed():
     get_node("/root/Menu/Background").visible = false
@@ -58,7 +72,8 @@ func _on_JoinGameButton_pressed():
     
 func on_color_pressed(button, other):
     button.set_size(Vector2(141, 300))
-    other.set_size(Vector2(141, 200))
+    if !other.get_node("Display").visible:
+        other.set_size(Vector2(141, 200))
     button.get_node("Edit").visible = true
     other.get_node("Edit").visible = false
 

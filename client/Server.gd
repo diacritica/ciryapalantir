@@ -9,6 +9,7 @@ signal connection_error(error)
 signal connection_success
 signal notification_received(message)
 signal room_created(id)
+signal user_logged
 
 var ws
 
@@ -20,6 +21,9 @@ var context = {
 }
 
 func _ready():
+    login_user()
+
+func login_user():
     $HttpClient.connect("request_completed", self, "on_user_request", [], CONNECT_ONESHOT)
     var url = "http://{host}:{port}/users".format(context)
     $HttpClient.request(url, [], false, HTTPClient.METHOD_PUT)
@@ -28,9 +32,17 @@ func on_user_request(result, response_code, headers, body):
     if response_code == 200:
         var msg = JSON.parse(body.get_string_from_utf8())
         context["user_id"] = msg.result["id"]
+        emit_signal("user_logged")
     else:
         # TODO: Show error message
         print("ERROR HTTP CONNECTION", response_code, body)
+        var timer = Timer.new()
+        timer.set_one_shot(true)
+        timer.set_timer_process_mode(0)
+        timer.set_wait_time(2)
+        timer.connect("timeout", self, "login_user")
+        self.add_child(timer)
+        timer.start()
 
 func create_room():
     $HttpClient.connect("request_completed", self, "on_room_request", [], CONNECT_ONESHOT)
@@ -81,15 +93,22 @@ func ws_error():
 func ws_connected(proto = ""):
     emit_signal("connection_success")
     context["connected"] = true
+    send_status_request()
 
 func ws_data_received():
-    #print('ws_data_received')
     var msg = ws.get_peer(1).get_packet().get_string_from_utf8()
     var data = JSON.parse(msg)
     
     if data.result["type"] == "PlayerJoined":
         var color = data.result["params"]["color"]
         context[color] = data.result["params"]["name"]
+        
+    if data.result["type"] == "StatusResponse":
+        var players = data.result["status"]["players"]
+        if players.get("1", null) != null:
+            context[players["1"]["color"]] = players["1"]["name"]
+        if players.get("2", null) != null:
+            context[players["2"]["color"]] = players["2"]["name"]
     
     global.data_received(data.result)
     emit_signal("notification_received", data.result)
@@ -143,3 +162,6 @@ func send_set_ready(is_ready):
         }
     }
     ws_send_message(msg)
+
+func send_status_request():
+    ws_send_message({ "type": "GetStatus" })
