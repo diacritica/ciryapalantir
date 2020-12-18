@@ -22,11 +22,20 @@ func _ready():
         
     move_fleet($Fleet)
     move_fleet($Fleet2)
+    
+    #simulation()
             
     $Server.join_room('test')
         
 func simulation():
     yield(get_tree().create_timer(2.0), "timeout")
+    
+    global.notation_movement(1, 'Te2')                 
+    yield(get_tree().create_timer(1.0), "timeout")     
+    
+    global.notation_movement(2, 'Te3')                 
+    yield(get_tree().create_timer(1.0), "timeout")           
+        
     global.notation_movement(1, 'a1')
     yield(get_tree().create_timer(1.0), "timeout")
     
@@ -60,7 +69,7 @@ func simulation():
     global.notation_movement(1, '2a1+11')                 
     yield(get_tree().create_timer(1.0), "timeout")       
     
-    global.notation_movement(1, '3b3>211')                 
+    global.notation_movement(1, '4b3>211')                 
     yield(get_tree().create_timer(1.0), "timeout")      
 
 func move_fleet(fleet):            

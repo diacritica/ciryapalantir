@@ -18,9 +18,18 @@ func drop(piece):
     var new_position = self.global_transform.origin
     
     # todo
-    if !global.valid_drop_tile(row, column):
+    if !global.valid_drop_tile(piece, row, column):
         global.restore_piece_position(piece.get_instance_id())
     else:
+        if piece.get_notation_name() == 'H':
+            var tile_pieces = global.get_tile_pieces(row, column)
+            
+            var finded_T = null
+            
+            for tile_piece in tile_pieces:
+                if tile_piece.get_notation_name() == 'T':
+                    tile_piece.toggle_block()
+                
         global.remove_piece_from_state(piece.get_instance_id())
         global.board_state[row][column].append(piece.get_instance_id())
         new_position.y = piece.translation.y

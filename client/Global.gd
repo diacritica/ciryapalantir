@@ -110,13 +110,13 @@ func remove_piece_from_state(piece_id):
         for column in row:
             column.erase(piece_id)
 
-func valid_drop_tile(row, column):
+func valid_drop_tile(piece, row, column):
     var tile = board_state[row][column]
     
     for piece_id in tile:
-        var piece = instance_from_id(piece_id)
+        var piece_tile = instance_from_id(piece_id)
         
-        if piece.block:
+        if piece_tile.block and piece.get_notation_name() != 'H':
             return false
             
     return true
@@ -181,6 +181,15 @@ func move_piece(piece_id, row, column):
     var piece = instance_from_id(piece_id)
     var tile = get_tile(row, column)
     
+    if piece.get_notation_name() == 'H':
+        var tile_pieces = get_tile_pieces(row, column)
+        
+        var finded_T = null
+        
+        for tile_piece in tile_pieces:
+            if tile_piece.get_notation_name() == 'T':
+                tile_piece.toggle_block()
+    
     var new_position = tile.global_transform.origin
     new_position.y = get_stack_height(row, column) + 0.2
 
@@ -203,7 +212,10 @@ func unassigned_piece(player, stone):
     for piece in pieces:
         if piece.player == player and !get_piece_tile(piece.get_instance_id()):
             if stone: 
-                if piece.get_notation_name() == stone:
+                if stone == 'T' and piece.get_notation_name() != 'H':
+                    piece.toggle_block()
+                    return piece  
+                elif piece.get_notation_name() == stone:
                     return piece
             else:
                 return piece
