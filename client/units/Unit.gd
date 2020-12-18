@@ -50,11 +50,11 @@ func get_height():
     return $CollisionShape.scale.z * 2
 
 func show_hover():
-    if player == global.player:
+    if true: #player == global.player:
         var m = $Mesh.mesh.surface_get_material(0)
         var m2 = m.duplicate(true)
         m2.emission_enabled = true
-        if self.fleet and self.fleet.white:
+        if self.fleet.white:
             m2.emission_energy = 0.2
             m2.emission = Color(0.62,0.27,0.0)
         else:
@@ -64,7 +64,7 @@ func show_hover():
    
     
 func hide_hover():
-    if player == global.player:
+    if true: #player == global.player:
         var m = $Mesh.mesh.surface_get_material(0)
         var m2 = m.duplicate(true)
         m2.emission_enabled = false
@@ -74,7 +74,7 @@ func show_selected():
     var m = $Mesh.mesh.surface_get_material(0)
     var m2 = m.duplicate(true)
     m2.emission_enabled = true
-    if self.fleet and self.fleet.white:
+    if self.fleet.white:
         m2.emission_energy = 0.2
         m2.emission = Color(0.62,0.27,0.0)
     else:
