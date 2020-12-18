@@ -1,6 +1,6 @@
 extends Node
 
-export var server_host = "127.0.0.1"
+export var server_host = "92.243.25.73"
 export var server_port = 3333
 
 onready var global = get_node("/root/Global")

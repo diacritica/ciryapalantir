@@ -15,9 +15,7 @@ func _ready():
 #    if 'connected' in Server && !Server.is_ws_connected():
 #        Server.connect("connection_success", self, "_on_connection_success")
 #        Server.join_room('test')
-        
-    # global.player = 1
-    
+
     if global.player == 1:
         $CameraPlayer1.current = true
         self.remove_child($CameraPlayer2)
