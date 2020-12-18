@@ -305,7 +305,7 @@ func notation_tile(position):
 # 5b4>212
 func notation(turn): 
     var old_notation = ''
-    var origin = turn[0]
+    var origin = turn[0] #FIXME! after an invalid movement clicking on CONFIRMACION TURNO has an empty turn object
     var count = origin.pieces.size()
 
     if origin.from == null:
@@ -347,6 +347,7 @@ func notation(turn):
         var movements = turn
         movements.invert()
         for movement in movements:
+            print("MOVEMENTE",movement)
             var dropped_count = 0
             
             for piece_id in movement.pieces:
@@ -359,6 +360,7 @@ func notation(turn):
         movement_drop_count.invert()
         
         for drop in movement_drop_count:
-            new_notation += str(drop)
+            if drop != 0: #WORKAROUND to avoid fake 0 movements in notation
+                new_notation += str(drop)
     
     return new_notation
