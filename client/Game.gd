@@ -2,7 +2,7 @@ extends Spatial
 
 onready var Server = get_node("/root/Server")
 onready var global = get_node("/root/Global")
-var ray_length = 100
+var ray_length = 200
 
 func _ready():
     global.game = self
@@ -123,8 +123,8 @@ func _input(event):
                 if !global.undo_state:
                     global.save_pieces_translation()
 
-                # init drag
-                if !global.disable_move and event.is_pressed() and cast.collider.collision_layer == 2 && cast.collider.player == global.player:
+                # init drag (we need to better sort out player's controlled pieces when theyr are in a controlled nosse, perhaps vertical raytracing upon topmost nosse piece? )
+                if !global.disable_move and event.is_pressed() and cast.collider.collision_layer == 2: # && cast.collider.player == global.player:
                     get_node("select").play()
                     var piece = cast.collider
                     var tile = global.get_piece_tile(piece.get_instance_id())
