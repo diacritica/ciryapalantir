@@ -12,7 +12,6 @@ var board_state = []
 var cirya_height = 0.102
 var board = null
 var game = null
-var ui = null
 var undo_state = null
 var player = null
 var pieces = []
@@ -203,7 +202,7 @@ func move_piece(piece_id, row, column):
     
 func data_received(data):
     if "move" in data.params and int(data.params.player) != self.player:
-        print('data received: ', data.params)
+        #print('data received: ', data.params)
         turn = int(data.params.turn) + 1
         var player = int(data.params.player)
         notation_movement(player, data.params.move)

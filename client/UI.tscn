@@ -1,4 +1,4 @@
-[gd_scene load_steps=23 format=2]
+[gd_scene load_steps=22 format=2]
 
 [ext_resource path="res://UI.gd" type="Script" id=1]
 [ext_resource path="res://assets/interface/logo.png" type="Texture" id=2]
@@ -7,7 +7,6 @@
 [ext_resource path="res://assets/interface/Alegreya-Regular.ttf" type="DynamicFontData" id=5]
 [ext_resource path="res://assets/interface/black-icon.png" type="Texture" id=6]
 [ext_resource path="res://assets/interface/white-icon.png" type="Texture" id=7]
-[ext_resource path="res://assets/interface/background_active.tres" type="StyleBox" id=9]
 [ext_resource path="res://assets/interface/WorkSans-Regular.ttf" type="DynamicFontData" id=10]
 [ext_resource path="res://assets/interface/opacity_gradient.tres" type="Material" id=11]
 [ext_resource path="res://assets/interface/Theme.tres" type="Theme" id=12]
@@ -16,30 +15,30 @@
 [ext_resource path="res://assets/interface/ribbon-btn.svg" type="Texture" id=15]
 [ext_resource path="res://assets/interface/ribbon-small.svg" type="Texture" id=16]
 
+[sub_resource type="DynamicFont" id=1]
+size = 18
+font_data = ExtResource( 5 )
+
+[sub_resource type="DynamicFont" id=2]
+size = 14
+font_data = ExtResource( 10 )
+
 [sub_resource type="DynamicFont" id=3]
 size = 18
 font_data = ExtResource( 5 )
 
-[sub_resource type="DynamicFont" id=5]
-size = 14
-font_data = ExtResource( 10 )
-
-[sub_resource type="DynamicFont" id=4]
-size = 18
-font_data = ExtResource( 5 )
-
-[sub_resource type="StyleBoxFlat" id=6]
+[sub_resource type="StyleBoxFlat" id=4]
 bg_color = Color( 0, 0, 0, 0.4 )
 border_color = Color( 0.482353, 0.223529, 0.0392157, 1 )
 
-[sub_resource type="StyleBoxFlat" id=7]
+[sub_resource type="StyleBoxFlat" id=5]
 bg_color = Color( 0.6, 0.6, 0.6, 0 )
 
-[sub_resource type="DynamicFont" id=8]
+[sub_resource type="DynamicFont" id=6]
 size = 14
 font_data = ExtResource( 10 )
 
-[sub_resource type="DynamicFont" id=9]
+[sub_resource type="DynamicFont" id=7]
 size = 18
 font_data = ExtResource( 5 )
 
@@ -53,17 +52,17 @@ __meta__ = {
 "_edit_use_anchors_": true
 }
 
-[node name="Panel" type="Panel" parent="."]
+[node name="WhiteTurn" type="Panel" parent="."]
 margin_left = 39.0
 margin_top = 40.0
 margin_right = 359.0
 margin_bottom = 106.0
-custom_styles/panel = ExtResource( 9 )
+custom_styles/panel = ExtResource( 4 )
 __meta__ = {
 "_edit_use_anchors_": false
 }
 
-[node name="TextureRect2" type="TextureRect" parent="Panel"]
+[node name="Icon" type="TextureRect" parent="WhiteTurn"]
 margin_left = 6.0
 margin_top = 9.0
 margin_right = 56.0
@@ -75,7 +74,7 @@ __meta__ = {
 "_edit_use_anchors_": false
 }
 
-[node name="Label" type="Label" parent="Panel"]
+[node name="User" type="Label" parent="WhiteTurn"]
 anchor_top = 0.5
 anchor_bottom = 0.5
 margin_left = 73.0
@@ -87,21 +86,22 @@ __meta__ = {
 "_edit_use_anchors_": false
 }
 
-[node name="Label2" type="Label" parent="Panel"]
+[node name="Label" type="Label" parent="WhiteTurn"]
 anchor_top = 0.5
 anchor_bottom = 0.5
 margin_left = 203.495
 margin_top = -12.1305
 margin_right = 304.495
 margin_bottom = 13.8695
-custom_fonts/font = SubResource( 3 )
+custom_fonts/font = SubResource( 1 )
 custom_colors/font_color = Color( 1, 0.690196, 0.258824, 1 )
 text = "Ninquë"
 __meta__ = {
 "_edit_use_anchors_": false
 }
 
-[node name="TextureRect" type="TextureRect" parent="Panel"]
+[node name="CurrentTurn" type="TextureRect" parent="WhiteTurn"]
+visible = false
 margin_left = 308.831
 margin_top = -7.5323
 margin_right = 366.831
@@ -114,7 +114,7 @@ __meta__ = {
 "_edit_use_anchors_": false
 }
 
-[node name="Panel2" type="Panel" parent="."]
+[node name="BlackTurn" type="Panel" parent="."]
 margin_left = 39.0
 margin_top = 126.0
 margin_right = 359.0
@@ -124,7 +124,7 @@ __meta__ = {
 "_edit_use_anchors_": false
 }
 
-[node name="TextureRect3" type="TextureRect" parent="Panel2"]
+[node name="Icon" type="TextureRect" parent="BlackTurn"]
 margin_left = 6.0
 margin_top = 8.0
 margin_right = 56.0
@@ -136,7 +136,7 @@ __meta__ = {
 "_edit_use_anchors_": false
 }
 
-[node name="Label2" type="Label" parent="Panel2"]
+[node name="User" type="Label" parent="BlackTurn"]
 anchor_top = 0.5
 anchor_bottom = 0.5
 margin_left = 73.0
@@ -148,21 +148,22 @@ __meta__ = {
 "_edit_use_anchors_": false
 }
 
-[node name="Label3" type="Label" parent="Panel2"]
+[node name="Label" type="Label" parent="BlackTurn"]
 anchor_top = 0.5
 anchor_bottom = 0.5
 margin_left = 203.495
 margin_top = -11.2287
 margin_right = 304.495
 margin_bottom = 14.7713
-custom_fonts/font = SubResource( 3 )
+custom_fonts/font = SubResource( 1 )
 custom_colors/font_color = Color( 1, 0.690196, 0.258824, 1 )
 text = "Morqua"
 __meta__ = {
 "_edit_use_anchors_": false
 }
 
-[node name="TextureRect2" type="TextureRect" parent="Panel2"]
+[node name="CurrentTurn" type="TextureRect" parent="BlackTurn"]
+visible = false
 margin_left = 308.831
 margin_top = -7.81257
 margin_right = 366.831
@@ -175,7 +176,7 @@ __meta__ = {
 "_edit_use_anchors_": false
 }
 
-[node name="Panel3" type="Panel" parent="."]
+[node name="Moves" type="Panel" parent="."]
 material = ExtResource( 11 )
 margin_left = 39.0
 margin_top = 241.0
@@ -186,7 +187,7 @@ __meta__ = {
 "_edit_use_anchors_": false
 }
 
-[node name="TextureRect" type="TextureRect" parent="Panel3"]
+[node name="Title" type="TextureRect" parent="Moves"]
 margin_left = 14.8325
 margin_top = 12.5359
 margin_right = 304.832
@@ -198,10 +199,10 @@ __meta__ = {
 "_edit_use_anchors_": false
 }
 
-[node name="Label2" type="Label" parent="Panel3/TextureRect"]
+[node name="Label2" type="Label" parent="Moves/Title"]
 anchor_right = 1.0
 anchor_bottom = 1.0
-custom_fonts/font = SubResource( 5 )
+custom_fonts/font = SubResource( 2 )
 custom_colors/font_color = Color( 1, 0.690196, 0.258824, 1 )
 text = "Movimientos"
 align = 1
@@ -211,26 +212,20 @@ __meta__ = {
 "_edit_use_anchors_": false
 }
 
-[node name="Label" type="Label" parent="Panel3"]
+[node name="MovesText" type="Label" parent="Moves"]
 anchor_right = 1.0
 anchor_bottom = 1.0
-margin_left = 33.8108
+margin_left = 34.0
 margin_top = 60.0
-margin_right = -36.1892
-custom_fonts/font = SubResource( 4 )
+margin_right = -16.0
+margin_bottom = -26.0
+custom_fonts/font = SubResource( 3 )
 custom_colors/font_color = Color( 0.631373, 0.631373, 0.631373, 1 )
-text = " 1.   a1      b2
- 2.   a1      b2
- 3.   a1      b2
- 4.   a1      b2
- 5.   a1      b2
- 6.   a1      b2
- 7.   a1      b2"
 __meta__ = {
 "_edit_use_anchors_": false
 }
 
-[node name="AdvicePanel" type="Panel" parent="."]
+[node name="HelpPanel" type="Panel" parent="."]
 visible = false
 anchor_left = 0.5
 anchor_top = 1.0
@@ -240,12 +235,12 @@ margin_left = -268.0
 margin_top = -205.0
 margin_right = 268.0
 margin_bottom = -150.0
-custom_styles/panel = SubResource( 6 )
+custom_styles/panel = SubResource( 4 )
 __meta__ = {
 "_edit_use_anchors_": false
 }
 
-[node name="AdviceLavel" type="Label" parent="AdvicePanel"]
+[node name="AdviceLavel" type="Label" parent="HelpPanel"]
 anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
@@ -268,24 +263,24 @@ margin_left = -345.5
 margin_top = -244.0
 margin_right = 345.5
 margin_bottom = -122.0
-custom_styles/panel = SubResource( 6 )
+custom_styles/panel = SubResource( 4 )
 __meta__ = {
 "_edit_use_anchors_": false
 }
 
-[node name="Button" type="Button" parent="TurnPanel"]
+[node name="Undo" type="Button" parent="TurnPanel"]
 margin_left = 41.5
 margin_top = 39.0
 margin_right = 242.5
 margin_bottom = 89.0
-custom_styles/normal = SubResource( 7 )
+custom_styles/normal = SubResource( 5 )
 custom_colors/font_color = Color( 1, 0.690196, 0.258824, 1 )
 text = "Deshacer"
 __meta__ = {
 "_edit_use_anchors_": false
 }
 
-[node name="Button2" type="Button" parent="TurnPanel"]
+[node name="Confirm" type="Button" parent="TurnPanel"]
 margin_left = 326.278
 margin_top = 39.0
 margin_right = 625.278
@@ -301,7 +296,7 @@ __meta__ = {
 "_edit_use_anchors_": false
 }
 
-[node name="TextureRect" type="TextureRect" parent="TurnPanel/Button2"]
+[node name="RibbonRight" type="TextureRect" parent="TurnPanel/Confirm"]
 margin_left = 289.99
 margin_top = -7.96613
 margin_right = 338.99
@@ -313,7 +308,7 @@ __meta__ = {
 "_edit_use_anchors_": false
 }
 
-[node name="TextureRect2" type="TextureRect" parent="TurnPanel/Button2"]
+[node name="RibbonLeft" type="TextureRect" parent="TurnPanel/Confirm"]
 margin_left = -40.0529
 margin_top = -7.96613
 margin_right = 8.94714
@@ -326,7 +321,7 @@ __meta__ = {
 "_edit_use_anchors_": false
 }
 
-[node name="Panel4" type="Panel" parent="."]
+[node name="CodePanel" type="Panel" parent="."]
 material = ExtResource( 11 )
 anchor_left = 1.0
 anchor_right = 1.0
@@ -339,12 +334,12 @@ __meta__ = {
 "_edit_use_anchors_": false
 }
 
-[node name="logo" type="Sprite" parent="Panel4"]
+[node name="logo" type="Sprite" parent="CodePanel"]
 position = Vector2( 103.182, -9.3731 )
 scale = Vector2( 0.479721, 0.479721 )
 texture = ExtResource( 2 )
 
-[node name="TextureRect" type="TextureRect" parent="Panel4"]
+[node name="ShareText" type="TextureRect" parent="CodePanel"]
 margin_left = 16.2245
 margin_top = 75.8619
 margin_right = 223.225
@@ -356,28 +351,28 @@ __meta__ = {
 "_edit_use_anchors_": false
 }
 
-[node name="Label" type="Label" parent="Panel4/TextureRect"]
+[node name="Label" type="Label" parent="CodePanel/ShareText"]
 anchor_right = 1.0
 anchor_bottom = 1.0
-custom_fonts/font = SubResource( 8 )
+custom_fonts/font = SubResource( 6 )
 custom_colors/font_color = Color( 1, 0.690196, 0.258824, 1 )
 text = "Comparte el enlace"
 align = 1
 valign = 1
 autowrap = true
 
-[node name="Label2" type="Label" parent="Panel4/TextureRect"]
+[node name="Link" type="Label" parent="CodePanel/ShareText"]
 anchor_right = 1.0
 anchor_bottom = 1.0
 margin_top = 35.0
 margin_bottom = 38.0
-custom_fonts/font = SubResource( 9 )
+custom_fonts/font = SubResource( 7 )
 text = "play.cirya.me"
 align = 1
 valign = 1
 clip_text = true
 
-[node name="TextureRect2" type="TextureRect" parent="Panel4"]
+[node name="CodeText" type="TextureRect" parent="CodePanel"]
 margin_left = 16.2245
 margin_top = 166.862
 margin_right = 223.225
@@ -389,23 +384,23 @@ __meta__ = {
 "_edit_use_anchors_": false
 }
 
-[node name="Label" type="Label" parent="Panel4/TextureRect2"]
+[node name="Label" type="Label" parent="CodePanel/CodeText"]
 anchor_right = 1.0
 anchor_bottom = 1.0
-custom_fonts/font = SubResource( 8 )
+custom_fonts/font = SubResource( 6 )
 custom_colors/font_color = Color( 1, 0.690196, 0.258824, 1 )
 text = "Código del juego"
 align = 1
 valign = 1
 autowrap = true
 
-[node name="Label2" type="Label" parent="Panel4/TextureRect2"]
+[node name="Code" type="Label" parent="CodePanel/CodeText"]
 anchor_right = 1.0
 anchor_bottom = 1.0
 margin_top = 35.0
 margin_bottom = 38.0
-custom_fonts/font = SubResource( 9 )
-text = "3312314123123"
+custom_fonts/font = SubResource( 7 )
+text = "?????"
 align = 1
 valign = 1
 clip_text = true

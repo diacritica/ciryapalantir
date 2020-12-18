@@ -8,7 +8,6 @@ onready var global = get_node("/root/Global")
 signal connection_error(error)
 signal connection_success
 signal notification_received(message)
-
 signal room_created(id)
 
 var ws
@@ -48,6 +47,9 @@ func on_room_request(result, response_code, headers, body):
         print("ERROR HTTP CONNECTION", response_code, body)
 
 func join_room(room_id):
+    if context.get("connected", false):
+        return
+
     print("Joining room %s" % room_id)
     context["room_id"] = room_id
 
@@ -78,11 +80,17 @@ func ws_error():
 
 func ws_connected(proto = ""):
     emit_signal("connection_success")
+    context["connected"] = true
 
 func ws_data_received():
-    print('ws_data_received')
+    #print('ws_data_received')
     var msg = ws.get_peer(1).get_packet().get_string_from_utf8()
     var data = JSON.parse(msg)
+    
+    if data.result["type"] == "PlayerJoined":
+        var color = data.result["params"]["color"]
+        context[color] = data.result["params"]["name"]
+    
     global.data_received(data.result)
     emit_signal("notification_received", data.result)
 
@@ -90,8 +98,17 @@ func _process(delta):
     if ws != null:
         ws.poll()
 
+func is_ws_connected():
+    return context["connected"]
+
 func get_player():
-    return context["player"]
+    return context.get("player", 0)
+    
+func get_player_name(color):
+    return context.get(color, "")
+    
+func get_code():
+    return context.get("room_id", "")
 
 # MESSAGES IMPLEMENTATION
 

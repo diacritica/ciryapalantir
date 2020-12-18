@@ -1,5 +1,6 @@
 extends Spatial
 
+onready var Server = get_node("/root/Server")
 onready var global = get_node("/root/Global")
 var ray_length = 100
 
@@ -9,9 +10,8 @@ func _ready():
     global.game = self
 
     var camera = get_viewport().get_camera()
-    global.ui = camera.get_node('GameUI')
-    global.ui.connect("turn_confirmation", self, "_on_turn_confirmation")
-    $Server.connect("connection_success", self, "_on_connection_success")    
+
+    $UI.connect("turn_confirmation", self, "_on_turn_confirmation")
     
     if camera.name == 'CameraPlayer2': 
         global.player = 2
@@ -25,7 +25,9 @@ func _ready():
     
     #simulation()
             
-    $Server.join_room('test')
+    if !Server.is_ws_connected():
+        Server.connect("connection_success", self, "_on_connection_success")
+        Server.join_room('test')
         
 func simulation():
     yield(get_tree().create_timer(2.0), "timeout")
@@ -229,7 +231,7 @@ func _on_turn_confirmation(value):
         }
         print('sending: ')
         print(msg)
-        $Server.ws_send_message(msg)
+        Server.ws_send_message(msg)
         
         movements = []
         global.save_pieces_translation()
@@ -243,7 +245,7 @@ func _on_connection_success():
     if global.player == 2:
         set = 'black'
     
-    $Server.send_join_player(global.player, set, name)
+    Server.send_join_player(global.player, set, name)
     yield(get_tree().create_timer(1.0), "timeout")
-    $Server.send_set_ready(true)
+    Server.send_set_ready(true)
 
