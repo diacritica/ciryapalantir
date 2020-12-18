@@ -72,6 +72,7 @@ func (b *Board) StonesInPosition(position string) int {
 
 func (b *Board) MoveStones(player int, position string, count int, direction MoveDirection, drops []int) error {
 	var err error
+	var current, currentDrop []string
 	
 	if b.ControlingPlayer(position) != player {
 		return fmt.Errorf("Player %d doesnt' control the position %s", player, position)
@@ -82,11 +83,14 @@ func (b *Board) MoveStones(player int, position string, count int, direction Mov
 	}
 
 	rank, file := parsePosition(position)
+	current = b.get(rank, file)
+	toDrop := current[len(current)-count:]
 
 	// Validate the drop squares before changing anything in the board
-
-	for range drops {
+	for _, drop := range drops {
 		rank, file, err = next(rank, file, b.Size, direction)
+		current = b.get(rank, file)
+		currentDrop = toDrop[:drop]
 
 		if err != nil {
 			return err
@@ -96,7 +100,6 @@ func (b *Board) MoveStones(player int, position string, count int, direction Mov
 			return fmt.Errorf("Drop position %s%s is not valid", rank, file)
 		}
 
-		current := b.get(rank, file)
 		var head string
 
 		if len(current) > 0 {
@@ -107,21 +110,45 @@ func (b *Board) MoveStones(player int, position string, count int, direction Mov
 			return fmt.Errorf("Cannot put stones over a Hallacirya")
 		}
 
-		if strings.HasPrefix(head, "T") {
+		// If the piece to drop is only a Hallacirya, is OK. Otherwise, error
+		isHallaciryaMove := len(currentDrop) == 1 && strings.HasPrefix(currentDrop[0], "H")
+
+		if strings.HasPrefix(head, "T") && !isHallaciryaMove {
 			return fmt.Errorf("Cannot put stones over Tampar")
 		}
+
+		toDrop = toDrop[drop:]
 	}
 
 	rank, file = parsePosition(position)
-	current := b.get(rank, file)
-	toDrop := current[len(current)-count:]
+	current = b.get(rank, file)
+	toDrop = current[len(current)-count:]
 
 	b.set(rank, file, current[:len(current) - count])
 
 	for _, drop := range drops {
 		rank, file, _ = next(rank, file, b.Size, direction)
-		current := b.get(rank, file)
-		b.set(rank, file, append(current, toDrop[:drop]...))
+		current = b.get(rank, file)
+		currentDrop = toDrop[:drop]
+
+		// Checking if hallacirya "flats" a Tampar
+		var head string
+
+		if len(current) > 0 {
+			head = current[len(current) - 1]
+		}
+		
+		// If the piece to drop is only a Hallacirya, is OK. Otherwise, error
+		isHallaciryaMove := len(currentDrop) == 1 && strings.HasPrefix(currentDrop[0], "H")
+
+		if strings.HasPrefix(head, "T") && isHallaciryaMove {
+			flattenTampar := "C" + string(head[1])
+			currentDrop = append([]string { flattenTampar }, currentDrop...)
+			b.set(rank, file, append(current[:len(current) - 1], currentDrop...))
+		} else {
+			b.set(rank, file, append(current, currentDrop...))
+		}
+		
 		toDrop = toDrop[drop:]
 	}
 
