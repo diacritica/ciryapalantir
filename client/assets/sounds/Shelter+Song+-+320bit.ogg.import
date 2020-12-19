@@ -1,0 +1,15 @@
+[remap]
+
+importer="ogg_vorbis"
+type="AudioStreamOGGVorbis"
+path="res://.import/Shelter+Song+-+320bit.ogg-02c186acc22e6970878f5fcda326e7b8.oggstr"
+
+[deps]
+
+source_file="res://assets/sounds/Shelter+Song+-+320bit.ogg"
+dest_files=[ "res://.import/Shelter+Song+-+320bit.ogg-02c186acc22e6970878f5fcda326e7b8.oggstr" ]
+
+[params]
+
+loop=true
+loop_offset=0
