@@ -29,20 +29,7 @@ func login_user():
     $HttpClient.request(url, [], false, HTTPClient.METHOD_PUT)
 
 func on_user_request(result, response_code, headers, body):
-    if response_code == 200:
-        var msg = JSON.parse(body.get_string_from_utf8())
-        context["user_id"] = msg.result["id"]
-        emit_signal("user_logged")
-    else:
-        # TODO: Show error message
-        print("ERROR HTTP CONNECTION", response_code, body)
-        var timer = Timer.new()
-        timer.set_one_shot(true)
-        timer.set_timer_process_mode(0)
-        timer.set_wait_time(2)
-        timer.connect("timeout", self, "login_user")
-        self.add_child(timer)
-        timer.start()
+    pass
 
 func create_room():
     $HttpClient.connect("request_completed", self, "on_room_request", [], CONNECT_ONESHOT)

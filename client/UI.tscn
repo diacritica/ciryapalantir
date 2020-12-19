@@ -53,6 +53,7 @@ __meta__ = {
 }
 
 [node name="WhiteTurn" type="Panel" parent="."]
+visible = false
 margin_left = 39.0
 margin_top = 40.0
 margin_right = 359.0
@@ -115,6 +116,7 @@ __meta__ = {
 }
 
 [node name="BlackTurn" type="Panel" parent="."]
+visible = false
 margin_left = 39.0
 margin_top = 126.0
 margin_right = 359.0
@@ -177,6 +179,7 @@ __meta__ = {
 }
 
 [node name="Moves" type="Panel" parent="."]
+visible = false
 material = ExtResource( 11 )
 margin_left = 39.0
 margin_top = 241.0
@@ -255,6 +258,7 @@ __meta__ = {
 }
 
 [node name="TurnPanel" type="Panel" parent="."]
+visible = false
 anchor_left = 0.5
 anchor_top = 1.0
 anchor_right = 0.5
@@ -325,10 +329,10 @@ __meta__ = {
 material = ExtResource( 11 )
 anchor_left = 1.0
 anchor_right = 1.0
-margin_left = -279.402
-margin_top = 97.9094
-margin_right = -43.4023
-margin_bottom = 375.91
+margin_left = -279.0
+margin_top = 98.0
+margin_right = -43.0
+margin_bottom = 223.0
 custom_styles/panel = ExtResource( 4 )
 __meta__ = {
 "_edit_use_anchors_": false
@@ -340,10 +344,10 @@ scale = Vector2( 0.479721, 0.479721 )
 texture = ExtResource( 2 )
 
 [node name="ShareText" type="TextureRect" parent="CodePanel"]
-margin_left = 16.2245
-margin_top = 75.8619
-margin_right = 223.225
-margin_bottom = 106.862
+margin_left = 15.4099
+margin_top = 65.2733
+margin_right = 222.41
+margin_bottom = 96.2734
 texture = ExtResource( 16 )
 expand = true
 stretch_mode = 1
@@ -352,6 +356,7 @@ __meta__ = {
 }
 
 [node name="Label" type="Label" parent="CodePanel/ShareText"]
+visible = false
 anchor_right = 1.0
 anchor_bottom = 1.0
 custom_fonts/font = SubResource( 6 )
@@ -364,15 +369,19 @@ autowrap = true
 [node name="Link" type="Label" parent="CodePanel/ShareText"]
 anchor_right = 1.0
 anchor_bottom = 1.0
-margin_top = 35.0
-margin_bottom = 38.0
+margin_top = -2.62903
+margin_bottom = 0.370972
 custom_fonts/font = SubResource( 7 )
-text = "play.cirya.me"
+text = "cirya.me"
 align = 1
 valign = 1
 clip_text = true
+__meta__ = {
+"_edit_use_anchors_": false
+}
 
 [node name="CodeText" type="TextureRect" parent="CodePanel"]
+visible = false
 margin_left = 16.2245
 margin_top = 166.862
 margin_right = 223.225

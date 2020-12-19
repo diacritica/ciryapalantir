@@ -1,8 +1,7 @@
 extends Spatial
 
-onready var Server = get_node("/root/Server")
 onready var global = get_node("/root/Global")
-var ray_length = 100
+var ray_length = 150
 
 func _ready():
     global.game = self
@@ -128,7 +127,7 @@ func _input(event):
                     global.save_pieces_translation()
 
                 # init drag
-                if !global.disable_move and event.is_pressed() and cast.collider.collision_layer == 2 && cast.collider.player == global.player:
+                if !global.disable_move and event.is_pressed() and cast.collider.collision_layer == 2:# && cast.collider.player == global.player:
                     get_node("select").play()
                     var piece = cast.collider
                     var tile = global.get_piece_tile(piece.get_instance_id())
@@ -207,7 +206,7 @@ func _on_turn_confirmation(value):
         }
         print('sending: ')
         print(msg)
-        Server.ws_send_message(msg)
+
         
         movements = []
         global.save_pieces_translation()
@@ -221,8 +220,7 @@ func _on_connection_success():
     if global.player == 2:
         set = 'black'
     
-    Server.send_join_player(global.player, set, name)
+
     
     yield(get_tree().create_timer(1.0), "timeout")
-    Server.send_set_ready(true)
 
