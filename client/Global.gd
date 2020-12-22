@@ -1,7 +1,5 @@
 extends Node
 
-onready var globalgame = get_node("/root/Game")
-
 # Layers | Masks
 # Tile: 1 | 2
 # Piece: 2 | 1,2
@@ -13,14 +11,15 @@ var cirya_height = 0.102
 var board = null
 var game = null
 var undo_state = null
+var undo_board_state = null
 var player = null
 var pieces = []
 var turn = 1
 var disable_move = false
 
-func render_board():
-    for row_index in  range(board_state.size()):
-        var row = board_state[row_index]
+func render_board(board):
+    for row_index in  range(board.size()):
+        var row = board[row_index]
         for column_index in range(row.size()):
             var column = row[column_index]
             for piece_index in range(column.size()):
@@ -122,11 +121,6 @@ func valid_drop_tile(piece, row, column):
             return false
             
     return true
-
-func save_pieces_translation():
-    undo_state = {}
-    for piece in pieces:
-        undo_state[piece.get_instance_id()] = piece.translation    
     
 func init_drag_drop(pieces): 
     dragging_nosse = Spatial.new()
@@ -163,15 +157,23 @@ func stop_drag_drop(tile):
     game.remove_child(dragging_nosse)
     dragging_nosse = null
     
+# TODO    
 func restore_piece_position(piece_id):
-    var piece = instance_from_id(piece_id)
-    piece.translation = undo_state[piece.get_instance_id()]
-    globalgame.get_node("undo").play()
+    render_board(undo_board_state)
+    game.get_node("undo").play()
+    
+func save_pieces_translation():                        
+    undo_board_state = str2var(var2str(board_state))
+    undo_state = {}
+    for piece in pieces:
+        undo_state[piece.get_instance_id()] = piece.translation        
     
 func restore_initial_position():
-    globalgame.get_node("undo").play()
+    game.get_node("undo").play()         
     for piece in pieces:
         piece.translation = undo_state[piece.get_instance_id()]
+
+    board_state = undo_board_state
     
 func move_to(el, to):
     el.get_parent().remove_child(el)
@@ -204,7 +206,7 @@ func move_piece(piece_id, row, column):
     board_state[row][column].append(piece_id)
     
 func data_received(data):
-    print(data)
+    print('data_received', data)
     if "type" in data and data.type == 'StartGame' || data.type == 'Turn':
         if data.params.nextPlayer == self.player:
             self.disable_move = false

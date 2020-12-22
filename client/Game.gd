@@ -120,11 +120,11 @@ func _input(event):
 
         if not cast.empty():
             if event is InputEventMouseButton and event.button_index == BUTTON_LEFT:
-                if !global.undo_state:
-                    global.save_pieces_translation()
-
                 # init drag (we need to better sort out player's controlled pieces when theyr are in a controlled nosse, perhaps vertical raytracing upon topmost nosse piece? )
                 if !global.disable_move and event.is_pressed() and cast.collider.collision_layer == 2: # && cast.collider.player == global.player:
+                    if !movements.size():
+                        global.save_pieces_translation()
+                    
                     get_node("select").play()
                     var piece = cast.collider
                     var tile = global.get_piece_tile(piece.get_instance_id())
@@ -137,9 +137,7 @@ func _input(event):
                         global.init_drag_drop(pieces)
 
                 # stop drag
-                elif global.dragging_nosse and not piece_cast_tile.empty():
-                    
-                        
+                elif global.dragging_nosse and not piece_cast_tile.empty():             
                     var wrapper = global.dragging_nosse
                     var pieces_ids = global.get_dragging_nosse_pieces_ids()
                     var old_tile = global.get_piece_tile(pieces_ids[0])
@@ -206,9 +204,9 @@ func _on_turn_confirmation(value):
         Server.ws_send_message(msg)
         
         movements = []
-        global.save_pieces_translation()
     else:
         global.restore_initial_position()
+        movements = []
         
 func _on_connection_success():
     var name = 'Client' + str(global.player)
