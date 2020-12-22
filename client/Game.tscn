@@ -166,7 +166,6 @@ colour = "B"
 
 [node name="GIProbe" type="GIProbe" parent="."]
 transform = Transform( 1, 0, 0, 0, -1, 0, 0, 0, 1, 0.789945, 0, 0.743479 )
-subdiv = 3
 extents = Vector3( 36.1759, 34.5423, 34.7832 )
 propagation = 0.75
 data = SubResource( 3 )
