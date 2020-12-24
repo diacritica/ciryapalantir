@@ -398,8 +398,9 @@ func notation(turn):
                 if exclude.find(piece_id) == -1:
                     dropped_count += 1
                     exclude.append(piece_id)
-        
-            movement_drop_count.append(dropped_count)
+            
+            if dropped_count > 0:
+                movement_drop_count.append(dropped_count)
             
         movement_drop_count.invert()
         
