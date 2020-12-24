@@ -50,7 +50,7 @@ func get_height():
     return $CollisionShape.scale.z * 2
 
 func show_hover():
-    if true: #player == global.player:
+    if global.is_valid_drag(self):
         var m = $Mesh.mesh.surface_get_material(0)
         var m2 = m.duplicate(true)
         m2.emission_enabled = true
@@ -64,7 +64,7 @@ func show_hover():
    
     
 func hide_hover():
-    if true: #player == global.player:
+    if global.is_valid_drag(self):
         var m = $Mesh.mesh.surface_get_material(0)
         var m2 = m.duplicate(true)
         m2.emission_enabled = false

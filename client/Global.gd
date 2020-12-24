@@ -16,6 +16,8 @@ var player = null
 var pieces = []
 var turn = 1
 var disable_move = false
+# false: move any piece and no backend
+var sandbox = false
 
 func render_board(board):
     for row_index in  range(board.size()):
@@ -77,6 +79,16 @@ func get_piece_tile(piece_id):
                 
     return null
     
+func tile_owner(row, column):
+    var piece_ids = board_state[row][column]
+    var last_piece_id = piece_ids.back()
+    var piece = instance_from_id(last_piece_id)
+    
+    if piece:
+        return piece.player
+    
+    return null
+
 func get_top_pieces(piece_id):
     var tile = get_piece_tile(piece_id)
     var piece_ids = board_state[tile.row][tile.column]
@@ -313,7 +325,23 @@ func simulation(moves):
             player = 2
         else:
             player = 1
+       
+func is_valid_drag(piece):
+    if self.sandbox:
+        return true
+
+    if !self.disable_move and piece.collision_layer == 2:
+        var tile = self.get_piece_tile(piece.get_instance_id())
+        var owner = piece.player
+        print('debug: ', tile)
+        if tile:
+            owner = self.tile_owner(tile.row, tile.column)
+            print('debug: owner, ', owner)
         
+        if owner == self.player || owner == null:
+            return true
+    
+    return false     
     
 # [{from:(2, 4), pieces:[1559, 1552], to:(2, 3)}, {from:(2, 3), pieces:[1552], to:(2, 2)}]    
 # (count)(square)(direction)(drop counts)(stone)

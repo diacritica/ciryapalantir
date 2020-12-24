@@ -78,8 +78,8 @@ func _input(event):
 
         if not cast.empty():
             if event is InputEventMouseButton and event.button_index == BUTTON_LEFT:
-                # init drag (we need to better sort out player's controlled pieces when theyr are in a controlled nosse, perhaps vertical raytracing upon topmost nosse piece? )
-                if !global.disable_move and event.is_pressed() and cast.collider.collision_layer == 2: # && cast.collider.player == global.player:
+                # init drag
+                if event.is_pressed() and global.is_valid_drag(cast.collider):
                     if !movements.size():
                         global.save_pieces_translation()
                     
@@ -135,8 +135,6 @@ func _input(event):
 
                 global.dragging_nosse.set_translation(new_position)
                 
-               
-                
         elif global.dragging_nosse:
             global.restore_initial_position()
             global.stop_drag_drop(null)
@@ -159,22 +157,11 @@ func _on_turn_confirmation(value):
         }
         print('sending: ')
         print(msg)
-        Server.ws_send_message(msg)
+        
+        if !global.sandbox:
+            Server.ws_send_message(msg)
         
         movements = []
     else:
         global.restore_initial_position()
         movements = []
-        
-func _on_connection_success():
-    var name = 'Client' + str(global.player)
-    var set = 'white'
-    
-    if global.player == 2:
-        set = 'black'
-    
-    Server.send_join_player(global.player, set, name)
-    
-    yield(get_tree().create_timer(1.0), "timeout")
-    Server.send_set_ready(true)
-
