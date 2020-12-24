@@ -249,17 +249,20 @@ func notation_movement(player, move):
         
         if result:         
             var origin = notation_to_vector(result.get_string("position"))
-            
             var pieces = get_tile_pieces(origin.x, origin.y)
+            var count = int(result.get_string("count"))
+            
+            if !count:
+                count = 1
                 
             pieces.invert()
-            pieces = pieces.slice(0, int(result.get_string("count")) - 1)
+            pieces = pieces.slice(0, count - 1)
 
             pieces.invert()
             
             var dropCounts = result.get_string("dropCounts")
             if !dropCounts:
-                dropCounts = [int(result.get_string("count"))]
+                dropCounts = [count]
             
             print('dropCounts: ', dropCounts)
             print('pieces above ', pieces.size())
@@ -300,6 +303,17 @@ func notation_tile(position):
     var row = position.x + 1
     
     return column + str(row)
+    
+func simulation(moves):
+    var player = 1
+    for move in moves:
+        yield(get_tree().create_timer(1.0), "timeout")
+        notation_movement(player, move)         
+        if player == 1:
+            player = 2
+        else:
+            player = 1
+        
     
 # [{from:(2, 4), pieces:[1559, 1552], to:(2, 3)}, {from:(2, 3), pieces:[1552], to:(2, 2)}]    
 # (count)(square)(direction)(drop counts)(stone)

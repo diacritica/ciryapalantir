@@ -11,7 +11,7 @@ func _ready():
 
     $UI.connect("turn_confirmation", self, "_on_turn_confirmation")
 
-    #simulation()
+    # simulation()
 #    if 'connected' in Server && !Server.is_ws_connected():
 #        Server.connect("connection_success", self, "_on_connection_success")
 #        Server.join_room('test')
@@ -29,49 +29,7 @@ func _ready():
     move_fleet($Fleet2)
 
 func simulation():
-    yield(get_tree().create_timer(2.0), "timeout")
-    
-    global.notation_movement(1, 'Te2')                 
-    yield(get_tree().create_timer(1.0), "timeout")     
-    
-    global.notation_movement(2, 'Te3')                 
-    yield(get_tree().create_timer(1.0), "timeout")           
-        
-    global.notation_movement(1, 'a1')
-    yield(get_tree().create_timer(1.0), "timeout")
-    
-    global.notation_movement(2, 'a1')
-    yield(get_tree().create_timer(1.0), "timeout")
-    
-    global.notation_movement(1, 'a1')
-    yield(get_tree().create_timer(1.0), "timeout")
-    
-    global.notation_movement(2, 'b3')
-    yield(get_tree().create_timer(1.0), "timeout")
-    
-    global.notation_movement(1, 'b3')     
-    yield(get_tree().create_timer(1.0), "timeout")
-    
-    global.notation_movement(2, 'b3')                 
-    yield(get_tree().create_timer(1.0), "timeout")
-    
-    global.notation_movement(1, 'b3')                 
-    yield(get_tree().create_timer(1.0), "timeout")
-    
-    global.notation_movement(2, 'c2')                 
-    yield(get_tree().create_timer(1.0), "timeout")     
-    
-    global.notation_movement(1, 'Hb3')                 
-    yield(get_tree().create_timer(1.0), "timeout")        
-    
-    global.notation_movement(2, 'c3')                 
-    yield(get_tree().create_timer(1.0), "timeout")      
-    
-    global.notation_movement(1, '2a1+11')                 
-    yield(get_tree().create_timer(1.0), "timeout")       
-    
-    global.notation_movement(1, '4b3>211')                 
-    yield(get_tree().create_timer(1.0), "timeout")      
+    global.simulation(['a3', 'c3', 'b3', 'd3', 'a3>', 'a1', 'b3>'])
 
 func move_fleet(fleet):            
     for piece in fleet.get_children():
