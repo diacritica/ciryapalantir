@@ -13,7 +13,7 @@ var vip = false
 var stackOffest = 2.2
 var rowsOffset = -2.5
 
-var startX = 2
+var startX = 0
 var startY = 2
 var startZ = -4
 

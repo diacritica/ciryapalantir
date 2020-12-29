@@ -152,6 +152,7 @@ func init_drag_drop(pieces):
 
     self.game.add_child(dragging_nosse)
 
+# TODO, make sure the drag and drop stop works when outside the board and undos board state
 func stop_drag_drop(tile):                        
     for piece in dragging_nosse.get_children():
         piece.mode = RigidBody.MODE_RIGID
