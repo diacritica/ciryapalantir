@@ -17,7 +17,7 @@ var pieces = []
 var turn = 1
 var disable_move = false
 # false: move any piece and no backend
-var sandbox = true
+var sandbox = false
 
 func render_board(board):
     for row_index in  range(board.size()):
