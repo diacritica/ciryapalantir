@@ -32,6 +32,10 @@ func _ready():
         
     move_fleet($Fleet)
     move_fleet($Fleet2)
+    
+    if global.sandbox:
+        $UI.visible = false
+        $sandboxlogo.visible = true
 
 func simulation():
     global.simulation(['a3', 'c3', 'b3', 'd3', 'a3>', 'a1', 'b3>'])

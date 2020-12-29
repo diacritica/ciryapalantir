@@ -1,4 +1,4 @@
-[gd_scene load_steps=20 format=2]
+[gd_scene load_steps=21 format=2]
 
 [ext_resource path="res://Board.tscn" type="PackedScene" id=1]
 [ext_resource path="res://Server.tscn" type="PackedScene" id=2]
@@ -8,6 +8,7 @@
 [ext_resource path="res://UI.tscn" type="PackedScene" id=6]
 [ext_resource path="res://assets/music/Shelter+Song+-+320bit.ogg" type="AudioStream" id=7]
 [ext_resource path="res://environment/candle-tavern.tscn" type="PackedScene" id=8]
+[ext_resource path="res://assets/interface/logo5.png" type="Texture" id=9]
 [ext_resource path="res://environment/table-tavern.tscn" type="PackedScene" id=10]
 [ext_resource path="res://environment/wood-mug.tscn" type="PackedScene" id=12]
 [ext_resource path="res://assets/sounds/undo.wav" type="AudioStream" id=13]
@@ -221,3 +222,11 @@ bake_hdr = true
 bake_extents = Vector3( 22.6719, 3.92138, 19.6826 )
 capture_cell_size = 1.0
 light_data = SubResource( 6 )
+
+[node name="sandboxlogo" type="Sprite" parent="."]
+visible = false
+position = Vector2( 1743.86, 88.1135 )
+scale = Vector2( 0.425685, 0.420853 )
+texture = ExtResource( 9 )
+
+[editable path="UI"]

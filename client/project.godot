@@ -36,7 +36,6 @@ mouse_cursor/custom_image="res://assets/cursors/cursor-select.png"
 [physics]
 
 common/physics_fps=110
-common/physics_jitter_fix=0.5
 3d/active_soft_world=false
 3d/default_gravity_vector=Vector3( 0, -1.1, 0 )
 
