@@ -50,7 +50,7 @@ glow_intensity = 8.0
 glow_strength = 0.68
 glow_bloom = 0.2
 
-[sub_resource type="SpatialMaterial" id=4]
+[sub_resource type="SpatialMaterial" id=3]
 flags_transparent = true
 flags_unshaded = true
 flags_albedo_tex_force_srgb = true
@@ -63,17 +63,17 @@ particles_anim_loop = false
 albedo_color = Color( 0.929412, 0.745098, 0.529412, 0.0392157 )
 albedo_texture = ExtResource( 5 )
 
-[sub_resource type="ParticlesMaterial" id=5]
+[sub_resource type="ParticlesMaterial" id=4]
 emission_shape = 2
 emission_box_extents = Vector3( 1, 1, 1 )
 gravity = Vector3( 0, 0.31, 0 )
 angular_velocity = 26.5
 
-[sub_resource type="QuadMesh" id=6]
+[sub_resource type="QuadMesh" id=5]
 
-[sub_resource type="BakedLightmapData" id=7]
+[sub_resource type="BakedLightmapData" id=6]
 bounds = AABB( -22.6719, -3.92138, -19.6826, 45.3438, 7.84276, 39.3652 )
-cell_space_transform = Transform( 4, 0, 0, 0, 4, 0, 0, 0, 4, 90.6875, 15.6855, 78.7304 )
+cell_space_transform = Transform( 4, 0, 0, 0, 4, 0, 0, 0, 4, 90.6876, 15.6855, 78.7304 )
 cell_subdiv = 9
 octree = PoolByteArray( 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255 )
 
@@ -170,25 +170,25 @@ transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 15.3939, 2.49143, -8.14082 )
 
 [node name="Particles" type="Particles" parent="."]
 transform = Transform( -2.33257, 0.0135155, 0, -0.0042608, -0.735348, 0, 0, 0, 2.78824, 43.0896, 53.7048, 55.9459 )
-material_override = SubResource( 4 )
+material_override = SubResource( 3 )
 use_in_baked_light = true
 lifetime = 10.0
 preprocess = 0.61
 speed_scale = 0.1
-process_material = SubResource( 5 )
-draw_pass_1 = SubResource( 6 )
+process_material = SubResource( 4 )
+draw_pass_1 = SubResource( 5 )
 
 [node name="Particles2" type="Particles" parent="."]
 transform = Transform( -1.36, 0.00788021, 0, -0.0042608, -0.735348, 0, 0, 0, 0.776287, -41.6685, 55.0146, -56.0558 )
-material_override = SubResource( 4 )
+material_override = SubResource( 3 )
 use_in_baked_light = true
 amount = 10
 lifetime = 10.0
 preprocess = 0.61
 speed_scale = 0.1
 explosiveness = 0.5
-process_material = SubResource( 5 )
-draw_pass_1 = SubResource( 6 )
+process_material = SubResource( 4 )
+draw_pass_1 = SubResource( 5 )
 
 [node name="select" type="AudioStreamPlayer3D" parent="."]
 stream = ExtResource( 15 )
@@ -217,4 +217,4 @@ enable_shadows = true
 transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, -0.94513, 3.01288, -0.115906 )
 bake_hdr = true
 bake_extents = Vector3( 22.6719, 3.92138, 19.6826 )
-light_data = SubResource( 7 )
+light_data = SubResource( 6 )
