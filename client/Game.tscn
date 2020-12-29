@@ -216,3 +216,8 @@ stream = ExtResource( 7 )
 attenuation_model = 3
 max_db = -15.0
 autoplay = true
+
+[node name="ReflectionProbe" type="ReflectionProbe" parent="."]
+visible = false
+box_projection = true
+enable_shadows = true

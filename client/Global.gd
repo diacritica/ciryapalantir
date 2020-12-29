@@ -35,7 +35,7 @@ func render_board(board):
                 piece.set_translation(new_position)
 
 func register_piece(piece): 
-    pieces.append(piece)                
+    pieces.append(piece)        
                 
 func get_dragging_nosse_pieces_ids():
     if !dragging_nosse:

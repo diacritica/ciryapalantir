@@ -1,11 +1,15 @@
 extends Spatial
 
+onready var Settings = get_node("/root/Settings")
 onready var Server = get_node("/root/Server")
 onready var global = get_node("/root/Global")
+
 var ray_length = 200
 
 func _ready():
     global.game = self
+    Settings.medium()
+    Settings.apply_settings(self)
 
     var camera = get_viewport().get_camera()
 
