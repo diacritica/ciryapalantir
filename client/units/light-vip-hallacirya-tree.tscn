@@ -2,7 +2,7 @@
 
 [ext_resource path="res://assets/light/vip-hallacirya-tree/light-wood-vip.material" type="Material" id=1]
 
-[sub_resource type="ArrayMesh" id=3]
+[sub_resource type="ArrayMesh" id=1]
 resource_name = "Vert001"
 surfaces/0 = {
 "aabb": AABB( -0.800978, 0.000659384, -0.717635, 1.95441, 2.02059, 1.40513 ),
@@ -22,10 +22,11 @@ surfaces/0 = {
 [node name="light-vip-hallacirya-tree" type="RigidBody"]
 collision_layer = 2
 collision_mask = 6
+continuous_cd = true
 
 [node name="Mesh" type="MeshInstance" parent="."]
 transform = Transform( 1.20362, 0, 0.798213, 0, 1.44425, 0, -0.798213, 0, 1.20362, 0, 0, 0 )
-mesh = SubResource( 3 )
+mesh = SubResource( 1 )
 material/0 = null
 
 [node name="CollisionShape" type="CollisionShape" parent="."]

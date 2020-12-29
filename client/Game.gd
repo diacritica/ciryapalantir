@@ -144,7 +144,6 @@ func _input(event):
                 global.dragging_nosse.set_translation(new_position)
                 
         elif global.dragging_nosse:
-            print("ELIF GLOBAL DRAGGING NOSE")
             global.restore_initial_position()
             global.stop_drag_drop(null)
     elif global.dragging_nosse and global.dragging_nosse.get_children().size() == 1 and Input.is_key_pressed(KEY_R):

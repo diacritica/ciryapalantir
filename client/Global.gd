@@ -140,7 +140,7 @@ func init_drag_drop(pieces):
     
     for piece_index in range(pieces.size()):
         var piece = pieces[piece_index]
-        piece.get_node("CollisionShape").disabled = true
+        piece.get_node("CollisionShape").disabled = true 
         piece.axis_lock_linear_z = true
         piece.axis_lock_linear_x = true
         piece.mode = RigidBody.MODE_STATIC
