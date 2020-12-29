@@ -31,7 +31,14 @@ Settings="*res://Settings.gd"
 window/size/width=1920
 window/size/height=1080
 window/vsync/use_vsync=false
+mouse_cursor/custom_image="res://assets/cursors/cursor-select.png"
+
+[physics]
+
+3d/active_soft_world=false
+3d/default_gravity=9.8
 
 [rendering]
 
+threads/thread_model=2
 environment/default_environment="res://default_env.tres"
