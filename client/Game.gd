@@ -83,6 +83,7 @@ func _input(event):
 
         if not cast.empty():
             if event is InputEventMouseButton and event.button_index == BUTTON_LEFT:
+                
                 # init drag
                 if event.is_pressed() and global.is_valid_drag(cast.collider):
                     if !movements.size():
@@ -100,7 +101,7 @@ func _input(event):
                         global.init_drag_drop(pieces)
 
                 # stop drag
-                elif global.dragging_nosse and not piece_cast_tile.empty():             
+                elif global.dragging_nosse and not piece_cast_tile.empty():
                     var wrapper = global.dragging_nosse
                     var pieces_ids = global.get_dragging_nosse_pieces_ids()
                     var old_tile = global.get_piece_tile(pieces_ids[0])
@@ -123,6 +124,8 @@ func _input(event):
                     if piece_source_tile:
                         piece_source_tile.hideHighlight()
                         piece_source_tile = null
+                else: #apparently useful only for sandbox mode
+                    global.stop_drag_drop(null)
             # drag movement
             elif global.dragging_nosse and event is InputEventMouseMotion:
                 if not piece_source_tile and piece_cast_tile:
@@ -141,6 +144,7 @@ func _input(event):
                 global.dragging_nosse.set_translation(new_position)
                 
         elif global.dragging_nosse:
+            print("ELIF GLOBAL DRAGGING NOSE")
             global.restore_initial_position()
             global.stop_drag_drop(null)
     elif global.dragging_nosse and global.dragging_nosse.get_children().size() == 1 and Input.is_key_pressed(KEY_R):

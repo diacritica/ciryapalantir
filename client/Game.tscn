@@ -73,8 +73,8 @@ angular_velocity = 26.5
 
 [sub_resource type="BakedLightmapData" id=6]
 bounds = AABB( -22.6719, -3.92138, -19.6826, 45.3438, 7.84276, 39.3652 )
-cell_space_transform = Transform( 4, 0, 0, 0, 4, 0, 0, 0, 4, 90.6876, 15.6855, 78.7304 )
-cell_subdiv = 9
+cell_space_transform = Transform( 2, 0, 0, 0, 2, 0, 0, 0, 2, 45.3438, 7.84276, 39.3652 )
+cell_subdiv = 8
 octree = PoolByteArray( 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255 )
 
 [node name="Game" type="Spatial"]
@@ -215,6 +215,9 @@ enable_shadows = true
 
 [node name="BakedLightmap" type="BakedLightmap" parent="."]
 transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, -0.94513, 3.01288, -0.115906 )
+bake_cell_size = 1.0
+bake_quality = 2
 bake_hdr = true
 bake_extents = Vector3( 22.6719, 3.92138, 19.6826 )
+capture_cell_size = 1.0
 light_data = SubResource( 6 )
