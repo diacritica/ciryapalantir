@@ -16,10 +16,16 @@ var player = null
 var pieces = []
 var turn = 1
 var disable_move = false
+var player_movement = {
+    "last_tile": null,
+    "direction": null,
+    "dropped_pieces": []
+}
 # false: move any piece and no backend
 var sandbox = false
+onready var Validation = get_node("/root/Validation")
 
-func render_board(board):
+func render_board(board):    
     for row_index in  range(board.size()):
         var row = board[row_index]
         for column_index in range(row.size()):
@@ -122,24 +128,14 @@ func remove_piece_from_state(piece_id):
     for row in board_state:
         for column in row:
             column.erase(piece_id)
-
-func valid_drop_tile(piece, row, column):
-    var tile = board_state[row][column]
-    
-    for piece_id in tile:
-        var piece_tile = instance_from_id(piece_id)
-        
-        if piece_tile.block and piece.get_notation_name() != 'H':
-            return false
-            
-    return true
     
 func init_drag_drop(pieces): 
     dragging_nosse = Spatial.new()
     dragging_nosse.set_translation(pieces[0].get_translation())
-    
+
     for piece_index in range(pieces.size()):
         var piece = pieces[piece_index]
+        
         piece.get_node("CollisionShape").disabled = true
         piece.axis_lock_linear_z = true
         piece.axis_lock_linear_x = true
@@ -149,11 +145,16 @@ func init_drag_drop(pieces):
         piece.show_selected()
         
         self.move_to(piece, dragging_nosse)
+    
+    var tile = get_piece_tile(pieces[0].get_instance_id())
+    self.player_movement.last_tile = tile
 
     self.game.add_child(dragging_nosse)
 
-func stop_drag_drop(tile):                        
-    for piece in dragging_nosse.get_children():
+func stop_drag_drop(tile):    
+    var piece_ids = []                    
+    for piece in dragging_nosse.get_children(): 
+        piece_ids.append(piece.get_instance_id())
         piece.mode = RigidBody.MODE_RIGID
         piece.get_node("CollisionShape").disabled = false
         piece.translation.x = dragging_nosse.translation.x
@@ -165,6 +166,23 @@ func stop_drag_drop(tile):
             piece.hide_selected()
         
         self.move_to(piece, game)
+        
+    # save info from new tile for validation
+    if self.player_movement.last_tile and self.player_movement.last_tile != tile:
+        print('save ', self.player_movement.last_tile.row, ' ', tile.row)
+        if self.player_movement.last_tile.row != tile.row:
+            if self.player_movement.last_tile.row > tile.row:
+                self.player_movement.direction = '-'
+            else:
+                self.player_movement.direction = '+'
+        else:
+            if self.player_movement.last_tile.column > tile.column:
+                self.player_movement.direction = '>'
+            else:
+                self.player_movement.direction = '<'
+            
+        self.player_movement.last_tile = tile
+        self.player_movement.dropped_pieces = piece_ids   
         
     game.remove_child(dragging_nosse)
     dragging_nosse = null
@@ -222,6 +240,11 @@ func data_received(data):
     if "type" in data and data.type == 'StartGame' || data.type == 'Turn':
         if data.params.nextPlayer == self.player:
             self.disable_move = false
+            self.player_movement = {
+                "last_tile": null,
+                "direction": null,
+                "dropped_pieces": []
+            }            
         else: 
             self.disable_move = true
         
@@ -325,24 +348,7 @@ func simulation(moves):
             player = 2
         else:
             player = 1
-       
-func is_valid_drag(piece):
-    if self.sandbox:
-        return true
-
-    if !self.disable_move and piece.collision_layer == 2:
-        var tile = self.get_piece_tile(piece.get_instance_id())
-        var owner = piece.player
-        print('debug: ', tile)
-        if tile:
-            owner = self.tile_owner(tile.row, tile.column)
-            print('debug: owner, ', owner)
         
-        if owner == self.player || owner == null:
-            return true
-    
-    return false     
-    
 # [{from:(2, 4), pieces:[1559, 1552], to:(2, 3)}, {from:(2, 3), pieces:[1552], to:(2, 2)}]    
 # (count)(square)(direction)(drop counts)(stone)
 # Take 5 stones from square b4 and move them right dropping 2 stones, 1 stone, then 2 stones as you come to each square.

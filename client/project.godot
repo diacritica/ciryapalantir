@@ -25,12 +25,12 @@ config/icon="res://assets/sat.png"
 Global="*res://Global.gd"
 Server="*res://Server.tscn"
 Settings="*res://Settings.gd"
+Validation="*res://Validation.gd"
 
 [display]
 
 window/size/width=1920
 window/size/height=1080
-window/vsync/use_vsync=false
 
 [rendering]
 

@@ -1,6 +1,6 @@
 extends Node
 
-export var server_host = "play.cirya.me"
+export var server_host = "127.0.0.1"
 export var server_port = 3333
 
 # export var server_host = "127.0.0.1"

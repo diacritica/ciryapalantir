@@ -2,11 +2,12 @@ extends Spatial
 
 onready var Settings = get_node("/root/Settings")
 onready var Server = get_node("/root/Server")
+onready var Validation = get_node("/root/Validation")
 onready var global = get_node("/root/Global")
 
 var ray_length = 200
 
-func _ready():
+func _ready():     
     global.game = self
     Settings.medium()
     Settings.apply_settings(self)
@@ -14,6 +15,8 @@ func _ready():
     var camera = get_viewport().get_camera()
 
     $UI.connect("turn_confirmation", self, "_on_turn_confirmation")
+    
+    $ambient.autoplay = false
 
     # simulation()
 #    if 'connected' in Server && !Server.is_ws_connected():
@@ -76,7 +79,7 @@ func _input(event):
         if global.dragging_nosse:
             var space_state = get_world().direct_space_state
             piece_cast_tile = space_state.intersect_ray(global.dragging_nosse.global_transform.origin, Vector3(0, -ray_length, 0), [], 2147483647, false, true)
-            if piece_cast_tile:
+            if piece_cast_tile and Validation.can_drop(piece_cast_tile.collider.row, piece_cast_tile.collider.column):
                 piece_cast_tile.collider.showHighlight()
 
         var cast = get_mouse_cast()
@@ -84,7 +87,7 @@ func _input(event):
         if not cast.empty():
             if event is InputEventMouseButton and event.button_index == BUTTON_LEFT:
                 # init drag
-                if event.is_pressed() and global.is_valid_drag(cast.collider):
+                if event.is_pressed() and Validation.can_move(cast.collider.get_instance_id()):
                     if !movements.size():
                         global.save_pieces_translation()
                     
@@ -100,7 +103,7 @@ func _input(event):
                         global.init_drag_drop(pieces)
 
                 # stop drag
-                elif global.dragging_nosse and not piece_cast_tile.empty():             
+                elif global.dragging_nosse and not piece_cast_tile.empty() and Validation.can_drop(piece_cast_tile.collider.row, piece_cast_tile.collider.column):             
                     var wrapper = global.dragging_nosse
                     var pieces_ids = global.get_dragging_nosse_pieces_ids()
                     var old_tile = global.get_piece_tile(pieces_ids[0])
@@ -112,9 +115,10 @@ func _input(event):
 
                     if old_tile:
                         last_turn.from = Vector2(old_tile.row, old_tile.column)
-
+                    
                     last_turn.to = Vector2(piece_cast_tile.collider.row, piece_cast_tile.collider.column)
-                    movements.append(last_turn)
+                    if !last_turn.from or (last_turn.to.x != last_turn.from.x or last_turn.to.y != last_turn.from.y):
+                        movements.append(last_turn)
 
                     global.stop_drag_drop(piece_cast_tile.collider)
 
@@ -125,7 +129,7 @@ func _input(event):
                         piece_source_tile = null
             # drag movement
             elif global.dragging_nosse and event is InputEventMouseMotion:
-                if not piece_source_tile and piece_cast_tile:
+                if not piece_source_tile and piece_cast_tile and Validation.can_drop(piece_cast_tile.collider.row, piece_cast_tile.collider.column):
                     piece_source_tile = piece_cast_tile.collider
                     piece_source_tile.showHighlight()
 
@@ -133,8 +137,8 @@ func _input(event):
 
                 if piece_cast_tile:
                     var piece = global.dragging_nosse
-
                     new_position.y = global.get_stack_height(piece_cast_tile.collider.row, piece_cast_tile.collider.column, global.get_dragging_nosse_pieces_ids()) + 0.2
+                    
                 if new_position.y < 2.2:
                     new_position.y = 2.2
 
@@ -167,6 +171,7 @@ func _on_turn_confirmation(value):
             Server.ws_send_message(msg)
         
         movements = []
+        
     else:
         global.restore_initial_position()
         movements = []
