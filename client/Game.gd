@@ -16,7 +16,7 @@ func _ready():
 
     $UI.connect("turn_confirmation", self, "_on_turn_confirmation")
     
-    $ambient.autoplay = false
+    # $ambient.autoplay = false
 
     # simulation()
 #    if 'connected' in Server && !Server.is_ws_connected():
