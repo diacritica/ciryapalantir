@@ -44,7 +44,6 @@ func can_drop(row, column):
     # Table pieces can only be droppend on empty tiles
     var came_from_table = !Global.get_piece_tile(pieces[0])
     if came_from_table and Global.get_tile_pieces(row, column).size() > 0:
-        print(1)
         return false
     
     # Check if the player is dragging an hallaciryar
@@ -61,10 +60,8 @@ func can_drop(row, column):
         var piece_tile = instance_from_id(piece_id)
         
         if piece_tile.get_notation_name() == 'H':
-            print(2)
             return false
         elif piece_tile.get_notation_name() == 'T' and !dragging_hallaciryar:
-            print(3)
             return false
             
     var last_tile = Global.player_movement.last_tile
