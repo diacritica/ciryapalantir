@@ -22,10 +22,10 @@ func can_move(piece_id):
         return false
         
     # You can't start dragging from the bottom piece
-    if tile:
-        var piece_ids = Global.board_state[tile.row][tile.column]
-        if piece_ids.size() > 1 and piece_ids[0] == piece_id:
-            return false
+#    if tile:
+#        var piece_ids = Global.board_state[tile.row][tile.column]
+#        if piece_ids.size() > 1 and piece_ids[0] == piece_id:
+#            return false
          
     # You only can drag again all pieces except the bottom one
     if Global.player_movement.dropped_pieces.size() > 0:
@@ -73,6 +73,8 @@ func can_drop(row, column):
             return false
                 
         if direction:
+            print('row ', tile.row, ' | ',  last_tile.row)
+            print('column ', tile.column, ' | ',  last_tile.column)
             if tile.column > last_tile.column and direction != '>':
                 return false
             elif tile.column < last_tile.column and direction != '<':

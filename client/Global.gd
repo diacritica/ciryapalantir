@@ -169,7 +169,8 @@ func stop_drag_drop(tile):
         
     # save info from new tile for validation
     if self.player_movement.last_tile and self.player_movement.last_tile != tile:
-        print('save ', self.player_movement.last_tile.row, ' ', tile.row)
+        print('save row', self.player_movement.last_tile.row, ' ', tile.row)
+        print('save column', self.player_movement.last_tile.column, ' ', tile.column)
         if self.player_movement.last_tile.row != tile.row:
             if self.player_movement.last_tile.row > tile.row:
                 self.player_movement.direction = '-'
@@ -177,9 +178,11 @@ func stop_drag_drop(tile):
                 self.player_movement.direction = '+'
         else:
             if self.player_movement.last_tile.column > tile.column:
-                self.player_movement.direction = '>'
-            else:
                 self.player_movement.direction = '<'
+            else:
+                self.player_movement.direction = '>'
+                
+        print('save direction ', self.player_movement.direction)
             
         self.player_movement.last_tile = tile
         self.player_movement.dropped_pieces = piece_ids   
