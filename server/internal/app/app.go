@@ -1,23 +1,37 @@
 package app
 
 import (
-	"time"
-	"github.com/speps/go-hashids"
+	"crypto/rand"
+	"math/big"
 )
 
 type ID string
 
-func GenerateCode() ID {
-	t := time.Now().Unix()
+// Without characters that are easy to confuse (0/O, 1/I/L)
+const codeAlphabet = "ABCDEFGHJKMNPQRSTUVWXYZ23456789"
 
-	hd := hashids.NewData()
-	hd.Alphabet = "ABCDEFGHIJKLMNPQRSTUVWXYZ123456789"
-	hd.MinLength = 5
-	hd.Salt = "cirya"
-	
-	h, _ := hashids.NewWithData(hd)
+const (
+	userIdLength   = 16
+	roomCodeLength = 6
+)
 
-	result, _ := h.EncodeInt64([]int64 { t })
+func RandomCode(length int) ID {
+	max := big.NewInt(int64(len(codeAlphabet)))
+	code := make([]byte, length)
 
-	return ID(result)
+	for i := range code {
+		n, err := rand.Int(rand.Reader, max)
+
+		if err != nil {
+			panic(err)
+		}
+
+		code[i] = codeAlphabet[n.Int64()]
+	}
+
+	return ID(code)
+}
+
+func NewUserId() ID {
+	return RandomCode(userIdLength)
 }

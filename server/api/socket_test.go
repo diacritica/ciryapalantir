@@ -179,6 +179,12 @@ func submit(c *testClient, player int, turn int, move string) {
 	})
 }
 
+func expectError(t *testing.T, c *testClient, code string) {
+	t.Helper()
+	msg := c.expect("Error")
+	assert.Equal(t, code, msg["params"].(map[string]interface{})["code"])
+}
+
 // Two players seated and ready, game started
 func startGame(t *testing.T, s *httptest.Server) (*testClient, *testClient) {
 	room := roomCode(t)
@@ -337,7 +343,7 @@ func TestCannotSubmitTurnForOtherPlayer(t *testing.T) {
 
 	submit(black, 1, 1, "a1")
 
-	black.expect("Error")
+	expectError(t, black, "NOT_YOUR_SEAT")
 	assert.Equal(t, 0, white.count("Turn", 300*time.Millisecond))
 }
 
@@ -353,7 +359,7 @@ func TestCannotTakeOccupiedSeat(t *testing.T) {
 	intruder.expect("PlayerJoined")
 
 	join(intruder, 1, "white")
-	intruder.expect("Error")
+	expectError(t, intruder, "SEAT_TAKEN")
 }
 
 // S9: a turn out of order is answered with an error, not ignored
@@ -363,7 +369,7 @@ func TestOutOfTurnIsAnswered(t *testing.T) {
 
 	submit(black, 2, 1, "a1")
 
-	black.expect("Error")
+	expectError(t, black, "NOT_YOUR_TURN")
 }
 
 // S6: a malformed move is rejected and the room keeps working
@@ -439,4 +445,94 @@ func TestRoomsGetDistinctCodes(t *testing.T) {
 		assert.False(t, codes[body["id"]], "repeated code %s", body["id"])
 		codes[body["id"]] = true
 	}
+}
+
+// The id in the response is the one stored in the cookie
+func TestUserIdMatchesCookie(t *testing.T) {
+	s := newServer(t)
+
+	req, _ := http.NewRequest(http.MethodPut, s.URL+"/users", nil)
+	res, err := http.DefaultClient.Do(req)
+	require.NoError(t, err)
+	defer res.Body.Close()
+
+	var body map[string]string
+	require.NoError(t, json.NewDecoder(res.Body).Decode(&body))
+
+	cookies := res.Cookies()
+	require.Len(t, cookies, 1)
+	assert.Equal(t, body["id"], cookies[0].Value)
+	assert.Equal(t, "/", cookies[0].Path)
+}
+
+// A player who reconnects to a started game keeps the seat and can keep playing
+func TestSeatOwnerCanRejoin(t *testing.T) {
+	s := newServer(t)
+	room := roomCode(t)
+	white, black := startGame(t, s)
+
+	white.conn.Close()
+	white = connect(t, s, room, white.user)
+	white.expect("StatusResponse")
+
+	join(white, 1, "white")
+	white.expect("StatusResponse")
+
+	submit(white, 1, 1, "a1")
+	black.expect("Turn")
+}
+
+// Nobody can leave a started game, so a seat cannot be freed and stolen
+func TestCannotLeaveStartedGame(t *testing.T) {
+	s := newServer(t)
+	white, _ := startGame(t, s)
+
+	white.send("LeaveGame", map[string]interface{}{"player": 1})
+	expectError(t, white, "GAME_STARTED")
+}
+
+// Someone without a seat can watch but not play
+func TestSpectatorCannotPlay(t *testing.T) {
+	s := newServer(t)
+	room := roomCode(t)
+	white, _ := startGame(t, s)
+
+	spectator := connect(t, s, room, "spectator")
+	spectator.expect("StatusResponse")
+
+	submit(spectator, 1, 1, "a1")
+	expectError(t, spectator, "NOT_YOUR_SEAT")
+
+	join(spectator, 2, "black")
+	expectError(t, spectator, "SEAT_TAKEN")
+
+	submit(white, 1, 1, "a1")
+	spectator.expect("Turn")
+}
+
+// Players have to sit before getting ready, and only in seats 1 and 2
+func TestReadyNeedsASeat(t *testing.T) {
+	s := newServer(t)
+	c := connect(t, s, roomCode(t), "alan")
+
+	ready(c, 1, true)
+	expectError(t, c, "NOT_YOUR_SEAT")
+
+	join(c, 3, "white")
+	expectError(t, c, "BAD_MESSAGE")
+}
+
+// Room codes are short, easy to read and dictate
+func TestRoomCodeFormat(t *testing.T) {
+	s := newServer(t)
+
+	req, _ := http.NewRequest(http.MethodPut, s.URL+"/rooms", nil)
+	res, err := http.DefaultClient.Do(req)
+	require.NoError(t, err)
+	defer res.Body.Close()
+
+	var body map[string]string
+	require.NoError(t, json.NewDecoder(res.Body).Decode(&body))
+
+	assert.Regexp(t, `^[ABCDEFGHJKMNPQRSTUVWXYZ2-9]{6}$`, body["id"])
 }

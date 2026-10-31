@@ -151,7 +151,7 @@ func corsHandler(r *http.Request) bool {
 }
 
 /*
-   Retrieves a Room given the request
+Retrieves a Room given the request
 */
 func getRoom(r *http.Request) (app.Room, error) {
 	vars := mux.Vars(r)
@@ -166,7 +166,7 @@ func getRoom(r *http.Request) (app.Room, error) {
 }
 
 /*
-   Extracts a User from the current request
+Extracts a User from the current request
 */
 func getUser(r *http.Request) (app.User, error) {
 	userId, err := GetUserCookieValue(r)

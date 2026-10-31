@@ -54,6 +54,7 @@ const (
 	Turn = "Turn"
 	GameFinished = "GameFinished"
 	InvalidTurn = "InvalidTurn"
+	Error = "Error"
 )
 
 var MessageTypes = []MessageType {
@@ -72,8 +73,11 @@ var MessageTypes = []MessageType {
 	PlayerJoined,
 	PlayerLeft,
 	ReadyChanged,
+	StartGame,
 	Turn,
 	GameFinished,
+	InvalidTurn,
+	Error,
 }
 
 func ParseMessage(data []byte) (Message, error) {

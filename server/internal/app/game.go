@@ -60,7 +60,9 @@ type TurnResult struct {
 
 type Game interface {
 	Status() GameStatus
-	AddPlayer(name string, player int, color string)
+	State() GameState
+	Seat(player int) (PlayerStatus, bool)
+	AddPlayer(user ID, name string, player int, color string)
 	RemovePlayer(player int)
 	SetReady(player int, ready bool)
 
@@ -73,6 +75,8 @@ type Game interface {
 }
 
 type PlayerStatus struct {
+	// The user sitting in this seat, the only one who can play with it
+	UserID ID `json:"-"`
 	Name string `json:"name"`
 	Color string `json:"color"`
 	Ready bool `json:"ready"`
@@ -118,8 +122,18 @@ func (g *game) Status() GameStatus {
 	return status
 }
 
-func (g *game) AddPlayer(name string, player int, color string) {
+func (g *game) State() GameState {
+	return g.state
+}
+
+func (g *game) Seat(player int) (PlayerStatus, bool) {
+	status, ok := g.players[strconv.Itoa(player)]
+	return status, ok
+}
+
+func (g *game) AddPlayer(user ID, name string, player int, color string) {
 	status := PlayerStatus {
+		UserID: user,
 		Name: name,
 		Color: color,
 		Ready: false,

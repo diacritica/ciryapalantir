@@ -16,14 +16,17 @@ type Server interface {
 	Router() http.Handler
 }
 
-func WriteUserCookie(w http.ResponseWriter) {
-	userId := app.GenerateCode()
+// Creates a new user and returns its id
+func WriteUserCookie(w http.ResponseWriter) string {
+	userId := app.NewUserId()
 	cookie := http.Cookie {
 		Name: "cirya-user",
 		Value: string(userId),
+		Path: "/",
 		Expires: time.Now().AddDate(1, 0, 0),
 	}
 	http.SetCookie(w, &cookie)
+	return string(userId)
 }
 
 func GetUserCookieValue(r *http.Request) (string, error) {
@@ -88,7 +91,7 @@ func (a *Api) GetCheck(w http.ResponseWriter, r *http.Request) {
 
 	
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(fmt.Sprintf("OK: %s", app.GenerateCode())))
+	w.Write([]byte(fmt.Sprintf("OK: %s", app.RandomCode(6))))
 }
 
 func (a *Api) SetUser(w http.ResponseWriter, r *http.Request) {
@@ -100,8 +103,7 @@ func (a *Api) SetUser(w http.ResponseWriter, r *http.Request) {
 	userId, err := GetUserCookieValue(r)
 
 	if err != nil {
-		userId = string(app.GenerateCode())
-		WriteUserCookie(w)
+		userId = WriteUserCookie(w)
 	}
 	
 	w.Header().Add("Content-Type", "application/json")
@@ -114,9 +116,9 @@ func (a *Api) CreateRoom(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodOptions {
 		return
 	}
-	w.WriteHeader(http.StatusOK)
 	w.Header().Add("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
 
-	room_id := app.GenerateCode()
-	w.Write([]byte(fmt.Sprintf(`{ "id": "%s"}`, room_id[:5])))
+	room := app.GetStore().CreateRoom()
+	w.Write([]byte(fmt.Sprintf(`{ "id": "%s"}`, room.Id())))
 }

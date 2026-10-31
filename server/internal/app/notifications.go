@@ -123,3 +123,28 @@ func InvalidTurnMessage(error string) Message {
 		Params: params,
 	}
 }
+
+type ErrorCode string
+
+const (
+	BAD_MESSAGE ErrorCode = "BAD_MESSAGE"
+	SEAT_TAKEN = "SEAT_TAKEN"
+	NOT_YOUR_SEAT = "NOT_YOUR_SEAT"
+	NOT_YOUR_TURN = "NOT_YOUR_TURN"
+	STALE_TURN = "STALE_TURN"
+	GAME_NOT_STARTED = "GAME_NOT_STARTED"
+	GAME_STARTED = "GAME_STARTED"
+	GAME_FINISHED = "GAME_FINISHED"
+)
+
+// A request that cannot be done. Only sent to the user who asked for it
+func ErrorMessage(code ErrorCode, text string) Message {
+	params := make(ParamMap)
+	params["code"] = string(code)
+	params["message"] = text
+
+	return &message {
+		Kind: Error,
+		Params: params,
+	}
+}

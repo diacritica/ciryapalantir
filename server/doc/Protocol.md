@@ -4,33 +4,26 @@
 
 ### PUT /users
 
-**Request**
-
-```json
-{ "username": "alan-turing" }
-```
-
 **Response**
 
-If the response is OK will retrieve a `Set-Cookie` that will allow the user to continue sending requests
+```json
+{ "id": "K7M2Q9XZ4HR8T3WA" }
+```
+
+When the request has no `cirya-user` cookie a new user is created and the response sets the cookie
+(path `/`, one year) with the same id. The cookie identifies the user in the websocket.
 
 ### PUT /rooms
 
-**Request**
-
-```json
-{
-    "ambient": "ROYAL",
-    "pieces": "WOOD",
-    "size": 5
-}
-```
+Creates a room with a new code. The configuration is not sent yet: every game is a 5x5 board.
 
 **Response**
 
 ```json
-{ "code": "XX-XXXX" }
+{ "id": "KM7Q2X" }
 ```
+
+Codes have 6 characters from `ABCDEFGHJKMNPQRSTUVWXYZ23456789` (no 0/O or 1/I/L).
 
 # WEBSOCKET API
 
@@ -39,8 +32,13 @@ After a room has been created the user can join the WS to send actions and recei
 The URL to connect will be:
 
 ```
-ws://IP:PORT/ws/rooms/{code}
+ws://IP:PORT/rooms/{code}
 ```
+
+The `cirya-user` cookie has to be sent. Connecting to a code that does not exist creates that room.
+
+The server sends a ping every 54 seconds and closes connections that do not answer (or send anything) for 60 seconds.
+A client that does not read its messages fast enough is disconnected.
 
 The general format to send actions notifications
 
@@ -64,7 +62,8 @@ Action by default when you connect to the server. The server will send you back 
 ### (Disconnect)
 
 => Will send a **UserLeft** to the other users
-=> If the user is a player will send a **PlayerLeft** as well
+
+Players keep their seat: they can connect again with the same cookie and keep playing.
 
 ### GetStatus
 
@@ -91,8 +90,13 @@ TODO
     }
 }
 ```
-=> Will send a "**PlayerJoined**" to the other users
+=> Will send a "**PlayerJoined**" to every user
 
+`player` has to be 1 or 2. The seat belongs to the user who takes it: nobody else can take it,
+get ready or play with it (**Error** `SEAT_TAKEN`). The same user can take both seats.
+
+When the game has started, the owner of the seat gets a **StatusResponse** back (reconnection).
+Other users get **Error** `GAME_STARTED` or `SEAT_TAKEN`.
 
 ### LeaveGame
 
@@ -104,7 +108,9 @@ TODO
     }
 }
 ```
-=> Will send a "**PlayerLeft**" to the other users
+=> Will send a "**PlayerLeft**" to every user
+
+Only the owner of the seat, and only before the game starts (**Error** `NOT_YOUR_SEAT`, `GAME_STARTED`).
 
 ### SetReady
 
@@ -117,8 +123,10 @@ TODO
     }
 }
 ```
-=> Will send a "**ReadyChanged**" to the other users
-=> If both players are ready a **
+=> Will send a "**ReadyChanged**" to every user
+=> If both players are ready, will send a **StartGame** to every user
+
+Only the owner of the seat, and only before the game starts (**Error** `NOT_YOUR_SEAT`, `GAME_STARTED`).
 
 ### Submit
 
@@ -128,16 +136,53 @@ TODO
     "params": {
         "player": 1,
         "turn": 20,
-        "move": "a6 f6"
+        "move": "3a2>12"
     }
 }
 ```
 
-=> Will calculate the game status and send either "**Turn**" or "**GameFinished**"
-=> If the turn is not valid the user will recive an "**InvalidTurn**" **notification**
+=> Will calculate the game status and send either "**Turn**" or "**GameFinished**" to every user
+=> If the move is not valid the user will receive an "**InvalidTurn**" **notification**
+
+Before checking the move, the user receives an **Error** when:
+
+* the game has not started or is over: `GAME_NOT_STARTED`, `GAME_FINISHED`
+* the user does not own the seat in `player`: `NOT_YOUR_SEAT`
+* it is the turn of the other player: `NOT_YOUR_TURN`
+* `turn` is not the current turn: `STALE_TURN`
 
 
 ## Notifications
+
+### Error
+
+Only sent to the user whose request could not be done. Nothing changes in the room.
+
+```json
+{
+    "type": "Error",
+    "params": {
+        "code": "NOT_YOUR_TURN",
+        "message": "It is not your turn"
+    }
+}
+```
+
+Codes: `BAD_MESSAGE`, `SEAT_TAKEN`, `NOT_YOUR_SEAT`, `NOT_YOUR_TURN`, `STALE_TURN`,
+`GAME_NOT_STARTED`, `GAME_STARTED`, `GAME_FINISHED`.
+
+### InvalidTurn
+
+The move does not follow the rules. The turn does not change and the player can send another move.
+
+```json
+{
+    "type": "InvalidTurn",
+    "params": {
+        "error": "Cannot put stones over Tampar"
+    }
+}
+```
 
 ### StatusResponse
 
@@ -150,15 +195,15 @@ TODO
             1: { "name: "Name1", "color": "white", "ready": true },
             2: { "name: "Name2", "color": "black", "ready": true }
         },
-        "state": "WAITING_1",
+        "state": "TURN_1",
         "turn: 20,
         "moves": [ "a6 f6", ... ],
         "board": {
-            "a": {
-                1: ["C1", "C2", "T1"]
+            "1": {
+                "a": ["C1", "C2", "T1"]
             },
-            "d": {
-                3: ["H1"]
+            "3": {
+                "d": ["H1"]
             }
         }
     }
@@ -287,7 +332,9 @@ A game board is a square grid where the corner bottom/left is "a1". The opposite
 
 Inside a square there is a list of "stones". The first index represents the stone at the **bottom** of the stack. 
 
-The format of every stone is "TYPE+PLAYER" where Type is: C (Cirya), S (Tampa), H (Hallacirya). So for example the previous examples:
+The board is keyed first by rank ("1".."9") and then by file ("a".."i"): `board["1"]["a"]` is the square a1.
+
+The format of every stone is "TYPE+PLAYER" where Type is: C (Cirya), T (Tampa), H (Hallacirya). So for example the previous examples:
 
 ["C1", "C2", "T1"] is a stack where the stone at the bottom is a Cirya belonging to player 1, then another Cirya for player 2 and finally a Tampa for player 1.
 
@@ -295,7 +342,7 @@ When there is no entry for a row/column it means it's an empty position (so equi
 
 ## Game states
 
-* WAITING_PLAYERS: Status given to the game when it's first initialized. Will change once the game is ready
+* NOT_STARTED: Status given to the game when it's first initialized. Will change once both players are ready
 * TURN_1/TURN_2: Turn for the player 1/2 will reject movements given by the other player
 * WIN_1/WIN_2: Game finished won by the player 1/2
 * DRAW: Game finished with a draw
@@ -310,7 +357,7 @@ When there is no entry for a row/column it means it's an empty position (so equi
     "status": {
         "config": { ... },
         "players": {},
-        "state": "WAITING_PLAYERS"
+        "state": "NOT_STARTED"
     }
 }
 ```
@@ -325,7 +372,7 @@ When there is no entry for a row/column it means it's an empty position (so equi
         "players": {
             "2": { "name: "Name2", "color": "white", "ready": false }
         },
-        "state": "WAITING_PLAYERS"
+        "state": "NOT_STARTED"
     }
 }
 ```

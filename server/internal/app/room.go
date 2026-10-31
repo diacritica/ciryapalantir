@@ -48,6 +48,7 @@ type room struct {
 }
 
 type Room interface {
+	Id() ID
 	Join(c *Client)
 	Leave(c *Client)
 	Receive(c *Client, m Message)
@@ -56,7 +57,7 @@ type Room interface {
 func NewRoom(id ID) Room {
 	r := &room{
 		id:         id,
-		game:       NewGame(GenerateCode()),
+		game:       NewGame(RandomCode(8)),
 		clients:    make(map[*Client]bool),
 		register:   make(chan *Client),
 		unregister: make(chan *Client),
@@ -66,6 +67,10 @@ func NewRoom(id ID) Room {
 	go r.run()
 
 	return r
+}
+
+func (r *room) Id() ID {
+	return r.id
 }
 
 func (r *room) Join(c *Client) {

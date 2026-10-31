@@ -43,6 +43,8 @@ func TestSlowClientIsDropped(t *testing.T) {
 		}
 	}()
 
+	r.Receive(healthy, parse(t, JoinGame, map[string]interface{}{"player": 1, "color": "white", "name": "healthy"}))
+
 	for i := 0; i < 2*sendBuffer; i++ {
 		r.Receive(healthy, parse(t, SetReady, map[string]interface{}{"player": 1, "ready": i%2 == 0}))
 	}
