@@ -78,8 +78,24 @@ func (b *Board) MoveStones(player int, position string, count int, direction Mov
 		return fmt.Errorf("Player %d doesnt' control the position %s", player, position)
 	}
 
+	if count < 1 || count > b.Size {
+		return fmt.Errorf("Cannot carry %d stones, the limit is %d", count, b.Size)
+	}
+
 	if b.StonesInPosition(position) < count {
 		return fmt.Errorf("Not enough stones in position %s. Expected at least %d, found %d", position, count, b.StonesInPosition(position))
+	}
+
+	dropped := 0
+	for _, drop := range drops {
+		if drop < 1 {
+			return fmt.Errorf("Every drop must leave at least one stone")
+		}
+		dropped += drop
+	}
+
+	if dropped != count {
+		return fmt.Errorf("Drops add up to %d but %d stones were taken", dropped, count)
 	}
 
 	rank, file := parsePosition(position)
@@ -89,12 +105,13 @@ func (b *Board) MoveStones(player int, position string, count int, direction Mov
 	// Validate the drop squares before changing anything in the board
 	for _, drop := range drops {
 		rank, file, err = next(rank, file, b.Size, direction)
-		current = b.get(rank, file)
-		currentDrop = toDrop[:drop]
 
 		if err != nil {
 			return err
 		}
+
+		current = b.get(rank, file)
+		currentDrop = toDrop[:drop]
 
 		if !checkRank(rank, b.Size) || !checkFile(file, b.Size) {
 			return fmt.Errorf("Drop position %s%s is not valid", rank, file)
