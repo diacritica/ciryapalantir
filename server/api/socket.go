@@ -25,7 +25,7 @@ func (a *Api) GetRoomSocket(w http.ResponseWriter, r *http.Request) {
 	room, err := getRoom(r)
 
 	if err != nil {
-		log.Printf("Problem looking up the room", err)
+		log.Printf("Problem looking up the room: %v", err)
 		returnError(w, 404, "Room not found")
 		return
 	}
@@ -33,7 +33,7 @@ func (a *Api) GetRoomSocket(w http.ResponseWriter, r *http.Request) {
 	game, err := getGame(room)
 	
 	if err != nil {
-		log.Printf("Problem looking up the game", err)
+		log.Printf("Problem looking up the game: %v", err)
 		returnError(w, 404, "Game not found")
 		return
 	}

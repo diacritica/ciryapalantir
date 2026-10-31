@@ -126,7 +126,7 @@ func (m *message) Get(param string) (interface{}, error) {
 }
 
 func (m *message) Validate() error {
-	if m.Type == nil {
+	if m.Kind == "" {
 		return fmt.Errorf("No type found in the message")
 	}
 
