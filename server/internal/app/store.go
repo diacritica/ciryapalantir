@@ -1,14 +1,18 @@
 package app
 
-type Data interface {}
+import (
+	"sync"
+)
 
+// Rooms by code, kept in memory
 type MemoryStore struct {
-	data map[ID]Data
+	mu    sync.Mutex
+	rooms map[ID]Room
 }
 
 type Store interface {
-	Save(i ID, d Data) error
-	Get(i ID) (Data, error)
+	// Returns the room with the given code, creating it if needed
+	Room(i ID) Room
 }
 
 var store = NewStore()
@@ -18,17 +22,21 @@ func GetStore() Store {
 }
 
 func NewStore() Store {
-	return &MemoryStore {
-		data: make(map[ID]Data),
+	return &MemoryStore{
+		rooms: make(map[ID]Room),
 	}
 }
 
-func (s *MemoryStore) Save(i ID, d Data) error {
-	s.data[i] = d
-	return nil
-}
+func (s *MemoryStore) Room(i ID) Room {
+	s.mu.Lock()
+	defer s.mu.Unlock()
 
-func (s *MemoryStore) Get(i ID) (Data, error){
-	value, _ := s.data[i]
-	return value, nil
+	r, ok := s.rooms[i]
+
+	if !ok {
+		r = NewRoom(i)
+		s.rooms[i] = r
+	}
+
+	return r
 }

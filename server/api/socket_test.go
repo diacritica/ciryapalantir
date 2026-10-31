@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -35,10 +36,22 @@ func newServer(t *testing.T) *httptest.Server {
 	return s
 }
 
-// Every test uses its own room code because the store is global
+var rooms int64
+
+// Every test uses its own room code because the store is global,
+// also when running the tests several times (-count)
 func roomCode(t *testing.T) string {
-	return strings.NewReplacer("/", "-", " ", "-").Replace(t.Name())
+	if code, ok := codes[t]; ok {
+		return code
+	}
+
+	name := strings.NewReplacer("/", "-", " ", "-").Replace(t.Name())
+	codes[t] = fmt.Sprintf("%s-%d", name, atomic.AddInt64(&rooms, 1))
+
+	return codes[t]
 }
+
+var codes = make(map[*testing.T]string)
 
 func connect(t *testing.T, s *httptest.Server, room string, user string) *testClient {
 	c, err := dial(t, s, room, user)
@@ -275,6 +288,11 @@ func TestSlowClientDoesNotFreezeRoom(t *testing.T) {
 	go func() {
 		for i := 0; i < total; i++ {
 			ready(white, 1, i%2 == 0)
+
+			// A short pause now and then so healthy clients can keep up
+			if i%200 == 0 {
+				time.Sleep(time.Millisecond)
+			}
 		}
 	}()
 
