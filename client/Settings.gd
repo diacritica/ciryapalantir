@@ -64,7 +64,7 @@ func medium():
     aa_quality = AAQuality.AA_2X
     ssao_quality = SSAOQuality.LOW
     bloom_quality = BloomQuality.LOW
-    resolution = Resolution.RES_1080
+    resolution = Resolution.NATIVE
     
 func low():
     gi_quality = GIQuality.DISABLED
@@ -84,8 +84,10 @@ func apply_settings(node):
             probe.hide()
         node.get_node("ReflectionProbe").show()
 
-    # AAQuality follows the order of Viewport.MSAA_*
-    get_viewport().msaa = aa_quality
+    # AAQuality follows the order of Viewport.MSAA_*. The game draws its 3D
+    # scene in a view of its own
+    var view = node.get_node_or_null("View3D")
+    (view if view else get_viewport()).msaa = aa_quality
 
     environment.ssao_enabled = ssao_quality != SSAOQuality.DISABLED
     environment.ssao_quality = Environment.SSAO_QUALITY_HIGH if ssao_quality == SSAOQuality.HIGH else Environment.SSAO_QUALITY_LOW
@@ -98,6 +100,8 @@ func apply_settings(node):
     if OS.has_feature("JavaScript"):
         environment.dof_blur_near_enabled = false
 
+    # Native: the screen's own pixels, with the interface scaled from 1920x1080
+    # (display/window/stretch), so the text stays sharp on big screens
     if resolution != Resolution.NATIVE:
         var height = [540.0, 720.0, 1080.0][resolution]
         var size = OS.window_size

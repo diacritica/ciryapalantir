@@ -22,6 +22,8 @@ const HAND_MIN_HEIGHT = 2.2
 const PLACE_MIN_HEIGHT = 1.0
 const FALL_IMPULSE = Vector3(0, -0.1, 0)
 # Seconds for rejected pieces to fly back
+# Lines of the 3D picture at most, see _render_3d_apart
+const MAX_3D_LINES = 1440.0
 const RETURN_TIME = 0.35
 
 # IDLE: nothing in the hand. DRAGGING: the hand follows the mouse.
@@ -47,6 +49,7 @@ var home = {}
 var rebuilds = 0
 
 func _ready():
+    _render_3d_apart()
     Settings.medium()
     Settings.apply_settings(self)
     Match.new_board($Board.rows)
@@ -75,6 +78,7 @@ func _ready():
                 home[piece.get_instance_id()] = piece.global_transform
 
     $sandboxlogo.visible = Match.sandbox
+    _follow_camera()
 
     # Opened in a game already started
     if Match.status:
@@ -96,6 +100,57 @@ func _input(event):
 
     elif event is InputEventKey and event.pressed and !event.echo and event.scancode == KEY_R and drag == Drag.DRAGGING:
         _rotate()
+
+# The interface is drawn with the pixels of the screen, so the text stays
+# sharp, but the 3D scene is drawn with at most MAX_3D_LINES and stretched:
+# with every effect on, a 4K screen would fall under 60 frames a second. The
+# view of the 3D scene shares the world; the camera of the game still takes
+# the mouse and the 3D sound, and draws nothing itself
+func _render_3d_apart():
+    var root = get_viewport()
+    var view = Viewport.new()
+    view.name = "View3D"
+    view.shadow_atlas_size = root.shadow_atlas_size
+
+    for quadrant in range(4):
+        view.set_shadow_atlas_quadrant_subdiv(quadrant, root.get_shadow_atlas_quadrant_subdiv(quadrant))
+
+    view.render_target_v_flip = true
+    view.gui_disable_input = true
+    view.add_child(Camera.new())
+    add_child(view)
+
+    var picture = TextureRect.new()
+    picture.name = "Picture3D"
+    picture.texture = view.get_texture()
+    picture.expand = true
+    picture.stretch_mode = TextureRect.STRETCH_SCALE
+    picture.mouse_filter = Control.MOUSE_FILTER_IGNORE
+    picture.set_anchors_and_margins_preset(Control.PRESET_WIDE)
+    add_child(picture)
+    move_child(picture, 0)
+
+    root.connect("size_changed", self, "_size_3d")
+    _size_3d()
+
+func _size_3d():
+    var size = OS.window_size
+    $View3D.size = (size * min(1.0, MAX_3D_LINES / size.y)).floor()
+
+# The view of the 3D scene looks through the camera of the player, which
+# itself draws nothing: no layer, and an environment without effects
+func _follow_camera():
+    var camera = get_viewport().get_camera()
+    var eye = $View3D.get_child(0)
+    eye.keep_aspect = camera.keep_aspect
+    eye.fov = camera.fov
+    eye.near = camera.near
+    eye.far = camera.far
+    eye.global_transform = camera.global_transform
+    eye.current = true
+
+    camera.cull_mask = 0
+    camera.environment = Environment.new()
 
 # Takes the piece and the ones above it
 func take(piece):
