@@ -23,7 +23,7 @@ func (b *Board) ProcessMove(player int, move string) error {
 		if stone == "" {
 			stone = "C"
 		}
-		
+
 		position := groups[2]
 
 		err := b.PlaceStone(player, stone, position)
@@ -45,7 +45,7 @@ func (b *Board) ProcessMove(player int, move string) error {
 		if err != nil {
 			return err
 		}
-		
+
 		position := groups[2]
 		directionSymbol := groups[3]
 
@@ -76,7 +76,7 @@ func (b *Board) ProcessMove(player int, move string) error {
 			if err != nil {
 				return err
 			}
-			
+
 			drops = append(drops, val)
 		}
 

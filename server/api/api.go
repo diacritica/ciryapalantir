@@ -1,11 +1,11 @@
 package api
 
 import (
-	"net/http"
-	"fmt"
-	"time"
 	"cirya.me/server/internal/app"
+	"fmt"
 	"github.com/gorilla/mux"
+	"net/http"
+	"time"
 )
 
 type Api struct {
@@ -19,10 +19,10 @@ type Server interface {
 // Creates a new user and returns its id
 func WriteUserCookie(w http.ResponseWriter) string {
 	userId := app.NewUserId()
-	cookie := http.Cookie {
-		Name: "cirya-user",
-		Value: string(userId),
-		Path: "/",
+	cookie := http.Cookie{
+		Name:    "cirya-user",
+		Value:   string(userId),
+		Path:    "/",
 		Expires: time.Now().AddDate(1, 0, 0),
 	}
 	http.SetCookie(w, &cookie)
@@ -46,7 +46,7 @@ func UserCookieWrapper(h http.Handler) http.Handler {
 		if err != nil {
 			WriteUserCookie(w)
 		}
-		
+
 		h.ServeHTTP(w, r)
 	})
 }
@@ -55,10 +55,10 @@ func New() Server {
 	r := mux.NewRouter()
 
 	api := &Api{}
-	fs :=  http.FileServer(http.Dir("./static"))
+	fs := http.FileServer(http.Dir("./static"))
 
 	r.HandleFunc("/", api.Index).Methods(http.MethodGet)
-  r.PathPrefix("/game").Handler(UserCookieWrapper(http.StripPrefix("/game", fs)))
+	r.PathPrefix("/game").Handler(UserCookieWrapper(http.StripPrefix("/game", fs)))
 	r.HandleFunc("/check", api.GetCheck).Methods(http.MethodGet, http.MethodOptions)
 	r.HandleFunc("/users", api.SetUser).Methods(http.MethodPut, http.MethodOptions)
 	r.HandleFunc("/rooms", api.CreateRoom).Methods(http.MethodPut, http.MethodOptions)
@@ -89,7 +89,6 @@ func (a *Api) GetCheck(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(fmt.Sprintf("OK: %s", app.RandomCode(6))))
 }
@@ -105,7 +104,7 @@ func (a *Api) SetUser(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		userId = WriteUserCookie(w)
 	}
-	
+
 	w.Header().Add("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(fmt.Sprintf(`{ "id": "%s"}`, userId)))

@@ -1,17 +1,17 @@
 package app
 
 import (
-	"fmt"
 	"encoding/json"
+	"fmt"
 )
 
 type ParamMap map[string]interface{}
 
 type message struct {
-	FromUser ID `json:"user,omitempty"`
-	Kind MessageType `json:"type,omitempty"`
-	Params ParamMap `json:"params,omitempty"`
-	Status *GameStatus `json:"status,omitempty"`
+	FromUser ID          `json:"user,omitempty"`
+	Kind     MessageType `json:"type,omitempty"`
+	Params   ParamMap    `json:"params,omitempty"`
+	Status   *GameStatus `json:"status,omitempty"`
 }
 
 type Message interface {
@@ -33,31 +33,31 @@ type Message interface {
 type MessageType string
 
 const (
-	Connect MessageType = "Connect"
-	Disconnect = "Disconnect"
-	GetStatus = "GetStatus"
-	ChangeConfig = "ChangeConfig"
-	JoinGame = "JoinGame"
-	LeaveGame = "LeaveGame"
-	SetReady = "SetReady"
-	SubmitTurn = "SubmitTurn"
+	Connect      MessageType = "Connect"
+	Disconnect               = "Disconnect"
+	GetStatus                = "GetStatus"
+	ChangeConfig             = "ChangeConfig"
+	JoinGame                 = "JoinGame"
+	LeaveGame                = "LeaveGame"
+	SetReady                 = "SetReady"
+	SubmitTurn               = "SubmitTurn"
 
 	// Notifications
 	StatusResponse = "StatusResponse"
-	ConfigChanged = "ConfigChanged"
-	UserJoined = "UserJoined"
-	UserLeft = "UserLeft"
-	PlayerJoined = "PlayerJoined"
-	PlayerLeft = "PlayerLeft"
-	ReadyChanged = "ReadyChanged"
-	StartGame = "StartGame"
-	Turn = "Turn"
-	GameFinished = "GameFinished"
-	InvalidTurn = "InvalidTurn"
-	Error = "Error"
+	ConfigChanged  = "ConfigChanged"
+	UserJoined     = "UserJoined"
+	UserLeft       = "UserLeft"
+	PlayerJoined   = "PlayerJoined"
+	PlayerLeft     = "PlayerLeft"
+	ReadyChanged   = "ReadyChanged"
+	StartGame      = "StartGame"
+	Turn           = "Turn"
+	GameFinished   = "GameFinished"
+	InvalidTurn    = "InvalidTurn"
+	Error          = "Error"
 )
 
-var MessageTypes = []MessageType {
+var MessageTypes = []MessageType{
 	Connect,
 	Disconnect,
 	GetStatus,
@@ -93,7 +93,7 @@ func ParseMessage(data []byte) (Message, error) {
 	if err != nil {
 		return nil, err
 	}
-	
+
 	return &result, err
 }
 
@@ -106,7 +106,7 @@ func (m *message) Format() ([]byte, error) {
 }
 
 func (m *message) User() User {
-	return &user {
+	return &user{
 		id: m.FromUser,
 	}
 }
@@ -137,7 +137,7 @@ func (m *message) Validate() error {
 	// Check that the type is one of the allowed types
 	valid := false
 	for _, t := range MessageTypes {
-		if (t == m.Type()) {
+		if t == m.Type() {
 			valid = true
 			break
 		}
@@ -159,7 +159,6 @@ func (m *message) String() string {
 
 	return string(ret)
 }
-
 
 func (m *message) AddStatus(s GameStatus) {
 	m.Status = &s
@@ -212,4 +211,3 @@ func (m *message) GetBool(param string) (bool, error) {
 
 	return result, nil
 }
-

@@ -49,4 +49,3 @@ func (b *Board) set(rankKey string, fileKey string, value []string) {
 
 	rank[fileKey] = value
 }
-

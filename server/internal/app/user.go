@@ -9,7 +9,7 @@ type User interface {
 }
 
 func NewUser(id string) User {
-	return &user {
+	return &user{
 		id: ID(id),
 	}
 }

@@ -8,7 +8,7 @@ import (
 
 type BoardData map[string]map[string][]string
 
-type Board struct{
+type Board struct {
 	Data BoardData
 	Size int
 	// Pieces each player has left to place. Without fleets there is no limit
@@ -24,14 +24,14 @@ const (
 	LEFT
 )
 
-var ranks = []string {"1", "2", "3", "4", "5", "6", "7", "8", "9" }
-var files = []string {"a", "b", "c", "d", "e", "f", "g", "h", "i" }
+var ranks = []string{"1", "2", "3", "4", "5", "6", "7", "8", "9"}
+var files = []string{"a", "b", "c", "d", "e", "f", "g", "h", "i"}
 
 func MakeBoard(size int) *Board {
-	return &Board {
+	return &Board{
 		Data: make(BoardData),
 		Size: size,
-		Fleets: map[int]*Fleet {
+		Fleets: map[int]*Fleet{
 			1: NewFleet(size),
 			2: NewFleet(size),
 		},
@@ -56,7 +56,7 @@ func (b *Board) PlaceStone(player int, stone string, position string) error {
 		return err
 	}
 
-	b.set(rank, file, []string { entry })
+	b.set(rank, file, []string{entry})
 
 	return nil
 }
@@ -69,7 +69,7 @@ func (b *Board) ControlingPlayer(position string) int {
 		return 0
 	}
 
-	last := stones[len(stones) - 1]
+	last := stones[len(stones)-1]
 
 	res, _ := strconv.Atoi(string(last[1]))
 	return res
@@ -83,7 +83,7 @@ func (b *Board) StonesInPosition(position string) int {
 func (b *Board) MoveStones(player int, position string, count int, direction MoveDirection, drops []int) error {
 	var err error
 	var current, currentDrop []string
-	
+
 	if b.ControlingPlayer(position) != player {
 		return fmt.Errorf("Player %d doesnt' control the position %s", player, position)
 	}
@@ -130,7 +130,7 @@ func (b *Board) MoveStones(player int, position string, count int, direction Mov
 		var head string
 
 		if len(current) > 0 {
-			head = current[len(current) - 1]
+			head = current[len(current)-1]
 		}
 
 		if strings.HasPrefix(head, "H") {
@@ -151,7 +151,7 @@ func (b *Board) MoveStones(player int, position string, count int, direction Mov
 	current = b.get(rank, file)
 	toDrop = current[len(current)-count:]
 
-	b.set(rank, file, current[:len(current) - count])
+	b.set(rank, file, current[:len(current)-count])
 
 	for _, drop := range drops {
 		rank, file, _ = next(rank, file, b.Size, direction)
@@ -162,20 +162,20 @@ func (b *Board) MoveStones(player int, position string, count int, direction Mov
 		var head string
 
 		if len(current) > 0 {
-			head = current[len(current) - 1]
+			head = current[len(current)-1]
 		}
-		
+
 		// If the piece to drop is only a Hallacirya, is OK. Otherwise, error
 		isHallaciryaMove := len(currentDrop) == 1 && strings.HasPrefix(currentDrop[0], "H")
 
 		if strings.HasPrefix(head, "T") && isHallaciryaMove {
 			flattenTampar := "C" + string(head[1])
-			currentDrop = append([]string { flattenTampar }, currentDrop...)
-			b.set(rank, file, append(current[:len(current) - 1], currentDrop...))
+			currentDrop = append([]string{flattenTampar}, currentDrop...)
+			b.set(rank, file, append(current[:len(current)-1], currentDrop...))
 		} else {
 			b.set(rank, file, append(current, currentDrop...))
 		}
-		
+
 		toDrop = toDrop[drop:]
 	}
 
@@ -191,10 +191,10 @@ func (b *Board) String() string {
 	}
 
 	sb.WriteString("\n")
-	
+
 	for _, rank := range reverse(ranks[:b.Size]) {
 		sb.WriteString(fmt.Sprintf("%s. ", rank))
-		
+
 		for _, file := range files[:b.Size] {
 
 			val := b.get(rank, file)

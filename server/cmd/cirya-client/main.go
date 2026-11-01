@@ -1,15 +1,15 @@
 package main
 
 import (
+	"bufio"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"log"
-	"net/url"
 	"net/http"
-	"bufio"
+	"net/url"
 	"os"
 	"strings"
-	"encoding/json"
 	//"cirya.me/server/internal/app"
 	"github.com/gorilla/websocket"
 )
@@ -24,17 +24,17 @@ func main() {
 	var turn int
 
 	flag.Parse()
-	
-	u := url.URL {
+
+	u := url.URL{
 		Scheme: "ws",
-		Host: *host,
-		Path: fmt.Sprintf("rooms/%s", *room),
+		Host:   *host,
+		Path:   fmt.Sprintf("rooms/%s", *room),
 	}
 
 	log.Printf("Conecting to %s", u.String())
 
 	header := make(http.Header)
-	header["Cookie"] = []string { fmt.Sprintf("cirya-user=%s", *user) }
+	header["Cookie"] = []string{fmt.Sprintf("cirya-user=%s", *user)}
 
 	c, _, err := websocket.DefaultDialer.Dial(u.String(), header)
 
@@ -44,11 +44,12 @@ func main() {
 
 	defer c.Close()
 
-
 	go func() {
 		for {
 			_, message, err := c.ReadMessage()
-			if err != nil { log.Print(err) }
+			if err != nil {
+				log.Print(err)
+			}
 			log.Printf("Received %s", message)
 
 			var data struct {
@@ -57,7 +58,6 @@ func main() {
 				} `json:"params"`
 			}
 			json.Unmarshal(message, &data)
-
 
 			if data.Params.NextTurn > 0 {
 				turn = data.Params.NextTurn
@@ -73,7 +73,7 @@ func main() {
 	scanner := bufio.NewScanner(os.Stdin)
 
 	for scanner.Scan() {
-		
+
 		input := scanner.Text()
 
 		switch {
@@ -129,7 +129,9 @@ func main() {
 
 		fmt.Println("Sending:", input)
 		err = c.WriteMessage(websocket.TextMessage, []byte(msg))
-		if err != nil { log.Fatal(err) }
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
 
 	if err := scanner.Err(); err != nil {

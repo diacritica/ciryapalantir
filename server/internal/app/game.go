@@ -1,31 +1,31 @@
 package app
 
 import (
+	"cirya.me/server/internal/cirya"
 	"fmt"
 	"strconv"
-	"cirya.me/server/internal/cirya"
 )
 
 type GameStatus struct {
-	Config GameConfig `json:"config,omitempty"`
+	Config  GameConfig              `json:"config,omitempty"`
 	Players map[string]PlayerStatus `json:"players,omitempty"`
-	State GameState `json:"state,omitempty"`
-	Moves []string `json:"moves,omitempty"`
-	Board cirya.BoardData `json:"board,omitempty"`
-	Turn *int `json:"turn,omitempty"`
-	Player *int `json:"currentPlayer,omitempty"`
-	Fleets map[int]*cirya.Fleet `json:"fleets,omitempty"`
+	State   GameState               `json:"state,omitempty"`
+	Moves   []string                `json:"moves,omitempty"`
+	Board   cirya.BoardData         `json:"board,omitempty"`
+	Turn    *int                    `json:"turn,omitempty"`
+	Player  *int                    `json:"currentPlayer,omitempty"`
+	Fleets  map[int]*cirya.Fleet    `json:"fleets,omitempty"`
 }
 
 type game struct {
-	id ID
-	config GameConfig
+	id      ID
+	config  GameConfig
 	players map[string]PlayerStatus
-	state GameState
-	moves []string
-	board *cirya.Board
-	turn int
-	player int
+	state   GameState
+	moves   []string
+	board   *cirya.Board
+	turn    int
+	player  int
 }
 
 type GameState string
@@ -39,23 +39,23 @@ const (
 	// End states
 	WIN_1 = "WIN_1"
 	WIN_2 = "WIN_2"
-	DRAW = "DRAW"
+	DRAW  = "DRAW"
 )
 
 type WinCondition string
 
-const(
-	NONE WinCondition = "NONE"
-	LONDI = "LONDI"
-	FLAT = "FLAT"
-	RESIGN = "RESIGN"
+const (
+	NONE   WinCondition = "NONE"
+	LONDI               = "LONDI"
+	FLAT                = "FLAT"
+	RESIGN              = "RESIGN"
 )
 
 type TurnResult struct {
-	State GameState
-	NextTurn int
-	NextPlayer int
-	EndGame bool
+	State        GameState
+	NextTurn     int
+	NextPlayer   int
+	EndGame      bool
 	WinCondition WinCondition
 }
 
@@ -77,40 +77,40 @@ type Game interface {
 
 type PlayerStatus struct {
 	// The user sitting in this seat, the only one who can play with it
-	UserID ID `json:"-"`
-	Name string `json:"name"`
-	Color string `json:"color"`
-	Ready bool `json:"ready"`
+	UserID ID     `json:"-"`
+	Name   string `json:"name"`
+	Color  string `json:"color"`
+	Ready  bool   `json:"ready"`
 }
 
 type GameConfig struct {
 	Ambient string `json:"ambient"`
-	Pieces string `json:"pieces"`
-	Size int `json:"size"`
+	Pieces  string `json:"pieces"`
+	Size    int    `json:"size"`
 }
 
 func NewGame(id ID) Game {
-	return &game {
+	return &game{
 		id: id,
-		config: GameConfig {
+		config: GameConfig{
 			Ambient: "TAVERN",
-			Pieces: "WOOD",
-			Size: 5,
+			Pieces:  "WOOD",
+			Size:    5,
 		},
 		players: make(map[string]PlayerStatus),
-		state: NOT_STARTED,
-		moves: make([]string, 0),
-		board: cirya.MakeBoard(5),
-		turn: 1,
-		player: 1,
+		state:   NOT_STARTED,
+		moves:   make([]string, 0),
+		board:   cirya.MakeBoard(5),
+		turn:    1,
+		player:  1,
 	}
 }
 
 func (g *game) Status() GameStatus {
-	status := GameStatus {
-		Config: g.config,
+	status := GameStatus{
+		Config:  g.config,
 		Players: g.players,
-		State: g.state,
+		State:   g.state,
 	}
 
 	if g.state != NOT_STARTED {
@@ -120,7 +120,7 @@ func (g *game) Status() GameStatus {
 		status.Player = &g.player
 		status.Fleets = g.board.Fleets
 	}
-	
+
 	return status
 }
 
@@ -134,11 +134,11 @@ func (g *game) Seat(player int) (PlayerStatus, bool) {
 }
 
 func (g *game) AddPlayer(user ID, name string, player int, color string) {
-	status := PlayerStatus {
+	status := PlayerStatus{
 		UserID: user,
-		Name: name,
-		Color: color,
-		Ready: false,
+		Name:   name,
+		Color:  color,
+		Ready:  false,
 	}
 
 	g.players[strconv.Itoa(player)] = status

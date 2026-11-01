@@ -1,21 +1,21 @@
 package app
 
 func ConnectMessage(user User) Message {
-	return &message {
+	return &message{
 		FromUser: user.Id(),
-		Kind: Connect,
+		Kind:     Connect,
 	}
 }
 
 func DisconnectMessage(user User) Message {
-	return &message {
+	return &message{
 		FromUser: user.Id(),
-		Kind: Disconnect,
+		Kind:     Disconnect,
 	}
 }
 
 func StatusResponseMessage(g Game) Message {
-	return &message {
+	return &message{
 		Kind: StatusResponse,
 	}
 }
@@ -27,9 +27,9 @@ func ConfigChangedMessage() Message {
 func UserJoinedMessage(user User) Message {
 	params := make(ParamMap)
 	params["username"] = user.Id()
-		
-	return &message {
-		Kind: UserJoined,
+
+	return &message{
+		Kind:   UserJoined,
 		Params: params,
 	}
 }
@@ -37,9 +37,9 @@ func UserJoinedMessage(user User) Message {
 func UserLeftMessage(user User) Message {
 	params := make(ParamMap)
 	params["username"] = user.Id()
-	
-	return &message {
-		Kind: UserLeft,
+
+	return &message{
+		Kind:   UserLeft,
 		Params: params,
 	}
 }
@@ -49,9 +49,9 @@ func PlayerJoinedMessage(name string, player int, color string) Message {
 	params["name"] = name
 	params["player"] = player
 	params["color"] = color
-	
-	return &message {
-		Kind: PlayerJoined,
+
+	return &message{
+		Kind:   PlayerJoined,
 		Params: params,
 	}
 }
@@ -59,9 +59,9 @@ func PlayerJoinedMessage(name string, player int, color string) Message {
 func PlayerLeftMessage(player int) Message {
 	params := make(ParamMap)
 	params["player"] = player
-	
-	return &message {
-		Kind: PlayerLeft,
+
+	return &message{
+		Kind:   PlayerLeft,
 		Params: params,
 	}
 }
@@ -70,9 +70,9 @@ func ReadyChangedMessage(player int, ready bool) Message {
 	params := make(ParamMap)
 	params["player"] = player
 	params["ready"] = ready
-	
-	return &message {
-		Kind: ReadyChanged,
+
+	return &message{
+		Kind:   ReadyChanged,
 		Params: params,
 	}
 }
@@ -81,9 +81,9 @@ func StartGameMessage() Message {
 	params := make(ParamMap)
 	params["nextPlayer"] = 1
 	params["nextTurn"] = 1
-	
-	return &message {
-		Kind: StartGame,
+
+	return &message{
+		Kind:   StartGame,
 		Params: params,
 	}
 }
@@ -95,9 +95,9 @@ func TurnMessage(player int, turn int, move string, nextPlayer int, nextTurn int
 	params["move"] = move
 	params["nextPlayer"] = nextPlayer
 	params["nextTurn"] = nextTurn
-	
-	return &message {
-		Kind: Turn,
+
+	return &message{
+		Kind:   Turn,
 		Params: params,
 	}
 }
@@ -107,9 +107,9 @@ func GameFinishedMessage(state GameState, winCondition WinCondition, turn int) M
 	params["result"] = string(state)
 	params["winCondition"] = string(winCondition)
 	params["turn"] = turn
-	
-	return &message {
-		Kind: GameFinished,
+
+	return &message{
+		Kind:   GameFinished,
 		Params: params,
 	}
 }
@@ -117,9 +117,9 @@ func GameFinishedMessage(state GameState, winCondition WinCondition, turn int) M
 func InvalidTurnMessage(error string) Message {
 	params := make(ParamMap)
 	params["error"] = error
-	
-	return &message {
-		Kind: InvalidTurn,
+
+	return &message{
+		Kind:   InvalidTurn,
 		Params: params,
 	}
 }
@@ -127,14 +127,14 @@ func InvalidTurnMessage(error string) Message {
 type ErrorCode string
 
 const (
-	BAD_MESSAGE ErrorCode = "BAD_MESSAGE"
-	SEAT_TAKEN = "SEAT_TAKEN"
-	NOT_YOUR_SEAT = "NOT_YOUR_SEAT"
-	NOT_YOUR_TURN = "NOT_YOUR_TURN"
-	STALE_TURN = "STALE_TURN"
-	GAME_NOT_STARTED = "GAME_NOT_STARTED"
-	GAME_STARTED = "GAME_STARTED"
-	GAME_FINISHED = "GAME_FINISHED"
+	BAD_MESSAGE      ErrorCode = "BAD_MESSAGE"
+	SEAT_TAKEN                 = "SEAT_TAKEN"
+	NOT_YOUR_SEAT              = "NOT_YOUR_SEAT"
+	NOT_YOUR_TURN              = "NOT_YOUR_TURN"
+	STALE_TURN                 = "STALE_TURN"
+	GAME_NOT_STARTED           = "GAME_NOT_STARTED"
+	GAME_STARTED               = "GAME_STARTED"
+	GAME_FINISHED              = "GAME_FINISHED"
 )
 
 // A request that cannot be done. Only sent to the user who asked for it
@@ -143,8 +143,8 @@ func ErrorMessage(code ErrorCode, text string) Message {
 	params["code"] = string(code)
 	params["message"] = text
 
-	return &message {
-		Kind: Error,
+	return &message{
+		Kind:   Error,
 		Params: params,
 	}
 }
