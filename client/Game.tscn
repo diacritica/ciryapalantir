@@ -129,6 +129,14 @@ light_color = Color( 0.235294, 0.192157, 0.145098, 1 )
 light_energy = 9.0
 spot_range = 29.2
 
+[node name="BlackFill" type="SpotLight" parent="."]
+transform = Transform( 0.894427, -0.39036, 0.218218, 0, 0.48795, 0.872872, -0.447214, -0.78072, 0.436436, -10.3265, 15.8, 4.07663 )
+visible = false
+light_color = Color( 0.784314, 0.8, 0.847059, 1 )
+light_energy = 1.1
+spot_range = 30.0
+spot_angle = 25.0
+
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]
 environment = SubResource( 2 )
 

@@ -22,6 +22,8 @@ const HAND_MIN_HEIGHT = 2.2
 const PLACE_MIN_HEIGHT = 1.0
 const FALL_IMPULSE = Vector3(0, -0.1, 0)
 # Seconds for rejected pieces to fly back
+# Visual layer of the black pieces, the only thing BlackFill lights
+const BLACK_FILL_LAYER = 1 << 19
 # Lines of the 3D picture at most, see _render_3d_apart
 const MAX_3D_LINES = 1440.0
 const RETURN_TIME = 0.35
@@ -68,6 +70,11 @@ func _ready():
         $CameraPlayer2.current = true
         remove_child($CameraPlayer1)
         remove_child($Particles)
+        # The lights of the tavern fall on the side of player 1: a soft light
+        # shows player 2 its own pieces as player 1 sees them. It lights only
+        # them, not the board or the tray
+        $BlackFill.light_cull_mask = BLACK_FILL_LAYER
+        $BlackFill.show()
 
     for fleet in [$Fleet, $Fleet2]:
         for piece in fleet.get_children():
@@ -76,6 +83,10 @@ func _ready():
                 _reparent(piece, $Pieces)
                 piece.translation = position
                 home[piece.get_instance_id()] = piece.global_transform
+
+    for piece in _pieces():
+        if piece.player == 2:
+            _add_visual_layer(piece, BLACK_FILL_LAYER)
 
     $sandboxlogo.visible = Match.sandbox
     _follow_camera()
@@ -151,6 +162,13 @@ func _follow_camera():
 
     camera.cull_mask = 0
     camera.environment = Environment.new()
+
+func _add_visual_layer(node, layer):
+    if node is VisualInstance:
+        node.layers |= layer
+
+    for child in node.get_children():
+        _add_visual_layer(child, layer)
 
 # Takes the piece and the ones above it
 func take(piece):
