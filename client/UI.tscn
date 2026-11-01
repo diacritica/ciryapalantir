@@ -212,13 +212,18 @@ __meta__ = {
 "_edit_use_anchors_": false
 }
 
-[node name="MovesText" type="Label" parent="Moves"]
+[node name="Scroll" type="ScrollContainer" parent="Moves"]
 anchor_right = 1.0
 anchor_bottom = 1.0
 margin_left = 34.0
 margin_top = 60.0
 margin_right = -16.0
 margin_bottom = -26.0
+scroll_horizontal_enabled = false
+
+[node name="MovesText" type="Label" parent="Moves/Scroll"]
+margin_right = 270.0
+size_flags_horizontal = 3
 custom_fonts/font = SubResource( 3 )
 custom_colors/font_color = Color( 0.631373, 0.631373, 0.631373, 1 )
 __meta__ = {

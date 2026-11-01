@@ -34,6 +34,7 @@ func _play():
     yield(_sandbox(), "completed")
     _online()
     _out_of_step()
+    yield(_long_game(), "completed")
     yield(_reopen(), "completed")
     yield(_back_to_menu(), "completed")
 
@@ -91,7 +92,7 @@ func _sandbox():
     check("turn 3 is d3<", state.move_notation() == "d3<")
     game._on_turn_confirmation(true)
     check("turn 4 for black", state.turn == 4 and state.player == 2)
-    check("the moves are written down", game.get_node("UI/Moves/MovesText").text.find("3. d3<") != -1)
+    check("the moves are written down", game.get_node("UI/Moves/Scroll/MovesText").text.find("3. d3<") != -1)
 
 # White online, against turns of black sent as the server sends them
 func _online():
@@ -126,7 +127,7 @@ func _online():
     state._next(10, 2)
     state._on_notification({"type": "GameFinished", "params": {"result": "WIN_2", "winCondition": "FLAT", "turn": 10.0}, "status": {"moves": ["e5"]}})
     check("the winning move is shown", stack("e5").size() == 1)
-    check("and written down", game.get_node("UI/Moves/MovesText").text.find("10. e5") != -1)
+    check("and written down", game.get_node("UI/Moves/Scroll/MovesText").text.find("10. e5") != -1)
     var dialog = game_over_dialog()
     check("the result is shown", dialog != null and dialog.visible and dialog.dialog_text.begins_with("Ganan las negras por recuento de ciryar\nHas perdido"))
 
@@ -145,6 +146,32 @@ func _out_of_step():
     check("the cirya is on d2", stack("d2").size() == 1 and instance_from_id(stack("d2")[0]).player == 2)
     check("counted as out of step", game.rebuilds == 1)
     check("and it is there on the table", _over(instance_from_id(stack("d2")[0]), "d2"))
+
+# A long list of moves stays in its frame and shows the last one, and a
+# spectator is not told it won or lost
+func _long_game():
+    var ui = game.get_node("UI")
+    var scroll = ui.get_node("Moves/Scroll")
+    var moves = []
+
+    for i in range(60):
+        moves.append("a1")
+
+    ui._on_history(moves)
+    yield(self, "idle_frame")
+    yield(self, "idle_frame")
+    var bar = scroll.get_v_scrollbar()
+    check("the moves scroll", bar.max_value > scroll.rect_size.y)
+    check("down to the last one", scroll.scroll_vertical + bar.page >= bar.max_value - 1)
+    check("inside the frame", scroll.get_global_rect().end.y <= ui.get_node("Moves").get_global_rect().end.y)
+
+    var player = state.player
+    state.player = 0
+    ui._on_game_over("WIN_2", "LONDI")
+    var dialog = ui.get_children().back()
+    check("a spectator just enjoyed the game", dialog.dialog_text == "Ganan las negras por Londë\n¡Esperamos que hayas disfrutado de la partida!")
+    dialog.free()
+    state.player = player
 
 # A game scene opened in a game already started takes the board of the status
 func _reopen():

@@ -30,6 +30,8 @@ func _ready():
     Match.connect("phase_changed", self, "_on_phase_changed")
     Match.connect("turn_played", self, "_on_turn_played")
     Match.connect("history", self, "_on_history")
+    # The list of moves keeps the last one in sight as it grows
+    $Moves/Scroll.get_v_scrollbar().connect("changed", self, "_show_last_move")
     Match.connect("move_changed", self, "_on_move_changed")
     Match.connect("turn_refused", self, "_on_turn_refused")
     Match.connect("game_over", self, "_on_game_over")
@@ -118,7 +120,9 @@ func _on_game_over(result, condition):
     if result != "DRAW":
         text += " " + CONDITIONS.get(condition, "")
 
-    if Match.player != 0:
+    if Match.player == 0:
+        text += "\n¡Esperamos que hayas disfrutado de la partida!"
+    else:
         var mine = "WIN_%d" % Match.player
         text += "\n" + ("¡Has ganado!" if result == mine else ("Has empatado" if result == "DRAW" else "Has perdido"))
 
@@ -145,10 +149,13 @@ func _on_undo_pressed():
     emit_signal("turn_confirmation", false)
 
 func _on_turn_played(turn, notation):
-    $Moves/MovesText.text += "\n%d. %s" % [turn, notation]
+    $Moves/Scroll/MovesText.text += "\n%d. %s" % [turn, notation]
+
+func _show_last_move():
+    $Moves/Scroll.scroll_vertical = int($Moves/Scroll.get_v_scrollbar().max_value)
 
 func _on_history(moves):
-    $Moves/MovesText.text = ""
+    $Moves/Scroll/MovesText.text = ""
 
     for i in range(moves.size()):
         _on_turn_played(i + 1, moves[i])
