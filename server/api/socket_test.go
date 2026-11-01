@@ -37,9 +37,10 @@ func newServer(t *testing.T) *httptest.Server {
 	return s
 }
 
-// Every server has its own store, so the name of the test is enough
-func roomCode(t *testing.T) string {
-	return strings.NewReplacer("/", "-", " ", "-").Replace(t.Name())
+// A new room, as the game makes it
+func newRoom(t *testing.T, s *httptest.Server) string {
+	body, _ := put(t, s, "/rooms")
+	return body["id"]
 }
 
 func connect(t *testing.T, s *httptest.Server, room string, user string) *testClient {
@@ -204,9 +205,8 @@ func expectError(t *testing.T, c *testClient, code string) {
 	assert.Equal(t, code, msg["params"].(map[string]any)["code"])
 }
 
-// Two players seated and ready, game started
-func startGame(t *testing.T, s *httptest.Server) (*testClient, *testClient) {
-	room := roomCode(t)
+// Two players seated and ready, game started in the room
+func startGame(t *testing.T, s *httptest.Server, room string) (*testClient, *testClient) {
 	white := connect(t, s, room, "white-"+room)
 	black := connect(t, s, room, "black-"+room)
 
@@ -225,10 +225,21 @@ func startGame(t *testing.T, s *httptest.Server) (*testClient, *testClient) {
 	return white, black
 }
 
+// Only rooms made with PUT /rooms can be joined: a mistyped code is not a new room
+func TestUnknownRoomIsNotFound(t *testing.T) {
+	s := newServer(t)
+	url := "ws" + strings.TrimPrefix(s.URL, "http") + "/rooms/NOPE00"
+
+	_, res, err := websocket.DefaultDialer.Dial(url, http.Header{"Cookie": {"cirya-user=alan"}})
+
+	require.Error(t, err)
+	assert.Equal(t, http.StatusNotFound, res.StatusCode)
+}
+
 // The server answers a connection with the room status
 func TestConnectReceivesStatus(t *testing.T) {
 	s := newServer(t)
-	c := connect(t, s, roomCode(t), "alan")
+	c := connect(t, s, newRoom(t, s), "alan")
 
 	assert.Equal(t, "NOT_STARTED", c.status["state"])
 }
@@ -238,7 +249,7 @@ func TestSimultaneousReadyStartsGameOnce(t *testing.T) {
 	s := newServer(t)
 
 	for i := 0; i < 20; i++ {
-		room := fmt.Sprintf("%s-%d", roomCode(t), i)
+		room := newRoom(t, s)
 		white := connect(t, s, room, "white-"+room)
 		black := connect(t, s, room, "black-"+room)
 
@@ -262,7 +273,7 @@ func TestSimultaneousReadyStartsGameOnce(t *testing.T) {
 // Clients connecting at the same time to a new code share one room
 func TestConcurrentConnectionsShareRoom(t *testing.T) {
 	s := newServer(t)
-	room := roomCode(t)
+	room := newRoom(t, s)
 
 	clients := make([]*testClient, 50)
 	errs := make([]error, 50)
@@ -292,7 +303,7 @@ func TestConcurrentConnectionsShareRoom(t *testing.T) {
 // A client that stops reading does not freeze the room for the rest
 func TestSlowClientDoesNotFreezeRoom(t *testing.T) {
 	s := newServer(t)
-	room := roomCode(t)
+	room := newRoom(t, s)
 
 	white := connect(t, s, room, "white")
 	black := connect(t, s, room, "black")
@@ -340,7 +351,7 @@ func TestSlowClientDoesNotFreezeRoom(t *testing.T) {
 // After clients disconnect the room keeps working for the others
 func TestDisconnectedClientDoesNotBreakRoom(t *testing.T) {
 	s := newServer(t)
-	room := roomCode(t)
+	room := newRoom(t, s)
 
 	for i := 0; i < 20; i++ {
 		gone := connect(t, s, room, fmt.Sprintf("gone-%d", i))
@@ -357,7 +368,7 @@ func TestDisconnectedClientDoesNotBreakRoom(t *testing.T) {
 // A player cannot move for the other one
 func TestCannotSubmitTurnForOtherPlayer(t *testing.T) {
 	s := newServer(t)
-	white, black := startGame(t, s)
+	white, black := startGame(t, s, newRoom(t, s))
 
 	submit(black, 1, 1, "a1")
 
@@ -368,7 +379,7 @@ func TestCannotSubmitTurnForOtherPlayer(t *testing.T) {
 // A seat taken by one user cannot be taken by another
 func TestCannotTakeOccupiedSeat(t *testing.T) {
 	s := newServer(t)
-	room := roomCode(t)
+	room := newRoom(t, s)
 
 	white := connect(t, s, room, "white")
 	intruder := connect(t, s, room, "intruder")
@@ -383,7 +394,7 @@ func TestCannotTakeOccupiedSeat(t *testing.T) {
 // A turn out of order is answered with an error, not ignored
 func TestOutOfTurnIsAnswered(t *testing.T) {
 	s := newServer(t)
-	_, black := startGame(t, s)
+	_, black := startGame(t, s, newRoom(t, s))
 
 	submit(black, 2, 1, "a1")
 
@@ -393,7 +404,7 @@ func TestOutOfTurnIsAnswered(t *testing.T) {
 // A malformed move is rejected and the room keeps working
 func TestMalformedMoveKeepsServerAlive(t *testing.T) {
 	s := newServer(t)
-	white, black := startGame(t, s)
+	white, black := startGame(t, s, newRoom(t, s))
 
 	submit(white, 1, 1, "a1")
 	black.expect("Turn")
@@ -411,8 +422,8 @@ func TestMalformedMoveKeepsServerAlive(t *testing.T) {
 // A player who reconnects gets the whole board back
 func TestReconnectRestoresBoard(t *testing.T) {
 	s := newServer(t)
-	room := roomCode(t)
-	white, black := startGame(t, s)
+	room := newRoom(t, s)
+	white, black := startGame(t, s, room)
 
 	submit(white, 1, 1, "a1")
 	black.expect("Turn")
@@ -466,8 +477,8 @@ func TestUserIdMatchesCookie(t *testing.T) {
 // A player who reconnects to a started game keeps the seat and can keep playing
 func TestSeatOwnerCanRejoin(t *testing.T) {
 	s := newServer(t)
-	room := roomCode(t)
-	white, black := startGame(t, s)
+	room := newRoom(t, s)
+	white, black := startGame(t, s, room)
 
 	white.conn.Close()
 	white = connect(t, s, room, white.user)
@@ -482,7 +493,7 @@ func TestSeatOwnerCanRejoin(t *testing.T) {
 // Nobody can leave a started game, so a seat cannot be freed and stolen
 func TestCannotLeaveStartedGame(t *testing.T) {
 	s := newServer(t)
-	white, _ := startGame(t, s)
+	white, _ := startGame(t, s, newRoom(t, s))
 
 	white.send("LeaveGame", map[string]any{"player": 1})
 	expectError(t, white, "GAME_STARTED")
@@ -491,8 +502,8 @@ func TestCannotLeaveStartedGame(t *testing.T) {
 // Someone without a seat can watch but not play
 func TestSpectatorCannotPlay(t *testing.T) {
 	s := newServer(t)
-	room := roomCode(t)
-	white, _ := startGame(t, s)
+	room := newRoom(t, s)
+	white, _ := startGame(t, s, room)
 
 	spectator := connect(t, s, room, "spectator")
 
@@ -509,7 +520,7 @@ func TestSpectatorCannotPlay(t *testing.T) {
 // Players have to sit before getting ready, and only in seats 1 and 2
 func TestReadyNeedsASeat(t *testing.T) {
 	s := newServer(t)
-	c := connect(t, s, roomCode(t), "alan")
+	c := connect(t, s, newRoom(t, s), "alan")
 
 	ready(c, 1, true)
 	expectError(t, c, "NOT_YOUR_SEAT")
@@ -529,8 +540,8 @@ func TestRoomCodeFormat(t *testing.T) {
 // by rank and file, the current player and the fleets
 func TestStatusShape(t *testing.T) {
 	s := newServer(t)
-	room := roomCode(t)
-	white, black := startGame(t, s)
+	room := newRoom(t, s)
+	white, black := startGame(t, s, room)
 
 	submit(white, 1, 1, "c3")
 	black.expect("Turn")
@@ -552,8 +563,8 @@ func TestStatusShape(t *testing.T) {
 // A whole game until white completes a londë along rank 2
 func TestFullGameToLonde(t *testing.T) {
 	s := newServer(t)
-	room := roomCode(t)
-	white, black := startGame(t, s)
+	room := newRoom(t, s)
+	white, black := startGame(t, s, room)
 	spectator := connect(t, s, room, "spectator")
 
 	moves := []string{

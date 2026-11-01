@@ -7,7 +7,6 @@
 cd "$(dirname "$0")/../.." || exit 1
 GODOT=${GODOT:-godot}
 PORT=${PORT:-3399}
-ROOM=E2E$(date +%s)
 BIN=$(mktemp -d)
 status=0
 
@@ -16,6 +15,13 @@ status=0
 SERVER=$!
 trap 'kill $SERVER 2>/dev/null; rm -rf "$BIN"' EXIT
 sleep 1
+
+# A room as the game makes it, by its code
+new_room() {
+    curl -s -X PUT "http://127.0.0.1:$PORT/rooms" | sed 's/.*"id":"\([^"]*\)".*/\1/'
+}
+
+ROOM=$(new_room)
 
 "$BIN/bot" -server "127.0.0.1:$PORT" -room "$ROOM" > "$BIN/bot.log" 2>&1 &
 
@@ -26,9 +32,10 @@ for script in e2e_player e2e_spectator; do
 done
 
 # The turns of black for the scripted game are in tests/e2e_nosse.gd
+ROOM=$(new_room)
 MOVES=$(sed -n 's/^const BLACK = "\(.*\)"$/\1/p' client/tests/e2e_nosse.gd)
-"$BIN/bot" -server "127.0.0.1:$PORT" -room "N$ROOM" -moves "$MOVES" > "$BIN/bot-nosse.log" 2>&1 &
-output=$("$GODOT" --no-window --path client -s tests/e2e_nosse.gd -- --server="127.0.0.1:$PORT" --profile=e2e_nosse --room="N$ROOM" 2>&1) || status=1
+"$BIN/bot" -server "127.0.0.1:$PORT" -room "$ROOM" -moves "$MOVES" > "$BIN/bot-nosse.log" 2>&1 &
+output=$("$GODOT" --no-window --path client -s tests/e2e_nosse.gd -- --server="127.0.0.1:$PORT" --profile=e2e_nosse --room="$ROOM" 2>&1) || status=1
 echo "$output" | grep -E "FAIL|SCRIPT ERROR|e2e"
 echo "$output" | grep -q "SCRIPT ERROR" && status=1
 

@@ -3,6 +3,7 @@ package app
 import (
 	"log"
 	"runtime/debug"
+	"time"
 )
 
 const (
@@ -36,16 +37,26 @@ type envelope struct {
 
 // Room owns its clients and its game. Everything that touches them runs in
 // the room goroutine, one message after the other, so no locks are needed.
-// Rooms live as long as the server: nothing removes them yet
+// The room ends when the store finds it without clients for too long
 type Room struct {
 	code ID
 	game *Game
 	// False once the room has dropped the client, until it leaves
 	clients map[*Client]bool
+	// When the last client left, or when the room was made
+	emptySince time.Time
 
 	register   chan *Client
 	unregister chan *Client
 	inbox      chan envelope
+	idle       chan idleQuery
+	// Closed when the room ends
+	done chan struct{}
+}
+
+type idleQuery struct {
+	since  time.Time
+	answer chan bool
 }
 
 func NewRoom(code ID) *Room {
@@ -53,9 +64,12 @@ func NewRoom(code ID) *Room {
 		code:       code,
 		game:       NewGame(),
 		clients:    make(map[*Client]bool),
+		emptySince: time.Now(),
 		register:   make(chan *Client),
 		unregister: make(chan *Client),
 		inbox:      make(chan envelope, inboxSize),
+		idle:       make(chan idleQuery),
+		done:       make(chan struct{}),
 	}
 
 	go r.run()
@@ -69,19 +83,43 @@ func (r *Room) Code() ID {
 
 // Join adds the client to the room, which answers with the status. Every
 // Join needs a Leave when the connection ends. Join, Leave and Receive
-// wait for the room to take them
-func (r *Room) Join(c *Client) {
-	r.register <- c
+// wait for the room to take them. False when the room has ended
+func (r *Room) Join(c *Client) bool {
+	select {
+	case r.register <- c:
+		return true
+	case <-r.done:
+		return false
+	}
 }
 
 // Leave takes the client out of the room and closes it. Leaving twice is harmless
 func (r *Room) Leave(c *Client) {
-	r.unregister <- c
+	select {
+	case r.unregister <- c:
+	case <-r.done:
+	}
 }
 
 // Receive hands an action of the client to the room
 func (r *Room) Receive(c *Client, m *Message) {
-	r.inbox <- envelope{client: c, message: m}
+	select {
+	case r.inbox <- envelope{client: c, message: m}:
+	case <-r.done:
+	}
+}
+
+// EndIfEmptySince ends the room when it has had no clients since then, and
+// tells whether it did
+func (r *Room) EndIfEmptySince(since time.Time) bool {
+	q := idleQuery{since: since, answer: make(chan bool, 1)}
+
+	select {
+	case r.idle <- q:
+		return <-q.answer
+	case <-r.done:
+		return true
+	}
 }
 
 func (r *Room) run() {
@@ -90,6 +128,15 @@ func (r *Room) run() {
 		case c := <-r.register:
 			r.clients[c] = true
 			r.safely("connect", func() { r.onConnect(c) })
+
+		case q := <-r.idle:
+			if len(r.clients) == 0 && !r.emptySince.After(q.since) {
+				close(r.done)
+				q.answer <- true
+				return
+			}
+
+			q.answer <- false
 
 		case c := <-r.unregister:
 			active, known := r.clients[c]
@@ -101,6 +148,10 @@ func (r *Room) run() {
 
 				delete(r.clients, c)
 				r.safely("disconnect", func() { r.onDisconnect(c) })
+
+				if len(r.clients) == 0 {
+					r.emptySince = time.Now()
+				}
 			}
 
 		case e := <-r.inbox:

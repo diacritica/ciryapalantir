@@ -39,7 +39,8 @@ The URL to connect will be:
 ws://IP:PORT/rooms/{code}
 ```
 
-The `cirya-user` cookie has to be sent. Connecting to a code that does not exist creates that room.
+The `cirya-user` cookie has to be sent. A code that no room has gets `404 Not Found`.
+A room ends when it has had no clients for an hour (`-idle` of the server), and its code is free again.
 
 The server sends a ping every 54 seconds and closes connections that do not answer (or send anything) for 60 seconds.
 A client that does not read its messages fast enough is disconnected.

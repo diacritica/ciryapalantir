@@ -27,13 +27,19 @@ var upgrader = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool { return true },
 }
 
-// Connects the user of the cookie to a room. A code nobody used before
-// creates the room
+// Connects the user of the cookie to a room made with PUT /rooms
 func (s *server) roomSocket(w http.ResponseWriter, r *http.Request) {
 	user, ok := userOf(r)
 
 	if !ok {
 		http.Error(w, "the cirya-user cookie is missing", http.StatusForbidden)
+		return
+	}
+
+	room, ok := s.store.Room(app.ID(mux.Vars(r)["code"]))
+
+	if !ok {
+		http.Error(w, "there is no room with that code", http.StatusNotFound)
 		return
 	}
 
@@ -44,9 +50,13 @@ func (s *server) roomSocket(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	room := s.store.Room(app.ID(mux.Vars(r)["code"]))
 	client := app.NewClient(user)
-	room.Join(client)
+
+	// The room ended just now, for lack of clients
+	if !room.Join(client) {
+		conn.Close()
+		return
+	}
 
 	go writeMessages(conn, client)
 	readMessages(conn, room, client)
