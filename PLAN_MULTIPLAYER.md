@@ -193,6 +193,22 @@ Así la rotura del nossë se prueba en el sandbox igual que online. E11 compara 
 
 ### 2.4 Conexión (arregla C5 y C6)
 
+**Hecho.**
+- **Elegir el servidor:** `--server=host:puerto`. Si no se indica, el host de la página en web, `127.0.0.1:3333` desde el editor y `play.cirya.me:3333` en una exportación.
+- **Usuario guardado:** en `user://cirya-<perfil>.cfg`, y `--profile=nombre` permite tener dos clientes en el mismo ordenador. También se recuerda el asiento de cada sala, para volver a él.
+- **Reconexión:** reintentos a los 1, 2, 4, 8 y 10 s, con el aviso "Reconectando…"; al reconectar, el estado del servidor pone el tablero al día.
+- **Observadores y reconexión desde el menú:** quien entra en una partida empezada abre el tablero directamente.
+- **`server/cmd/cirya-bot`:** juega el otro asiento colocando en la primera casilla libre.
+- **`client/tests/e2e.sh`:** arranca servidor y bot, juega una partida entera con la escena real cortando la conexión a mitad, y entra un observador por el menú.
+
+Jugar en un solo ordenador, desde la raíz del repositorio:
+
+```
+cd server && go run ./cmd/cirya-server            # el servidor, en 127.0.0.1:3333
+cd server && go run ./cmd/cirya-bot -room CODIGO   # el rival, con el código que da "Nueva partida"
+godot --path client -- --profile=negras            # otro cliente (sin exportar), además del F5 del editor
+```
+
 - Elegir el host:
   - En web, `JavaScript.eval("location.host")` y el esquema según `location.protocol` (`wss`/`https` si la página va por https).
   - En nativo, una variable exportada o el argumento `--server=host:port`; por defecto, `play.cirya.me`.
