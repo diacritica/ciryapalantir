@@ -104,7 +104,6 @@ light_color = Color( 0.870588, 0.619608, 0.372549, 1 )
 light_energy = 5.0
 light_indirect_energy = 1.5
 light_specular = 0.53
-light_bake_mode = 2
 shadow_enabled = true
 shadow_bias = 0.03
 spot_range = 40.0
@@ -118,7 +117,6 @@ light_color = Color( 0.576471, 0.4, 0.188235, 1 )
 light_energy = 0.1
 light_indirect_energy = 0.0
 light_specular = 0.63
-light_bake_mode = 2
 
 [node name="light4" type="SpotLight" parent="."]
 transform = Transform( 0.794083, -0.242187, 0.557474, -0.503252, -0.776303, 0.379594, 0.340836, -0.581979, -0.73833, 7.89064, 4.87363, -8.75398 )
@@ -130,7 +128,6 @@ spot_range = 29.2
 transform = Transform( 0.794083, -0.242187, 0.557474, -0.503252, -0.776303, 0.379594, 0.340836, -0.581979, -0.73833, -9.28696, 4.87363, -12.5739 )
 light_color = Color( 0.235294, 0.192157, 0.145098, 1 )
 light_energy = 9.0
-light_bake_mode = 2
 spot_range = 29.2
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]
@@ -216,10 +213,7 @@ enable_shadows = true
 
 [node name="BakedLightmap" type="BakedLightmap" parent="."]
 transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, -0.94513, 3.01288, -0.115906 )
-bake_cell_size = 1.0
-bake_quality = 2
-bake_hdr = true
-bake_extents = Vector3( 22.6719, 3.92138, 19.6826 )
+extents = Vector3( 22.67, 3.92, 19.68 )
 capture_cell_size = 1.0
 light_data = SubResource( 6 )
 
