@@ -25,6 +25,14 @@ Reglas del refactor:
 
 ## Servidor
 
+**Hecho** (commits `687b859` a `f462586`). Además de los pasos de la tabla:
+- Una segunda revisión independiente encontró un bug que ya existía: una sala que expulsaba a un cliente lento no avisaba con `UserLeft` cuando su conexión acababa. Arreglado con su test.
+- `SetReady` sin `ready` responde `BAD_MESSAGE`.
+- Los mensajes salen en JSON compacto.
+- Hay un test que fija la forma del estado que lee Godot.
+
+Unas 1.570 líneas de código y 1.260 de tests. La suite tarda unos 2 s con `-race`.
+
 | # | Paso | Riesgo |
 |---|---|---|
 | S1 | `gofmt -w`: hay 12 ficheros sin formatear | Mecánico |
