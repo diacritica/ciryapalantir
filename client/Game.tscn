@@ -1,7 +1,6 @@
-[gd_scene load_steps=21 format=2]
+[gd_scene load_steps=20 format=2]
 
 [ext_resource path="res://Board.tscn" type="PackedScene" id=1]
-[ext_resource path="res://Server.tscn" type="PackedScene" id=2]
 [ext_resource path="res://Game.gd" type="Script" id=3]
 [ext_resource path="res://Fleet.tscn" type="PackedScene" id=4]
 [ext_resource path="res://assets/dust.jpg" type="Texture" id=5]
@@ -138,8 +137,6 @@ transform = Transform( -1.62921e-07, 0, 1, 0, 1, 0, -1, 0, -1.62921e-07, 0.001, 
 
 [node name="Tiles" type="Spatial" parent="Board"]
 transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, -4.32, 0, -4.32 )
-
-[node name="light-cirya-basic" parent="." instance=ExtResource( 2 )]
 
 [node name="Fleet" parent="." instance=ExtResource( 4 )]
 transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 14.1913, -0.2, 3.39279 )
