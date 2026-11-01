@@ -7,22 +7,15 @@ import (
 	"net/http"
 
 	"cirya.me/server/api"
+	"cirya.me/server/internal/app"
 )
 
-var port = flag.Int("p", 3333, "-p [port]")
+var port = flag.Int("p", 3333, "port to listen on")
 
 func main() {
 	flag.Parse()
-
 	addr := fmt.Sprintf("0.0.0.0:%d", *port)
 
-	log.Printf("Starting server %s", addr)
-
-	s := api.New()
-
-	err := http.ListenAndServe(addr, s.Router())
-
-	if err != nil {
-		log.Fatal("Server error", err)
-	}
+	log.Printf("listening on %s", addr)
+	log.Fatal(http.ListenAndServe(addr, api.New(app.NewStore())))
 }

@@ -1,8 +1,6 @@
 package api
 
 import (
-	"fmt"
-	"io"
 	"log"
 	"net/http"
 	"time"
@@ -12,89 +10,73 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-const MSG_TYPE = websocket.TextMessage
-
 const (
 	// Time allowed to write a message to the client
 	writeWait = 10 * time.Second
 
-	// Time allowed without hearing from the client (pongs included)
+	// Time allowed without hearing from the client, pongs included
 	pongWait = 60 * time.Second
 
-	// Pings are sent with this period, it must be less than pongWait
-	pingPeriod = (pongWait * 9) / 10
+	// Pings are sent with this period, which has to be less than pongWait
+	pingPeriod = pongWait * 9 / 10
 
 	maxMessageSize = 4096
 )
 
-func (a *Api) GetRoomSocket(w http.ResponseWriter, r *http.Request) {
-	a.CorsHeaders(w)
+var upgrader = websocket.Upgrader{
+	CheckOrigin: func(r *http.Request) bool { return true },
+}
 
-	if r.Method == http.MethodOptions {
+// Connects the user of the cookie to a room. A code nobody used before
+// creates the room
+func (s *server) roomSocket(w http.ResponseWriter, r *http.Request) {
+	user, ok := userOf(r)
+
+	if !ok {
+		http.Error(w, "the cirya-user cookie is missing", http.StatusForbidden)
 		return
 	}
-	upgrader := websocket.Upgrader{}
-	upgrader.CheckOrigin = corsHandler
 
-	room, err := getRoom(r)
+	conn, err := upgrader.Upgrade(w, r, nil)
 
 	if err != nil {
-		log.Printf("Problem looking up the room: %v", err)
-		returnError(w, 404, "Room not found")
+		log.Print("websocket upgrade: ", err)
 		return
 	}
 
-	user, err := getUser(r)
-
-	if err != nil {
-		log.Printf("Problem looking up the user")
-		returnError(w, 403, "User not allowed")
-		return
-	}
-
-	c, err := upgrader.Upgrade(w, r, nil)
-
-	if err != nil {
-		log.Print("Error on upgrade", err)
-		return
-	}
-
+	room := s.store.Room(app.ID(mux.Vars(r)["code"]))
 	client := app.NewClient(user)
 	room.Join(client)
 
-	go SendMessages(c, client)
-	ReadMessages(c, room, client)
+	go writeMessages(conn, client)
+	readMessages(conn, room, client)
 }
 
-// Main read loop. Delegates every message to the room
-func ReadMessages(c *websocket.Conn, room *app.Room, client *app.Client) {
+// Hands every message of the client to the room until the connection ends
+func readMessages(conn *websocket.Conn, room *app.Room, client *app.Client) {
 	defer func() {
 		room.Leave(client)
-		c.Close()
+		conn.Close()
 	}()
 
-	c.SetReadLimit(maxMessageSize)
-	c.SetReadDeadline(time.Now().Add(pongWait))
-	c.SetPongHandler(func(string) error {
-		c.SetReadDeadline(time.Now().Add(pongWait))
-		return nil
+	conn.SetReadLimit(maxMessageSize)
+	conn.SetReadDeadline(time.Now().Add(pongWait))
+	conn.SetPongHandler(func(string) error {
+		return conn.SetReadDeadline(time.Now().Add(pongWait))
 	})
 
 	for {
-		_, msg, err := c.ReadMessage()
+		_, data, err := conn.ReadMessage()
 
 		if err != nil {
-			// When the user disconnects we get an error reading
-			break
+			return
 		}
 
-		c.SetReadDeadline(time.Now().Add(pongWait))
-
-		message, err := app.ParseMessage(msg)
+		conn.SetReadDeadline(time.Now().Add(pongWait))
+		message, err := app.ParseMessage(data)
 
 		if err != nil {
-			log.Print("Cannot parse message:", err)
-			// TODO RETURN ERROR TO CLIENT
+			log.Print("ignoring a message: ", err)
 			continue
 		}
 
@@ -102,75 +84,36 @@ func ReadMessages(c *websocket.Conn, room *app.Room, client *app.Client) {
 	}
 }
 
-// Sends the room messages back to the user and keeps the connection alive.
-// Ends when the room drops the client or the connection fails.
-func SendMessages(c *websocket.Conn, client *app.Client) {
+// Sends the messages of the room to the client and keeps the connection
+// alive. Ends when the room drops the client or the connection fails
+func writeMessages(conn *websocket.Conn, client *app.Client) {
 	ticker := time.NewTicker(pingPeriod)
 
 	defer func() {
 		ticker.Stop()
-		c.Close()
+		conn.Close()
 	}()
 
 	for {
 		select {
-		case msg, ok := <-client.Send():
-			c.SetWriteDeadline(time.Now().Add(writeWait))
+		case data, ok := <-client.Send():
+			conn.SetWriteDeadline(time.Now().Add(writeWait))
 
 			if !ok {
-				c.WriteMessage(websocket.CloseMessage, []byte{})
+				conn.WriteMessage(websocket.CloseMessage, []byte{})
 				return
 			}
 
-			if err := c.WriteMessage(MSG_TYPE, msg); err != nil {
-				log.Print("Error:", err)
+			if err := conn.WriteMessage(websocket.TextMessage, data); err != nil {
 				return
 			}
 
 		case <-ticker.C:
-			c.SetWriteDeadline(time.Now().Add(writeWait))
+			conn.SetWriteDeadline(time.Now().Add(writeWait))
 
-			if err := c.WriteMessage(websocket.PingMessage, nil); err != nil {
+			if err := conn.WriteMessage(websocket.PingMessage, nil); err != nil {
 				return
 			}
 		}
 	}
-}
-
-func returnError(w http.ResponseWriter, status int, msg string) {
-	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-	w.WriteHeader(status)
-	io.WriteString(w, msg)
-}
-
-func corsHandler(r *http.Request) bool {
-	return true
-}
-
-/*
-Retrieves a Room given the request
-*/
-func getRoom(r *http.Request) (*app.Room, error) {
-	vars := mux.Vars(r)
-	roomId, ok := vars["room"]
-
-	if !ok {
-		// Couldn't find room in parameters
-		return nil, fmt.Errorf("Error, couldn't find room in parameters")
-	}
-
-	return store.Room(app.ID(roomId)), nil
-}
-
-/*
-Extracts a User from the current request
-*/
-func getUser(r *http.Request) (app.ID, error) {
-	userId, err := GetUserCookieValue(r)
-
-	if err != nil {
-		return "", fmt.Errorf("Error, user not present in cookie")
-	}
-
-	return app.ID(userId), nil
 }

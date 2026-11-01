@@ -7,19 +7,18 @@ import (
 	"net/http/httptest"
 	"strings"
 	"sync"
-	"sync/atomic"
 	"testing"
 	"time"
 
 	"cirya.me/server/api"
+	"cirya.me/server/internal/app"
 	"github.com/gorilla/websocket"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-// These tests describe how the server must behave with several real
-// websocket clients. Each one reproduces a bug found while reviewing
-// the server (see HACKATHON.md, S1-S9).
+// How the server behaves with several real websocket clients, speaking
+// the protocol of doc/Protocol.md
 
 const waitTimeout = 2 * time.Second
 
@@ -28,30 +27,20 @@ type testClient struct {
 	user     string
 	conn     *websocket.Conn
 	messages chan map[string]interface{}
+	// The status the server sends when the client connects
+	status map[string]interface{}
 }
 
 func newServer(t *testing.T) *httptest.Server {
-	s := httptest.NewServer(api.New().Router())
+	s := httptest.NewServer(api.New(app.NewStore()))
 	t.Cleanup(s.Close)
 	return s
 }
 
-var rooms int64
-
-// Every test uses its own room code because the store is global,
-// also when running the tests several times (-count)
+// Every server has its own store, so the name of the test is enough
 func roomCode(t *testing.T) string {
-	if code, ok := codes[t]; ok {
-		return code
-	}
-
-	name := strings.NewReplacer("/", "-", " ", "-").Replace(t.Name())
-	codes[t] = fmt.Sprintf("%s-%d", name, atomic.AddInt64(&rooms, 1))
-
-	return codes[t]
+	return strings.NewReplacer("/", "-", " ", "-").Replace(t.Name())
 }
-
-var codes = make(map[*testing.T]string)
 
 func connect(t *testing.T, s *httptest.Server, room string, user string) *testClient {
 	c, err := dial(t, s, room, user)
@@ -98,6 +87,16 @@ func dial(t *testing.T, s *httptest.Server, room string, user string) (*testClie
 
 	t.Cleanup(func() { conn.Close() })
 
+	select {
+	case msg := <-c.messages:
+		if msg["type"] != "StatusResponse" {
+			return nil, fmt.Errorf("%s: the first message is %v, not the status", user, msg["type"])
+		}
+		c.status = msg["status"].(map[string]interface{})
+	case <-time.After(waitTimeout):
+		return nil, fmt.Errorf("%s: no status after connecting", user)
+	}
+
 	return c, nil
 }
 
@@ -134,26 +133,45 @@ func (c *testClient) expect(kind string) map[string]interface{} {
 	}
 }
 
-// Counts the messages of the given type received during the given time
-func (c *testClient) count(kind string, during time.Duration) int {
-	n := 0
-	timeout := time.After(during)
+// The messages that arrive before the answer to a GetStatus sent now. The
+// room handles the messages of a client in order, so they are all the
+// effects of what this client sent before
+func (c *testClient) sync() []map[string]interface{} {
+	c.t.Helper()
+	c.send("GetStatus", nil)
+
+	var before []map[string]interface{}
+	timeout := time.After(waitTimeout)
 
 	for {
 		select {
 		case msg, ok := <-c.messages:
 			if !ok {
-				return n
+				c.t.Fatalf("%s: connection closed while syncing", c.user)
 			}
 
-			if msg["type"] == kind {
-				n++
+			if msg["type"] == "StatusResponse" {
+				return before
 			}
+
+			before = append(before, msg)
 
 		case <-timeout:
-			return n
+			c.t.Fatalf("%s: timeout while syncing", c.user)
 		}
 	}
+}
+
+func count(messages []map[string]interface{}, kind string) int {
+	n := 0
+
+	for _, msg := range messages {
+		if msg["type"] == kind {
+			n++
+		}
+	}
+
+	return n
 }
 
 func join(c *testClient, player int, color string) {
@@ -206,15 +224,15 @@ func startGame(t *testing.T, s *httptest.Server) (*testClient, *testClient) {
 	return white, black
 }
 
-// S9: Protocol.md says the server answers a connection with the room status
+// The server answers a connection with the room status
 func TestConnectReceivesStatus(t *testing.T) {
 	s := newServer(t)
 	c := connect(t, s, roomCode(t), "alan")
 
-	c.expect("StatusResponse")
+	assert.Equal(t, "NOT_STARTED", c.status["state"])
 }
 
-// S1: both players getting ready at the same time must start the game once
+// Both players getting ready at the same time start the game once
 func TestSimultaneousReadyStartsGameOnce(t *testing.T) {
 	s := newServer(t)
 
@@ -234,11 +252,13 @@ func TestSimultaneousReadyStartsGameOnce(t *testing.T) {
 		go func() { defer wg.Done(); ready(black, 2, true) }()
 		wg.Wait()
 
-		assert.Equal(t, 1, white.count("StartGame", 300*time.Millisecond), "room %s", room)
+		// Once both readies are handled every StartGame has been sent
+		black.sync()
+		assert.Equal(t, 1, count(white.sync(), "StartGame"), "room %s", room)
 	}
 }
 
-// S4 and S2: clients connecting at the same time to a new code share one room
+// Clients connecting at the same time to a new code share one room
 func TestConcurrentConnectionsShareRoom(t *testing.T) {
 	s := newServer(t)
 	room := roomCode(t)
@@ -261,8 +281,6 @@ func TestConcurrentConnectionsShareRoom(t *testing.T) {
 		require.NoError(t, err)
 	}
 
-	time.Sleep(200 * time.Millisecond)
-
 	join(clients[0], 1, "white")
 
 	for _, c := range clients {
@@ -270,7 +288,7 @@ func TestConcurrentConnectionsShareRoom(t *testing.T) {
 	}
 }
 
-// S3: a client that stops reading must not freeze the room for the rest
+// A client that stops reading does not freeze the room for the rest
 func TestSlowClientDoesNotFreezeRoom(t *testing.T) {
 	s := newServer(t)
 	room := roomCode(t)
@@ -318,7 +336,7 @@ func TestSlowClientDoesNotFreezeRoom(t *testing.T) {
 	}
 }
 
-// S2: after a client disconnects the room keeps working for the others
+// After clients disconnect the room keeps working for the others
 func TestDisconnectedClientDoesNotBreakRoom(t *testing.T) {
 	s := newServer(t)
 	room := roomCode(t)
@@ -330,13 +348,12 @@ func TestDisconnectedClientDoesNotBreakRoom(t *testing.T) {
 
 	white := connect(t, s, room, "white")
 	black := connect(t, s, room, "black")
-	time.Sleep(100 * time.Millisecond)
 
 	join(white, 1, "white")
 	black.expect("PlayerJoined")
 }
 
-// S7: a player cannot move for the other one
+// A player cannot move for the other one
 func TestCannotSubmitTurnForOtherPlayer(t *testing.T) {
 	s := newServer(t)
 	white, black := startGame(t, s)
@@ -344,10 +361,10 @@ func TestCannotSubmitTurnForOtherPlayer(t *testing.T) {
 	submit(black, 1, 1, "a1")
 
 	expectError(t, black, "NOT_YOUR_SEAT")
-	assert.Equal(t, 0, white.count("Turn", 300*time.Millisecond))
+	assert.Equal(t, 0, count(white.sync(), "Turn"))
 }
 
-// S7: a seat taken by one user cannot be taken by another
+// A seat taken by one user cannot be taken by another
 func TestCannotTakeOccupiedSeat(t *testing.T) {
 	s := newServer(t)
 	room := roomCode(t)
@@ -362,7 +379,7 @@ func TestCannotTakeOccupiedSeat(t *testing.T) {
 	expectError(t, intruder, "SEAT_TAKEN")
 }
 
-// S9: a turn out of order is answered with an error, not ignored
+// A turn out of order is answered with an error, not ignored
 func TestOutOfTurnIsAnswered(t *testing.T) {
 	s := newServer(t)
 	_, black := startGame(t, s)
@@ -372,7 +389,7 @@ func TestOutOfTurnIsAnswered(t *testing.T) {
 	expectError(t, black, "NOT_YOUR_TURN")
 }
 
-// S6: a malformed move is rejected and the room keeps working
+// A malformed move is rejected and the room keeps working
 func TestMalformedMoveKeepsServerAlive(t *testing.T) {
 	s := newServer(t)
 	white, black := startGame(t, s)
@@ -402,15 +419,13 @@ func TestReconnectRestoresBoard(t *testing.T) {
 	black.conn.Close()
 	black = connect(t, s, room, black.user)
 
-	msg := black.expect("StatusResponse")
-	status := msg["status"].(map[string]interface{})
-	board := status["board"].(map[string]interface{})
+	board := black.status["board"].(map[string]interface{})
 
 	// The first move places a cirya of the opponent
 	assert.Equal(t, []interface{}{"C2"}, board["1"].(map[string]interface{})["a"])
 }
 
-// S5: two users logging in during the same second get different ids
+// Two users logging in during the same second get different ids
 func TestUsersGetDistinctIds(t *testing.T) {
 	s := newServer(t)
 	ids := make(map[string]bool)
@@ -429,7 +444,7 @@ func TestUsersGetDistinctIds(t *testing.T) {
 	}
 }
 
-// S5: rooms created during the same second get different codes
+// Rooms created during the same second get different codes
 func TestRoomsGetDistinctCodes(t *testing.T) {
 	s := newServer(t)
 	codes := make(map[string]bool)
@@ -474,7 +489,6 @@ func TestSeatOwnerCanRejoin(t *testing.T) {
 
 	white.conn.Close()
 	white = connect(t, s, room, white.user)
-	white.expect("StatusResponse")
 
 	join(white, 1, "white")
 	white.expect("StatusResponse")
@@ -499,7 +513,6 @@ func TestSpectatorCannotPlay(t *testing.T) {
 	white, _ := startGame(t, s)
 
 	spectator := connect(t, s, room, "spectator")
-	spectator.expect("StatusResponse")
 
 	submit(spectator, 1, 1, "a1")
 	expectError(t, spectator, "NOT_YOUR_SEAT")
@@ -544,7 +557,6 @@ func TestFullGameToLonde(t *testing.T) {
 	room := roomCode(t)
 	white, black := startGame(t, s)
 	spectator := connect(t, s, room, "spectator")
-	spectator.expect("StatusResponse")
 
 	moves := []string{
 		"a5", "e5", // openings: a cirya of the opponent
