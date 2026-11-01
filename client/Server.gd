@@ -3,9 +3,6 @@ extends Node
 export var server_host = "play.cirya.me"
 export var server_port = 3333
 
-# export var server_host = "127.0.0.1"
-# export var server_port = 3333
-
 onready var global = get_node("/root/Global")
 
 signal connection_error(error)
@@ -37,8 +34,8 @@ func on_user_request(result, response_code, headers, body):
         context["user_id"] = msg.result["id"]
         emit_signal("user_logged")
     else:
-        # TODO: Show error message
-        print("ERROR HTTP CONNECTION", response_code, body)
+        # Tries again until the server answers
+        push_error("cannot log in: HTTP %d" % response_code)
         var timer = Timer.new()
         timer.set_one_shot(true)
         timer.set_timer_process_mode(0)
@@ -58,14 +55,12 @@ func on_room_request(result, response_code, headers, body):
         context["room_id"] = msg.result["id"]
         emit_signal("room_created", context["room_id"])
     else:
-        # TODO: Show error message
-        print("ERROR HTTP CONNECTION", response_code, body)
+        push_error("cannot create a room: HTTP %d" % response_code)
 
 func join_room(room_id):
     if context.get("connected", false):
         return
 
-    print("Joining room %s" % room_id)
     context["room_id"] = room_id
 
     ws = WebSocketClient.new()
@@ -77,19 +72,13 @@ func join_room(room_id):
     ws.connect("data_received", self, "ws_data_received")
 
     var ws_url = "ws://{host}:{port}/rooms/{room_id}".format(context)
-
-    print("Connecting to {url} with {user}".format({
-        "user": context["user_id"],
-        "url": ws_url
-    }))
     var err = ws.connect_to_url(ws_url, [], false, [
         "Cookie: cirya-user={user_id}; SameSite=None; Secure".format(context),
     ])
 
     if err != OK:
-        print("Cannot connect to URL %s" % ws_url)
         set_process(false)
-        emit_signal("connection_error", "Cannot connect to URL %s" )
+        emit_signal("connection_error", "Cannot connect to %s" % ws_url)
 
 func ws_closed(clean = false):
     set_process(false)
@@ -125,9 +114,6 @@ func _process(delta):
     if ws != null:
         ws.poll()
 
-func is_ws_connected():
-    return context["connected"]
-
 func get_player():
     return context.get("player", 0)
     
@@ -140,9 +126,6 @@ func get_code():
 # MESSAGES IMPLEMENTATION
 
 func ws_send_message(data):
-    """
-    Generic method to send any kind of message. Will be used by the more specialized ones
-    """
     var msg = JSON.print(data)
     ws.get_peer(1).put_packet(msg.to_utf8())
 

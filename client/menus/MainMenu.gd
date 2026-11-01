@@ -78,16 +78,8 @@ func on_color_pressed(button, other):
     button.get_node("Edit").visible = true
     other.get_node("Edit").visible = false
 
-func on_name_focus_enter(button):
-    button.get_node("Edit/InputName/Label").visible = false
-
-func on_name_focus_exit(button):
-    if button.get_node("Edit/InputName").text == "":
-        button.get_node("Edit/InputName/Label").visible = true
-
 func on_play_pressed(button):
     var name = button.get_node("Edit/InputName").text
-    #set_player_name(button, name)
     disconnect_handlers()
     
     if button == WhiteButton:
@@ -98,17 +90,6 @@ func on_play_pressed(button):
 func disconnect_handlers():
     disconnect_button(WhiteButton)
     disconnect_button(BlackButton)
-
-func set_player(color, name):
-    get_node("/root/Menu/Welcome").visible = false
-    get_node("/root/Menu/JoinGame").visible = false
-    get_node("/root/Menu/Loading").visible = false
-    get_node("/root/Menu/CreateGame").visible = true
-    
-    if color == "white":
-        set_player_name(WhiteButton, name)
-    else:
-        set_player_name(BlackButton, name)
 
 func set_player_name(button, name):
     disconnect_button(button)
@@ -123,7 +104,7 @@ func _on_JoinGameCode_pressed():
     # Room codes are uppercase, someone typing them in lowercase would end in an empty room
     _on_room_created(code.strip_edges().to_upper())
 
-# Offline board to try moves: any piece can be moved and nothing is sent to the server
+# A local game on one computer: the same rules and turns, without the server
 func _on_SandboxButton_pressed():
     Global.sandbox = true
     Global.player = 1
