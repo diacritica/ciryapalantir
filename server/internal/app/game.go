@@ -99,7 +99,7 @@ func NewGame(id ID) Game {
 		players: make(map[string]PlayerStatus),
 		state:   NOT_STARTED,
 		moves:   make([]string, 0),
-		board:   cirya.MakeBoard(5),
+		board:   cirya.NewBoard(5),
 		turn:    1,
 		player:  1,
 	}
@@ -161,7 +161,7 @@ func (g *game) StartGame() {
 	g.state = TURN_1
 	g.turn = 1
 	g.player = 1
-	g.board = cirya.MakeBoard(g.config.Size)
+	g.board = cirya.NewBoard(g.config.Size)
 }
 
 func (g *game) CurrentPlayer() int {
@@ -178,9 +178,9 @@ func (g *game) Turn(move string) (TurnResult, error) {
 
 	// The first move of each player places a cirya of the opponent
 	if g.turn <= 2 {
-		err = g.board.ProcessOpening(g.player, move)
+		err = g.board.PlayOpening(g.player, move)
 	} else {
-		err = g.board.ProcessMove(g.player, move)
+		err = g.board.Play(g.player, move)
 	}
 
 	if err != nil {

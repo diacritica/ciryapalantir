@@ -10,7 +10,7 @@ import (
 
 // A 5x5 board with the stones placed as "C1@a1"
 func boardOf(t *testing.T, stones ...string) *cirya.Board {
-	board := cirya.MakeBoard(5)
+	board := cirya.NewBoard(5)
 
 	for _, s := range stones {
 		require.Len(t, s, 5, "stone %s", s)
@@ -78,26 +78,26 @@ func TestSimultaneousLondeWinsMover(t *testing.T) {
 		"C2@a5", "C2@b5", "C2@c5", "C2@d5", "C2@e5",
 	)
 
-	assert.Equal(t, cirya.Result{Over: true, Winner: 2, Condition: cirya.LONDI}, board.Result(2))
-	assert.Equal(t, cirya.Result{Over: true, Winner: 1, Condition: cirya.LONDI}, board.Result(1))
+	assert.Equal(t, cirya.Result{Over: true, Winner: 2, Condition: cirya.Londi}, board.Result(2))
+	assert.Equal(t, cirya.Result{Over: true, Winner: 1, Condition: cirya.Londi}, board.Result(1))
 }
 
 // A move that only completes the londë of the opponent makes the opponent win
 func TestLondeOfOpponentWins(t *testing.T) {
 	board := boardOf(t, "C1@a1", "C1@b1", "C1@c1", "C1@d1", "C1@e1")
 
-	assert.Equal(t, cirya.Result{Over: true, Winner: 1, Condition: cirya.LONDI}, board.Result(2))
+	assert.Equal(t, cirya.Result{Over: true, Winner: 1, Condition: cirya.Londi}, board.Result(2))
 }
 
 func TestGameGoesOnWithoutLonde(t *testing.T) {
 	board := boardOf(t, "C1@a1", "C1@b1", "C2@c1")
 
-	assert.Equal(t, cirya.Result{Over: false, Condition: cirya.NONE}, board.Result(1))
+	assert.Equal(t, cirya.Result{Over: false, Condition: cirya.NoWin}, board.Result(1))
 }
 
 // Full board: only flat ciryar on top count
 func TestFullBoardCountsFlats(t *testing.T) {
-	board := cirya.MakeBoard(5)
+	board := cirya.NewBoard(5)
 	files := "abcde"
 
 	// A checkerboard, so nobody has a londë. a1 belongs to player 2
@@ -120,19 +120,19 @@ func TestFullBoardCountsFlats(t *testing.T) {
 	// 13 squares of player 2 and 12 of player 1. A tampa and a hallacirya of player 2 do not count
 	assert.Equal(t, 13, board.FlatCount(2))
 	assert.Equal(t, 12, board.FlatCount(1))
-	assert.Equal(t, cirya.Result{Over: true, Winner: 2, Condition: cirya.FLAT}, board.Result(1))
+	assert.Equal(t, cirya.Result{Over: true, Winner: 2, Condition: cirya.Flat}, board.Result(1))
 
 	board.Data["1"]["a"] = []string{"T2"}
 	board.Data["3"]["c"] = []string{"H2"}
 
 	assert.Equal(t, 11, board.FlatCount(2))
-	assert.Equal(t, cirya.Result{Over: true, Winner: 1, Condition: cirya.FLAT}, board.Result(1))
+	assert.Equal(t, cirya.Result{Over: true, Winner: 1, Condition: cirya.Flat}, board.Result(1))
 
 	// Same flats: draw
 	board.Data["5"]["e"] = []string{"T2"}
 	board.Data["2"]["a"] = []string{"T1"}
 	board.Data["1"]["b"] = []string{"T1"}
-	assert.Equal(t, cirya.Result{Over: true, Winner: 0, Condition: cirya.FLAT}, board.Result(1))
+	assert.Equal(t, cirya.Result{Over: true, Winner: 0, Condition: cirya.Flat}, board.Result(1))
 }
 
 // The game ends when a player has placed the whole fleet
@@ -141,15 +141,15 @@ func TestEmptyFleetEndsGame(t *testing.T) {
 	board.Fleets[2].Ciryar = 0
 	board.Fleets[2].Hallaciryar = 0
 
-	assert.Equal(t, cirya.Result{Over: true, Winner: 2, Condition: cirya.FLAT}, board.Result(1))
+	assert.Equal(t, cirya.Result{Over: true, Winner: 2, Condition: cirya.Flat}, board.Result(1))
 }
 
 func TestFleetLimits(t *testing.T) {
-	board := cirya.MakeBoard(5)
+	board := cirya.NewBoard(5)
 	squares := 0
 
 	place := func(move string) error {
-		return board.ProcessMove(1, move)
+		return board.Play(1, move)
 	}
 
 	assert.Nil(t, place("Ha1"))
@@ -183,16 +183,16 @@ func TestOfficialFleets(t *testing.T) {
 
 // The first move places a flat cirya of the opponent, from the opponent's fleet
 func TestOpening(t *testing.T) {
-	board := cirya.MakeBoard(5)
+	board := cirya.NewBoard(5)
 
-	assert.NotNil(t, board.ProcessOpening(1, "Ta1"))
-	assert.NotNil(t, board.ProcessOpening(1, "Ha1"))
-	assert.NotNil(t, board.ProcessOpening(1, "a1>"))
+	assert.NotNil(t, board.PlayOpening(1, "Ta1"))
+	assert.NotNil(t, board.PlayOpening(1, "Ha1"))
+	assert.NotNil(t, board.PlayOpening(1, "a1>"))
 
-	assert.Nil(t, board.ProcessOpening(1, "a1"))
+	assert.Nil(t, board.PlayOpening(1, "a1"))
 	assert.Equal(t, []string{"C2"}, board.Data["1"]["a"])
 	assert.Equal(t, 20, board.Fleets[2].Ciryar)
 	assert.Equal(t, 21, board.Fleets[1].Ciryar)
 
-	assert.NotNil(t, board.ProcessOpening(2, "a1"), "occupied")
+	assert.NotNil(t, board.PlayOpening(2, "a1"), "occupied")
 }

@@ -7,12 +7,12 @@ import (
 )
 
 func TestPlaceOne(t *testing.T) {
-	var board = cirya.MakeBoard(9)
-	err1 := board.ProcessMove(1, "a1")
-	err2 := board.ProcessMove(2, "Hi9")
-	err3 := board.ProcessMove(1, "Td4")
-	err4 := board.ProcessMove(1, "x1")
-	err5 := board.ProcessMove(1, "a0")
+	var board = cirya.NewBoard(9)
+	err1 := board.Play(1, "a1")
+	err2 := board.Play(2, "Hi9")
+	err3 := board.Play(1, "Td4")
+	err4 := board.Play(1, "x1")
+	err5 := board.Play(1, "a0")
 
 	assert.Nil(t, err1)
 	assert.Nil(t, err2)
@@ -27,18 +27,18 @@ func TestPlaceOne(t *testing.T) {
 }
 
 func TestPlaceOverExistingFails(t *testing.T) {
-	var board = cirya.MakeBoard(9)
-	board.ProcessMove(1, "a1")
+	var board = cirya.NewBoard(9)
+	board.Play(1, "a1")
 
 	var err error
 
-	err = board.ProcessMove(1, "a1")
+	err = board.Play(1, "a1")
 	assert.NotNil(t, err)
 
-	err = board.ProcessMove(2, "Ha1")
+	err = board.Play(2, "Ha1")
 	assert.NotNil(t, err)
 
-	err = board.ProcessMove(1, "Ta1")
+	err = board.Play(1, "Ta1")
 	assert.NotNil(t, err)
 }
 
@@ -60,17 +60,17 @@ func TestMove(t *testing.T) {
 		Size: 9,
 	}
 
-	board.ProcessMove(1, "a1>")
+	board.Play(1, "a1>")
 
 	assert.Equal(t, board.Data["1"]["a"], []string{"C1", "C2", "C1"})
 	assert.Equal(t, board.Data["1"]["b"], []string{"C1"})
 
-	board.ProcessMove(1, "3a1+")
+	board.Play(1, "3a1+")
 
 	assert.Equal(t, board.Data["1"]["a"], []string{})
 	assert.Equal(t, board.Data["2"]["a"], []string{"C1", "C2", "C1"})
 
-	board.ProcessMove(1, "3a2>111")
+	board.Play(1, "3a2>111")
 
 	assert.Equal(t, board.Data["1"]["a"], []string{})
 	assert.Equal(t, board.Data["2"]["a"], []string{})
@@ -79,20 +79,20 @@ func TestMove(t *testing.T) {
 	assert.Equal(t, board.Data["2"]["c"], []string{"C2"})
 	assert.Equal(t, board.Data["2"]["d"], []string{"C1"})
 
-	err = board.ProcessMove(1, "2d5-2")
+	err = board.Play(1, "2d5-2")
 
 	assert.Nil(t, err)
 	assert.Equal(t, board.Data["5"]["d"], []string{"C1"})
 	assert.Equal(t, board.Data["4"]["d"], []string{"C2", "H1"})
 
-	board.ProcessMove(2, "c5>")
-	board.ProcessMove(2, "e5<")
+	board.Play(2, "c5>")
+	board.Play(2, "e5<")
 
 	assert.Equal(t, board.Data["5"]["c"], []string{})
 	assert.Equal(t, board.Data["5"]["d"], []string{"C1", "C2", "C2"})
 	assert.Equal(t, board.Data["5"]["e"], []string{})
 
-	board.ProcessMove(2, "3d5<12")
+	board.Play(2, "3d5<12")
 
 	assert.Equal(t, board.Data["5"]["c"], []string{"C1"})
 	assert.Equal(t, board.Data["5"]["b"], []string{"C2", "C2"})
@@ -112,21 +112,21 @@ func TestMoveOutsideBounds(t *testing.T) {
 		Size: 9,
 	}
 
-	assert.NotNil(t, board.ProcessMove(1, "a1<"))
-	assert.NotNil(t, board.ProcessMove(1, "3a1<"))
-	assert.NotNil(t, board.ProcessMove(1, "3a1<111"))
+	assert.NotNil(t, board.Play(1, "a1<"))
+	assert.NotNil(t, board.Play(1, "3a1<"))
+	assert.NotNil(t, board.Play(1, "3a1<111"))
 
-	assert.NotNil(t, board.ProcessMove(1, "a1-"))
-	assert.NotNil(t, board.ProcessMove(1, "3a1-"))
-	assert.NotNil(t, board.ProcessMove(1, "3a1-111"))
+	assert.NotNil(t, board.Play(1, "a1-"))
+	assert.NotNil(t, board.Play(1, "3a1-"))
+	assert.NotNil(t, board.Play(1, "3a1-111"))
 
-	assert.NotNil(t, board.ProcessMove(1, "i9>"))
-	assert.NotNil(t, board.ProcessMove(1, "3i9>"))
-	assert.NotNil(t, board.ProcessMove(1, "3i9>111"))
+	assert.NotNil(t, board.Play(1, "i9>"))
+	assert.NotNil(t, board.Play(1, "3i9>"))
+	assert.NotNil(t, board.Play(1, "3i9>111"))
 
-	assert.NotNil(t, board.ProcessMove(1, "i9+"))
-	assert.NotNil(t, board.ProcessMove(1, "3i9+"))
-	assert.NotNil(t, board.ProcessMove(1, "3i9+111"))
+	assert.NotNil(t, board.Play(1, "i9+"))
+	assert.NotNil(t, board.Play(1, "3i9+"))
+	assert.NotNil(t, board.Play(1, "3i9+111"))
 }
 
 func TestMoveOverTampa(t *testing.T) {
@@ -148,11 +148,11 @@ func TestMoveOverTampa(t *testing.T) {
 	}
 
 	// Invalid moves
-	assert.NotNil(t, board.ProcessMove(1, "b6>"))
-	assert.NotNil(t, board.ProcessMove(1, "2c7-2"))
+	assert.NotNil(t, board.Play(1, "b6>"))
+	assert.NotNil(t, board.Play(1, "2c7-2"))
 
 	// Valid
-	err = board.ProcessMove(1, "d6<")
+	err = board.Play(1, "d6<")
 	assert.Nil(t, err)
 	assert.Equal(t, board.Data["6"]["c"], []string{"C1", "H1"})
 }

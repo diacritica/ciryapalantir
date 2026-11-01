@@ -1,8 +1,6 @@
 package cirya
 
-import (
-	"fmt"
-)
+import "fmt"
 
 // Pieces a player has not placed yet. Tampar come from the same pile as ciryar
 type Fleet struct {
@@ -32,38 +30,27 @@ func (f *Fleet) Empty() bool {
 	return f.Ciryar == 0 && f.Hallaciryar == 0
 }
 
-func (b *Board) takeFromFleet(player int, stone string) error {
-	if b.Fleets == nil {
-		return nil
-	}
+// True when the player has placed every piece of the fleet
+func (b *Board) FleetEmpty(player int) bool {
+	fleet := b.Fleets[player]
+	return fleet != nil && fleet.Empty()
+}
 
-	fleet, ok := b.Fleets[player]
+func (b *Board) takeFromFleet(player int, stone byte) error {
+	fleet := b.Fleets[player]
 
-	if !ok {
-		return fmt.Errorf("Player %d has no fleet", player)
-	}
-
-	if stone == "H" {
-		if fleet.Hallaciryar == 0 {
-			return fmt.Errorf("Player %d has no hallaciryar left", player)
-		}
+	switch {
+	case fleet == nil:
+		return fmt.Errorf("player %d has no fleet", player)
+	case stone == 'H' && fleet.Hallaciryar == 0:
+		return fmt.Errorf("player %d has no hallaciryar left", player)
+	case stone != 'H' && fleet.Ciryar == 0:
+		return fmt.Errorf("player %d has no ciryar left", player)
+	case stone == 'H':
 		fleet.Hallaciryar--
-	} else {
-		if fleet.Ciryar == 0 {
-			return fmt.Errorf("Player %d has no ciryar left", player)
-		}
+	default:
 		fleet.Ciryar--
 	}
 
 	return nil
-}
-
-// True when a player has placed every piece of the fleet
-func (b *Board) FleetEmpty(player int) bool {
-	if b.Fleets == nil {
-		return false
-	}
-
-	fleet, ok := b.Fleets[player]
-	return ok && fleet.Empty()
 }

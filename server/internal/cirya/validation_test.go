@@ -22,7 +22,7 @@ func safeMove(t *testing.T, board *cirya.Board, player int, move string) (err er
 		}
 	}()
 
-	return board.ProcessMove(player, move)
+	return board.Play(player, move)
 }
 
 // S6: drops have to add up to the stones taken
