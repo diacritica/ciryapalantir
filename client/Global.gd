@@ -18,12 +18,11 @@ var player = null
 var pieces = []
 var turn = 1
 var disable_move = false
-var player_movement = {
-    "last_tile": null,
-    "direction": null,
-    "dropped_pieces": []
-}
-# false: move any piece and no backend
+# The move of this turn: the board before it, where it started (the nossë, or
+# the piece taken from the fleet) and the tampar standing then. Null until a
+# piece is taken
+var move = null
+# A local game on one computer: the same rules and turns, without the server
 var sandbox = false
 onready var Validation = get_node("/root/Validation")
 
@@ -131,19 +130,87 @@ func remove_piece_from_state(piece_id):
         for column in row:
             column.erase(piece_id)
     
-# A new move starts: no direction and no squares visited yet
-func reset_movement():
-    player_movement = {
-        "last_tile": null,
-        "direction": null,
-        "dropped_pieces": []
+# A move that starts by taking this piece, from the board as it is now
+func new_move(piece_id):
+    var tile = get_piece_tile(piece_id)
+    var tampar = []
+
+    for piece in pieces:
+        if piece.get_notation_name() == 'T' and get_piece_tile(piece.get_instance_id()):
+            tampar.append(piece.get_instance_id())
+
+    return {
+        "before": board_state.duplicate(true),
+        "origin": Vector2(tile.row, tile.column) if tile else null,
+        "placed": null if tile else piece_id,
+        "tampar": tampar
     }
 
-# True when the piece is one of those that can keep being spread in the current
-# move: the ones just dropped except the bottom one, which has to stay
-func continues_movement(piece_id):
-    var dropped = player_movement.dropped_pieces
-    return dropped.size() > 1 and dropped.slice(1, dropped.size() - 1).has(piece_id)
+func start_move(piece_id):
+    save_pieces_translation()
+    move = new_move(piece_id)
+
+# The turn is over: the next piece taken starts a new move
+func end_move():
+    move = null
+
+# In the sandbox the turn goes to the other player when it is confirmed
+func next_sandbox_turn():
+    end_move()
+    turn += 1
+    player = 3 - player
+
+func move_started():
+    return move != null and var2str(board_state) != var2str(move.before)
+
+# The pieces that can be taken once the move has started: the piece from the
+# fleet, the nossë it started from and the stones dropped along the way
+func part_of_move(piece_id):
+    if !move:
+        return false
+
+    if move.placed != null:
+        return piece_id == move.placed
+
+    var tile = get_piece_tile(piece_id)
+
+    if !tile:
+        return false
+
+    if tile.row == move.origin.x and tile.column == move.origin.y:
+        return true
+
+    var before = move.before[tile.row][tile.column]
+    return board_state[tile.row][tile.column].find(piece_id) >= before.size()
+
+# The board if the dragged pieces were dropped on this square
+func board_after_drop(hand, row, column):
+    var state = board_state.duplicate(true)
+
+    for line in state:
+        for stack in line:
+            for piece_id in hand:
+                stack.erase(piece_id)
+
+    for piece_id in hand:
+        state[row][column].append(piece_id)
+
+    return state
+
+# A tampa lies flat while the hallacirya of this move is on it, and stands up
+# again when the hallacirya goes back
+func sync_tampar():
+    if !move:
+        return
+
+    for piece_id in move.tampar:
+        var tile = get_piece_tile(piece_id)
+        var stack = board_state[tile.row][tile.column]
+        var covered = stack.find(piece_id) < stack.size() - 1
+        var piece = instance_from_id(piece_id)
+
+        if piece.block == covered:
+            piece.toggle_block()
 
 func init_drag_drop(pieces): 
     dragging_nosse = Spatial.new()
@@ -164,17 +231,12 @@ func init_drag_drop(pieces):
         piece.show_selected()
         
         self.move_to(piece, dragging_nosse)
-    
-    var tile = get_piece_tile(pieces[0].get_instance_id())
-    self.player_movement.last_tile = tile
 
     self.game.add_child(dragging_nosse)
 
 # TODO, make sure the drag and drop stop works when outside the board and undos board state
 func stop_drag_drop(tile):
-    var piece_ids = []
     for piece in dragging_nosse.get_children():
-        piece_ids.append(piece.get_instance_id())
         piece.mode = RigidBody.MODE_RIGID
         piece.get_node("CollisionShape").disabled = false
         piece.translation.x = dragging_nosse.translation.x
@@ -186,27 +248,6 @@ func stop_drag_drop(tile):
             piece.hide_selected()
         
         self.move_to(piece, game)
-        
-    # save info from new tile for validation
-    # tile is null when the pieces are dropped outside the board
-    if tile and self.player_movement.last_tile and self.player_movement.last_tile != tile:
-        print('save row', self.player_movement.last_tile.row, ' ', tile.row)
-        print('save column', self.player_movement.last_tile.column, ' ', tile.column)
-        if self.player_movement.last_tile.row != tile.row:
-            if self.player_movement.last_tile.row > tile.row:
-                self.player_movement.direction = '-'
-            else:
-                self.player_movement.direction = '+'
-        else:
-            if self.player_movement.last_tile.column > tile.column:
-                self.player_movement.direction = '<'
-            else:
-                self.player_movement.direction = '>'
-                
-        print('save direction ', self.player_movement.direction)
-            
-        self.player_movement.last_tile = tile
-        self.player_movement.dropped_pieces = piece_ids   
         
     game.remove_child(dragging_nosse)
     dragging_nosse.queue_free()
@@ -254,11 +295,16 @@ func save_pieces_translation():
         undo_state[piece.get_instance_id()] = piece.translation        
     
 func restore_initial_position():
+    if !move:
+        return
+
     game.get_node("undo").play()         
     for piece in pieces:
         piece.translation = undo_state[piece.get_instance_id()]
 
-    board_state = undo_board_state
+    board_state = move.before.duplicate(true)
+    sync_tampar()
+    end_move()
     
 func move_to(el, to):
     el.get_parent().remove_child(el)
@@ -293,9 +339,10 @@ func move_piece(piece_id, row, column):
 func data_received(data):
     print('data_received', data)
     if "type" in data and data.type == 'StartGame' || data.type == 'Turn':
+        end_move()
+
         if data.params.nextPlayer == self.player:
             self.disable_move = false
-            reset_movement()
         else: 
             self.disable_move = true
         
@@ -400,69 +447,30 @@ func simulation(moves):
         else:
             player = 1
         
-# [{from:(2, 4), pieces:[1559, 1552], to:(2, 3)}, {from:(2, 3), pieces:[1552], to:(2, 2)}]    
 # (count)(square)(direction)(drop counts)(stone)
 # Take 5 stones from square b4 and move them right dropping 2 stones, 1 stone, then 2 stones as you come to each square.
 # 5b4>212
-func notation(turn): 
-    var old_notation = ''
-    var origin = turn[0] #FIXME! after an invalid movement clicking on CONFIRMACION TURNO has an empty turn object
-    var count = origin.pieces.size()
+# Worked out from the board when the turn is confirmed, not from the drops made
+func move_notation():
+    var state = Validation.move_state(move, board_state)
 
-    if origin.from == null:
-        var piece_from_tray = instance_from_id(origin.pieces[0])
-        var piece_type = piece_from_tray.get_notation_name()
-        
-        var notation = notation_tile(origin.to)
-        
-        if piece_type != 'C':
-            return piece_type + notation
-        else:
-            return notation
-           
-    var new_notation = ''
-    
-    if count > 1:
-        new_notation += str(count)
-        
-    var from_notation = notation_tile(origin.from)
-    
-    new_notation += from_notation
-    
-    var move_symbol = null
+    if !state:
+        return ''
 
-    if origin.from.x < origin.to.x:
-        move_symbol = '+'
-    elif  origin.from.x > origin.to.x:
-        move_symbol = '-'
-    elif origin.from.y < origin.to.y:    
-        move_symbol = '>'
-    else:
-        move_symbol = '<'
-        
-    new_notation += move_symbol
-    
-    if turn.size() > 1:
-        var exclude = []
-        var movement_drop_count = []
-        var movements = turn
-        movements.invert()
-        for movement in movements:
-            print("MOVEMENTE",movement)
-            var dropped_count = 0
-            
-            for piece_id in movement.pieces:
-                if exclude.find(piece_id) == -1:
-                    dropped_count += 1
-                    exclude.append(piece_id)
-            
-            if dropped_count > 0:
-                movement_drop_count.append(dropped_count)
-            
-        movement_drop_count.invert()
-        
-        for drop in movement_drop_count:
-            if drop != 0: #WORKAROUND to avoid fake 0 movements in notation
-                new_notation += str(drop)
-    
-    return new_notation
+    if state.has("placed"):
+        var stone = instance_from_id(state.placed).get_notation_name()
+        return ('' if stone == 'C' else stone) + notation_tile(state.square)
+
+    var symbols = {Vector2(1, 0): '+', Vector2(-1, 0): '-', Vector2(0, 1): '>', Vector2(0, -1): '<'}
+    var text = ''
+
+    if state.count > 1:
+        text += str(state.count)
+
+    text += notation_tile(state.origin) + symbols[state.direction]
+
+    if state.drops.size() > 1:
+        for drop in state.drops:
+            text += str(drop)
+
+    return text

@@ -38,7 +38,9 @@ func _ready():
     move_fleet($Fleet2)
     
     if global.sandbox:
-        $UI.visible = false
+        global.turn = 1
+        $UI/CodePanel.visible = false
+        $UI.show_turn_buttons()
         $sandboxlogo.visible = true
 
 func simulation():
@@ -69,7 +71,6 @@ func get_mouse_cast(exclude_current_piece = true):
                 
 var piece_cast_tile = null
 var piece_source_tile = null
-var movements = []
 var show_fps = true
 
 func _process(delta):
@@ -96,14 +97,8 @@ func _input(event):
                 
                 # init drag
                 if event.is_pressed() and Validation.can_move(cast.collider.get_instance_id()):
-                    # In the sandbox there are no turns: taking a piece that does not
-                    # continue the last move starts a new one
-                    if global.sandbox and !global.continues_movement(cast.collider.get_instance_id()):
-                        movements = []
-
-                    if !movements.size():
-                        global.save_pieces_translation()
-                        global.reset_movement()
+                    if !global.move_started():
+                        global.start_move(cast.collider.get_instance_id())
                     
                     get_node("select").play()
                     var piece = cast.collider
@@ -118,23 +113,11 @@ func _input(event):
 
                 # stop drag
                 elif global.dragging_nosse and not piece_cast_tile.empty() and Validation.can_drop(piece_cast_tile.collider.row, piece_cast_tile.collider.column):
-                    var wrapper = global.dragging_nosse
-                    var pieces_ids = global.get_dragging_nosse_pieces_ids()
-                    var old_tile = global.get_piece_tile(pieces_ids[0])
-                    var last_turn = {
-                        "from": null,
-                        "to": null,
-                        "pieces": pieces_ids
-                    }
+                    var tile = piece_cast_tile.collider
 
-                    if old_tile:
-                        last_turn.from = Vector2(old_tile.row, old_tile.column)
-                    
-                    last_turn.to = Vector2(piece_cast_tile.collider.row, piece_cast_tile.collider.column)
-                    if !last_turn.from or (last_turn.to.x != last_turn.from.x or last_turn.to.y != last_turn.from.y):
-                        movements.append(last_turn)
-
-                    global.stop_drag_drop(piece_cast_tile.collider)
+                    global.stop_drag_drop(tile)
+                    global.sync_tampar()
+                    print('drop on ', global.notation_tile(Vector2(tile.row, tile.column)), ', move so far: ', global.move_notation())
 
                     piece_cast_tile.collider.hideHighlight()
 
@@ -143,6 +126,8 @@ func _input(event):
                         piece_source_tile = null
                 # Released where the pieces cannot go
                 elif global.dragging_nosse and not event.is_pressed():
+                    if not piece_cast_tile.empty():
+                        print('drop on ', global.notation_tile(Vector2(piece_cast_tile.collider.row, piece_cast_tile.collider.column)), ' rejected')
                     cancel_drag()
             # drag movement
             elif global.dragging_nosse and event is InputEventMouseMotion:
@@ -181,7 +166,12 @@ func cancel_drag():
 
 func _on_turn_confirmation(value):
     if value:
-        var move = global.notation(movements)
+        var move = global.move_notation()
+
+        # Nothing moved, or the move is not finished yet
+        if !move:
+            return
+
         var msg = {
             "type": "SubmitTurn",
             "params": {
@@ -193,11 +183,13 @@ func _on_turn_confirmation(value):
         print('sending: ')
         print(msg)
         
-        if !global.sandbox:
+        if global.sandbox:
+            $UI.add_move(move)
+            global.next_sandbox_turn()
+            $UI.set_turn_color("white" if global.player == 1 else "black")
+        else:
             Server.ws_send_message(msg)
-        
-        movements = []
+            global.end_move()
         
     else:
         global.restore_initial_position()
-        movements = []

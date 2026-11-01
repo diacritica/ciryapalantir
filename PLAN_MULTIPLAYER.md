@@ -152,19 +152,26 @@ El sandbox es "mundo libre": `can_move` devuelve `true` siempre y cada pieza cog
 Solo con turnos alternos se ejercita la regla de verdad. Hay que comprobar que, al coger una carga de un nossë que controla el jugador:
 
 - Solo se puede coger del nossë propio (pieza de arriba del jugador) y como mucho tantas piezas como el tamaño del tablero.
-  **Hoy el cliente no comprueba el límite de carga**; el servidor sí (`MoveStones`).
-- Una vez soltada la primera pieza, el turno es ese movimiento: no se puede coger otro nossë ni sacar piezas de la flota,
-  solo seguir con las de encima de lo que se acaba de soltar (`dropped_pieces` sin la de abajo).
-- Una sola dirección y un solo sentido, una casilla por paso, dejando al menos una pieza en cada casilla, sin volver atrás.
-  **Revisar:** soltar en la misma casilla del último paso (distancia 0) parece pasar `can_drop`.
+  El cliente lo comprueba al coger y al soltar.
+- Una vez empezado, el turno es ese movimiento: no se puede coger otro nossë ni sacar piezas de la flota,
+  solo las del nossë de origen y las que se han ido soltando por el camino.
+- Una sola dirección y un solo sentido, casillas seguidas y al menos una pieza en cada casilla al confirmar.
+- **Romper y "desromper":** mientras dura el turno se puede soltar, recoger y volver a soltar al ritmo que se quiera,
+  también en la misma casilla o devolviendo piezas atrás. Cada suelta deja el tablero en un movimiento legal, aunque sea a medias:
+  `Validation.move_state` compara el tablero con el de antes del turno y deduce de ahí qué se ha movido.
+  La notación se calcula al confirmar (`Global.move_notation`), no suelta a suelta.
 - Tampa y Hallacirya: no se suelta encima de una Hallacirya, y encima de una Tampa solo la Hallacirya **sola**, que la aplana.
-  **Hoy el cliente lo permite si la Hallacirya va en cualquier parte de la carga**; el servidor exige que vaya sola (divergencia).
+  Si la Hallacirya vuelve atrás, la Tampa se levanta otra vez (`Global.sync_tampar`).
 - La notación que genera el cliente (`3a2>12`) coincide con lo que se ha hecho en pantalla y el servidor la acepta;
   el rival la reproduce con `notation_movement` y los dos tableros quedan iguales.
-- Al recibir el turno del rival o `InvalidTurn`, `player_movement` se reinicia.
+- Al recibir un `Turn` o `StartGame`, o al confirmar o deshacer, el movimiento se da por terminado (`Global.end_move`).
 
-Antes de E1, añadir en el servidor tests de tabla para estos casos (`MoveStones`), para que el servidor sea la referencia,
-y que E11 compare cliente y servidor.
+El servidor tiene estos casos en `server/internal/cirya/nosse_test.go` y el cliente en `client/tests/test_moves.gd`,
+que usa los `Global.gd` y `Validation.gd` reales sin escena. Se lanza desde `client/` con
+`godot --no-window --path . -s tests/test_moves.gd` y hay que pasarlo antes de cada commit que toque el arrastre.
+
+El sandbox es una partida local por turnos con las mismas reglas: "Confirmar" pasa el turno al otro jugador en el mismo ordenador.
+Así la rotura del nossë se prueba en el sandbox igual que online. E11 compara cliente y servidor.
 
 ### 2.4 Conexión (arregla C5 y C6)
 
