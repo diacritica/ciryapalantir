@@ -1,3 +1,5 @@
+// Package cirya holds the rules of Cirya: the board, the turns in Tak
+// notation and how a game ends.
 package cirya
 
 import (
@@ -11,7 +13,7 @@ import (
 // It is also how the board travels in the protocol.
 type BoardData map[string]map[string][]string
 
-// A board of Size × Size squares and the pieces each player has not placed yet
+// Board is a board of Size × Size squares and the pieces each player has not placed yet
 type Board struct {
 	Data   BoardData
 	Size   int
@@ -83,7 +85,7 @@ func owner(stone string) int {
 	return digit(stone[1])
 }
 
-// The board as text, rank 1 at the bottom, with the height of the stacks
+// String draws the board as text, rank 1 at the bottom, with the height of the stacks
 func (b *Board) String() string {
 	var sb strings.Builder
 

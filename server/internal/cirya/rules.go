@@ -8,6 +8,7 @@ const (
 	Flat  WinCondition = "FLAT"
 )
 
+// Result tells if a game is over, who won and how
 type Result struct {
 	Over bool
 	// 1 or 2, and 0 when the game ends in a draw
@@ -90,6 +91,7 @@ func (b *Board) connects(player int, start, end func(square) bool) bool {
 	return false
 }
 
+// Full tells if every square has a stack
 func (b *Board) Full() bool {
 	for _, s := range b.squares() {
 		if len(b.stack(s)) == 0 {

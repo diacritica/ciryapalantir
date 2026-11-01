@@ -2,7 +2,7 @@ package cirya
 
 import "fmt"
 
-// Pieces a player has not placed yet. Tampar come from the same pile as ciryar
+// Fleet counts the pieces a player has not placed yet. Tampar come from the same pile as ciryar
 type Fleet struct {
 	Ciryar      int `json:"ciryar"`
 	Hallaciryar int `json:"hallaciryar"`
@@ -30,7 +30,7 @@ func (f *Fleet) Empty() bool {
 	return f.Ciryar == 0 && f.Hallaciryar == 0
 }
 
-// True when the player has placed every piece of the fleet
+// FleetEmpty tells if the player has placed every piece of the fleet
 func (b *Board) FleetEmpty(player int) bool {
 	fleet := b.Fleets[player]
 	return fleet != nil && fleet.Empty()

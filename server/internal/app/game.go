@@ -24,7 +24,7 @@ const (
 	Draw       GameState = "DRAW"
 )
 
-// The reason the game refuses a request, sent back in an Error notification
+// ErrorCode is why the game refuses a request, sent back in an Error notification
 type ErrorCode string
 
 const (
@@ -47,7 +47,7 @@ func (r refusal) Error() string {
 	return string(r.code) + ": " + r.text
 }
 
-// A game in a room. It is only used from the room goroutine
+// Game is the game of a room. It is only used from the room goroutine
 type Game struct {
 	config GameConfig
 	// By seat number, "1" or "2", as the protocol sends them
@@ -65,6 +65,7 @@ type GameConfig struct {
 	Size    int    `json:"size"`
 }
 
+// Seat is one of the two places at the table
 type Seat struct {
 	// The user sitting here, the only one who can play with this seat
 	UserID ID     `json:"-"`
@@ -164,6 +165,7 @@ func (g *Game) Sit(user ID, player int, name, color string) (rejoined bool, err 
 	return false, nil
 }
 
+// Stand frees the seat of the user before the game starts
 func (g *Game) Stand(user ID, player int) error {
 	if err := g.checkOwner(user, player); err != nil {
 		return err

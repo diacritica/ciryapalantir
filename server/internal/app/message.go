@@ -1,3 +1,5 @@
+// Package app runs the rooms: the clients connected to each one, the
+// messages of the protocol and the state of the game.
 package app
 
 import (
@@ -63,16 +65,6 @@ func ParseMessage(data []byte) (*Message, error) {
 
 func (m *Message) Format() ([]byte, error) {
 	return json.MarshalIndent(m, "", "  ")
-}
-
-func (m *Message) String() string {
-	data, err := m.Format()
-
-	if err != nil {
-		return "cannot format message: " + err.Error()
-	}
-
-	return string(data)
 }
 
 func (m *Message) stringParam(name string) (string, error) {

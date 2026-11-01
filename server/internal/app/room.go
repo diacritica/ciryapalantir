@@ -8,7 +8,7 @@ import (
 // Messages waiting for a client before it is considered too slow and dropped
 const sendBuffer = 256
 
-// A websocket connection. A user can have several (two tabs, a reconnection)
+// Client is a websocket connection. A user can have several (two tabs, a reconnection)
 type Client struct {
 	user ID
 	send chan []byte
@@ -29,7 +29,7 @@ type envelope struct {
 	message *Message
 }
 
-// A room owns its clients and its game. Everything that touches them runs in
+// Room owns its clients and its game. Everything that touches them runs in
 // the room goroutine, one message after the other, so no locks are needed.
 // Rooms live as long as the server: nothing removes them yet
 type Room struct {

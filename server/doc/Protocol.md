@@ -25,6 +25,10 @@ Creates a room with a new code. The configuration is not sent yet: every game is
 
 Codes have 6 characters from `ABCDEFGHJKMNPQRSTUVWXYZ23456789` (no 0/O or 1/I/L).
 
+### GET /check
+
+Answers `OK` while the server is up.
+
 # WEBSOCKET API
 
 After a room has been created the user can join the WS to send actions and receive notifications related to that room.
@@ -52,9 +56,12 @@ The general format to send actions notifications
 
 ## Actions
 
+Connect and Disconnect, in brackets, are not messages: the server does them when the websocket opens and closes.
+Messages from the client with any type that is not an action are ignored.
+
 ### (Connect)
 
-Action by default when you connect to the server. The server will send you back a notification of `Status` with the current state of the room.
+Done when you connect to the server. The server will send you back a notification of `Status` with the current state of the room.
 
 => Will send back a **StatusResponse** to the User
 => Will send a **UserJoined** to the other users
@@ -163,7 +170,7 @@ Only sent to the user whose request could not be done. Nothing changes in the ro
     "type": "Error",
     "params": {
         "code": "NOT_YOUR_TURN",
-        "message": "It is not your turn"
+        "message": "it is not your turn"
     }
 }
 ```
@@ -179,7 +186,7 @@ The move does not follow the rules. The turn does not change and the player can 
 {
     "type": "InvalidTurn",
     "params": {
-        "error": "Cannot put stones over Tampar"
+        "error": "cannot drop on c3: only a lone hallacirya goes over a tampa"
     }
 }
 ```
