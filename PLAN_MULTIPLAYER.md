@@ -146,6 +146,26 @@ Reestructurar `internal/app` siguiendo el patrón del ejemplo de chat de gorilla
 - `GameFinished`: capa encima del tablero con el ganador y el motivo (Londë o flota), input bloqueado y botón "Volver al menú".
 - `UserLeft` del rival: aviso de "rival desconectado" (la partida sigue cuando vuelva).
 
+### 2.3b Rotura del nossë con turnos (clave, el sandbox no lo puede validar)
+
+El sandbox es "mundo libre": `can_move` devuelve `true` siempre y cada pieza cogida puede empezar un movimiento nuevo.
+Solo con turnos alternos se ejercita la regla de verdad. Hay que comprobar que, al coger una carga de un nossë que controla el jugador:
+
+- Solo se puede coger del nossë propio (pieza de arriba del jugador) y como mucho tantas piezas como el tamaño del tablero.
+  **Hoy el cliente no comprueba el límite de carga**; el servidor sí (`MoveStones`).
+- Una vez soltada la primera pieza, el turno es ese movimiento: no se puede coger otro nossë ni sacar piezas de la flota,
+  solo seguir con las de encima de lo que se acaba de soltar (`dropped_pieces` sin la de abajo).
+- Una sola dirección y un solo sentido, una casilla por paso, dejando al menos una pieza en cada casilla, sin volver atrás.
+  **Revisar:** soltar en la misma casilla del último paso (distancia 0) parece pasar `can_drop`.
+- Tampa y Hallacirya: no se suelta encima de una Hallacirya, y encima de una Tampa solo la Hallacirya **sola**, que la aplana.
+  **Hoy el cliente lo permite si la Hallacirya va en cualquier parte de la carga**; el servidor exige que vaya sola (divergencia).
+- La notación que genera el cliente (`3a2>12`) coincide con lo que se ha hecho en pantalla y el servidor la acepta;
+  el rival la reproduce con `notation_movement` y los dos tableros quedan iguales.
+- Al recibir el turno del rival o `InvalidTurn`, `player_movement` se reinicia.
+
+Antes de E1, añadir en el servidor tests de tabla para estos casos (`MoveStones`), para que el servidor sea la referencia,
+y que E11 compare cliente y servidor.
+
 ### 2.4 Conexión (arregla C5 y C6)
 
 - Elegir el host:
@@ -173,8 +193,9 @@ Con el servidor lanzado con `go run -race ./cmd/cirya-server`:
 | E8 | Agotar la flota en una partida de 5×5 | Fin por `FLAT` con el resultado correcto |
 | E9 | Confirmar sin mover, o mover fuera de turno | El botón está desactivado o el servidor responde `Error`, y no se rompe nada |
 | E10 | Desplegar en play.cirya.me por https | Funciona con `wss://` y E1 se repite en remoto |
+| E11 | Rotura del nossë con turnos (2.3b): carga de 3–5 en un nossë mixto, repartida en varios pasos; intentar cambiar de sentido, saltar casillas, superar la carga, coger otro nossë a mitad y aplanar Tampa con Hallacirya sola y acompañada | Lo legal se acepta y se ve igual en los dos clientes; lo ilegal lo frena el cliente antes de enviar, y si se escapa, el servidor responde `InvalidTurn` |
 
-**Hecho cuando:** pasan E1 a E9 en local y E10 en remoto, sin errores en la consola de Godot ni en el log del servidor.
+**Hecho cuando:** pasan E1 a E9 y E11 en local y E10 en remoto, sin errores en la consola de Godot ni en el log del servidor.
 
 ---
 
