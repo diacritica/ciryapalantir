@@ -10,7 +10,7 @@ Reglas del refactor:
 - **Sin cambios de comportamiento.** El protocolo de `server/doc/Protocol.md` es el contrato entre los dos lados.
 - Un commit por paso, con todo en verde:
   - `go vet`, `gofmt` y `go test -race ./...` en el servidor.
-  - `tests/test_moves.gd` y la carga de `Game.tscn` sin errores de script en el cliente.
+  - `tests/run.gd` y la carga de `Game.tscn` sin errores de script en el cliente.
 - Los arreglos de bugs que aparezcan van **después**, en commits propios, porque cambian el comportamiento.
 
 ## Lo que ya está bien y se conserva
