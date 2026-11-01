@@ -98,9 +98,6 @@ func ReadMessages(c *websocket.Conn, room app.Room, client *app.Client) {
 			continue
 		}
 
-		log.Print("Received:", message)
-		message.AddUser(client.User())
-
 		room.Receive(client, message)
 	}
 }

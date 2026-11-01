@@ -2,7 +2,6 @@ package cirya_test
 
 import (
 	"cirya.me/server/internal/cirya"
-	"fmt"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
@@ -61,27 +60,17 @@ func TestMove(t *testing.T) {
 		Size: 9,
 	}
 
-	fmt.Println(" == INITIAL ==")
-	fmt.Println(board.String())
-
 	board.ProcessMove(1, "a1>")
-
-	fmt.Printf(" == %s ==\n", "a1>")
-	fmt.Println(board.String())
 
 	assert.Equal(t, board.Data["1"]["a"], []string{"C1", "C2", "C1"})
 	assert.Equal(t, board.Data["1"]["b"], []string{"C1"})
 
 	board.ProcessMove(1, "3a1+")
-	fmt.Printf(" == %s ==\n", "3a1+")
-	fmt.Println(board.String())
 
 	assert.Equal(t, board.Data["1"]["a"], []string{})
 	assert.Equal(t, board.Data["2"]["a"], []string{"C1", "C2", "C1"})
 
 	board.ProcessMove(1, "3a2>111")
-	fmt.Printf(" == %s ==\n", "3a2>111")
-	fmt.Println(board.String())
 
 	assert.Equal(t, board.Data["1"]["a"], []string{})
 	assert.Equal(t, board.Data["2"]["a"], []string{})
@@ -91,8 +80,6 @@ func TestMove(t *testing.T) {
 	assert.Equal(t, board.Data["2"]["d"], []string{"C1"})
 
 	err = board.ProcessMove(1, "2d5-2")
-	fmt.Printf(" == %s ==\n", "2d5-2")
-	fmt.Println(board.String())
 
 	assert.Nil(t, err)
 	assert.Equal(t, board.Data["5"]["d"], []string{"C1"})
@@ -100,16 +87,12 @@ func TestMove(t *testing.T) {
 
 	board.ProcessMove(2, "c5>")
 	board.ProcessMove(2, "e5<")
-	fmt.Printf(" == %s ==\n", "c5>, e5<")
-	fmt.Println(board.String())
 
 	assert.Equal(t, board.Data["5"]["c"], []string{})
 	assert.Equal(t, board.Data["5"]["d"], []string{"C1", "C2", "C2"})
 	assert.Equal(t, board.Data["5"]["e"], []string{})
 
 	board.ProcessMove(2, "3d5<12")
-	fmt.Printf(" == %s ==\n", "3d5<12")
-	fmt.Println(board.String())
 
 	assert.Equal(t, board.Data["5"]["c"], []string{"C1"})
 	assert.Equal(t, board.Data["5"]["b"], []string{"C2", "C2"})

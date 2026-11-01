@@ -2,7 +2,6 @@ package app
 
 import (
 	"cirya.me/server/internal/cirya"
-	"fmt"
 	"strconv"
 )
 
@@ -187,8 +186,6 @@ func (g *game) Turn(move string) (TurnResult, error) {
 	if err != nil {
 		return result, err
 	}
-
-	fmt.Println(g.board.String())
 
 	g.moves = append(g.moves, move)
 	end := g.board.Result(g.player)

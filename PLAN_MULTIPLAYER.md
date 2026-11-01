@@ -101,7 +101,7 @@ Reestructurar `internal/app` siguiendo el patrón del ejemplo de chat de gorilla
   5. Un cliente deja de leer: los demás siguen recibiendo mensajes.
   6. 50 conexiones simultáneas al mismo código acaban en una sola sala.
 - Todo con `go test -race ./...` en verde.
-- Actualizar `cmd/cirya-client` para que sirva como bot manual en las pruebas del día 2.
+- ~~Actualizar `cmd/cirya-client` como bot manual~~: se borró en el refactor; los tests de api y el sandbox por turnos lo cubren.
 
 **Hecho cuando:** `go test -race ./...` pasa en verde y el servidor ya no se cae ni se bloquea con mensajes malformados o desconexiones.
 

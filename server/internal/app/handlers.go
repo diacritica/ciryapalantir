@@ -53,7 +53,7 @@ func DoGetStatus(m Message, r *room, c *Client) {
 }
 
 func DoChangeConfig(m Message, r *room, c *Client) {
-	log.Print("DoChangeConfig")
+	// Reserved: the configuration cannot be changed yet
 }
 
 func fail(r *room, c *Client, code ErrorCode, text string) {
