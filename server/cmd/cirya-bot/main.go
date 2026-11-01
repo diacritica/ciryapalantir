@@ -3,6 +3,10 @@
 // always legal. Start the server, create a room in the game and run:
 //
 //	go run ./cmd/cirya-bot -room KM7Q2X
+//
+// With -moves it plays those turns first, in order, for scripted games:
+//
+//	go run ./cmd/cirya-bot -room KM7Q2X -moves b1,Ta4,e5
 package main
 
 import (
@@ -11,6 +15,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strings"
 
 	"github.com/gorilla/websocket"
 )
@@ -20,6 +25,7 @@ var (
 	room   = flag.String("room", "", "code of the room")
 	seat   = flag.Int("seat", 2, "seat to take, 1 (white) or 2 (black)")
 	name   = flag.String("name", "Bot", "name shown to the other player")
+	moves  = flag.String("moves", "", "turns to play first, separated by commas")
 )
 
 type message struct {
@@ -58,6 +64,7 @@ func main() {
 	send(conn, message{Type: "JoinGame", Params: map[string]any{"player": *seat, "color": color, "name": *name}})
 	send(conn, message{Type: "SetReady", Params: map[string]any{"player": *seat, "ready": true}})
 	log.Printf("sitting in seat %d of room %s", *seat, *room)
+	script := strings.FieldsFunc(*moves, func(r rune) bool { return r == ',' })
 
 	for {
 		var m message
@@ -69,6 +76,9 @@ func main() {
 		case "StartGame", "Turn":
 			if int(m.Params["nextPlayer"].(float64)) == *seat {
 				move := firstEmpty(*m.Status)
+				if len(script) > 0 {
+					move, script = script[0], script[1:]
+				}
 				log.Printf("turn %v: %s", m.Params["nextTurn"], move)
 				send(conn, message{Type: "SubmitTurn", Params: map[string]any{"player": *seat, "turn": m.Params["nextTurn"], "move": move}})
 			}
