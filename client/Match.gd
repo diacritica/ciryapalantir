@@ -26,6 +26,10 @@ signal turn_refused(reason)
 signal status_received(status)
 # All the moves of the game, when joining one already started
 signal history(moves)
+# The move of this turn changed: its notation, "" when there is nothing to send
+signal move_changed(notation)
+# result: WIN_1, WIN_2 or DRAW. condition: LONDI or FLAT
+signal game_over(result, condition)
 
 # The same rules and turns, without the server
 var sandbox = false
@@ -77,6 +81,12 @@ func move_started():
 func start_move(piece_id, pieces):
     move = Move.new(board, piece_id, pieces)
 
+# Puts the pieces of the hand on the square. The drop has been checked
+func drop(hand, square):
+    board.put(hand, square)
+    move.sync_tampar(board)
+    emit_signal("move_changed", move_notation())
+
 # The move worked out from the board, or "" when there is nothing to send yet
 func move_notation():
     var state = Rules.move_state(move, board, player, opening())
@@ -108,7 +118,18 @@ func undo():
     board = move.before.copy()
     move.sync_tampar(board)
     move = null
+    emit_signal("move_changed", "")
     return true
+
+# Back to the menu: no game, no seat
+func leave():
+    sandbox = false
+    player = 0
+    status = null
+    move = null
+    turn = 1
+    current = 1
+    _set_phase(Phase.WAITING)
 
 func _on_notification(message):
     var params = message.get("params", {})
@@ -135,11 +156,13 @@ func _on_notification(message):
 
             move = null
             _set_phase(Phase.FINISHED)
+            emit_signal("game_over", params.result, params.winCondition)
 
         "InvalidTurn", "Error":
+            # The phase first, so what shows the refusal is not hidden by the new phase
             if phase == Phase.SUBMITTED:
-                emit_signal("turn_refused", params.get("error", params.get("message", "")))
                 _set_phase(Phase.MY_TURN)
+                emit_signal("turn_refused", params.get("error", params.get("message", "")))
 
     var received = message.get("status", {})
 

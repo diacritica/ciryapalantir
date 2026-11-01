@@ -148,6 +148,14 @@ Reestructurar `internal/app` siguiendo el patrón del ejemplo de chat de gorilla
 
 ### 2.3 Flujo del turno propio (arregla C3 y C4)
 
+**Hecho.**
+- "Confirmar" solo se activa con un movimiento completo.
+- Al confirmar, el tablero se bloquea y la línea de ayuda dice "Esperando al servidor…".
+- Un `InvalidTurn` o `Error` devuelve las piezas y muestra el motivo unos segundos.
+- `GameFinished` abre un diálogo con el resultado y "Volver al menú", que sale de la sala.
+- La línea de ayuda da la pista de la apertura y dice de quién es el turno.
+- El aviso de entradas y salidas es genérico ("Alguien ha salido de la sala"): el estado no dice qué usuario ocupa cada asiento, así que el cliente no sabe si quien sale es el rival.
+
 - Antes de enviar:
   - Si no hay movimientos, se desactiva "Confirmar" (C4).
   - Validación local con `Validation.gd` (de `master`): misma dirección, casillas contiguas y que las piedras cuadren.

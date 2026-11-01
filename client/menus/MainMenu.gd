@@ -15,6 +15,10 @@ func _ready():
     _connect_button(WhiteButton, BlackButton)
     _connect_button(BlackButton, WhiteButton)
 
+    # Back from a game: the user logged in long ago
+    if Server.logged_in():
+        _on_user_logged()
+
 func _on_user_logged():
     $Welcome/Panel/NewGameButton.disabled = false
     $Welcome/Panel/JoinGameButton.disabled = false

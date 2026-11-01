@@ -35,6 +35,7 @@ func _play():
     _online()
     _out_of_step()
     yield(_reopen(), "completed")
+    yield(_back_to_menu(), "completed")
 
     print("smoke: %d failures" % failures)
     quit(1 if failures else 0)
@@ -49,12 +50,16 @@ func _board():
     check("and the highlight is over the board", tile.global_transform.origin.y > game.get_node("Board").global_transform.origin.y)
 
 func _sandbox():
+    check("the opening hint", help_text().begins_with("Toma una cirya de tu oponente"))
+    check("nothing to confirm yet", confirm_button().disabled)
+
     # Turn 1: white places a black cirya on c3, and c3 lights up under the hand
     take(fleet_piece(2))
     hover("c3")
     check("the tile under the hand lights up", tile("c3").visible)
     release("c3")
     check("and goes off after the drop", !tile("c3").visible)
+    check("now it can be confirmed", !confirm_button().disabled)
     check("turn 1 is c3", state.move_notation() == "c3")
     game._on_turn_confirmation(true)
 
@@ -104,7 +109,9 @@ func _online():
     take(cirya)
     release("e1")
     state._set_phase(state.Phase.SUBMITTED)
+    check("waiting for the server", help_text() == "Esperando al servidor…")
     notify("InvalidTurn", {"error": "refused"})
+    check("the refusal is shown", help_text() == "Movimiento no válido: refused")
     check("the board is back", stack("e1").empty())
     check("the piece is back in the fleet", cirya.global_transform.origin.distance_to(tray.origin) < 0.01)
     check("white can move again", state.phase == state.Phase.MY_TURN)
@@ -120,6 +127,8 @@ func _online():
     state._on_notification({"type": "GameFinished", "params": {"result": "WIN_2", "winCondition": "FLAT", "turn": 10.0}, "status": {"moves": ["e5"]}})
     check("the winning move is shown", stack("e5").size() == 1)
     check("and written down", game.get_node("UI/Moves/MovesText").text.find("10. e5") != -1)
+    var dialog = game_over_dialog()
+    check("the result is shown", dialog != null and dialog.visible and dialog.dialog_text.begins_with("Ganan las negras por recuento de ciryar\nHas perdido"))
 
 # The client missed where a piece went: the status of the next turn says it
 func _out_of_step():
@@ -174,6 +183,28 @@ func _over(piece, square):
     var a = piece.global_transform.origin
     var b = tile(square).global_transform.origin
     return Vector2(a.x, a.z).distance_to(Vector2(b.x, b.z)) < 0.01
+
+# The button of the game over dialog goes back to the menu, out of the room
+func _back_to_menu():
+    state._on_notification({"type": "GameFinished", "params": {"result": "WIN_1", "winCondition": "LONDI", "turn": 13.0}})
+    game_over_dialog().emit_signal("confirmed")
+    yield(self, "idle_frame")
+    yield(self, "idle_frame")
+
+    check("in the menu", current_scene.name == "Menu")
+    check("without a seat", state.player == 0 and state.phase == state.Phase.WAITING)
+
+func help_text():
+    var panel = game.get_node("UI/HelpPanel")
+    return panel.get_node("AdviceLavel").text if panel.visible else ""
+
+func confirm_button():
+    return game.get_node("UI/TurnPanel/Confirm")
+
+func game_over_dialog():
+    for child in game.get_node("UI").get_children():
+        if child is AcceptDialog:
+            return child
 
 func notify(type, params):
     state._on_notification({"type": type, "params": params})

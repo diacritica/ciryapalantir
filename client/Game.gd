@@ -142,15 +142,13 @@ func release(tile):
         cancel()
 
 func drop(tile):
-    var square = _square(tile)
-    Match.board.put(_hand_ids(), square)
+    Match.drop(_hand_ids(), _square(tile))
 
     for piece in hand.get_children():
         var height = piece.global_transform.origin.y
         _land(piece)
         _put_at(piece, Vector3(tile.global_transform.origin.x, height, tile.global_transform.origin.z))
 
-    Match.move.sync_tampar(Match.board)
     _close_hand()
 
 # The pieces fly back and the board does not change

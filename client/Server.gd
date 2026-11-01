@@ -72,6 +72,20 @@ func join_room(room_id):
         set_process(false)
         emit_signal("connection_error", "Cannot connect to %s" % ws_url)
 
+func logged_in():
+    return context.has("user_id")
+
+# Closes the connection to the room, to join another one later
+func leave_room():
+    if ws:
+        ws.disconnect_from_host()
+
+    ws = null
+    set_process(false)
+
+    for key in ["room_id", "connected", "player", "color", "white", "black"]:
+        context.erase(key)
+
 func ws_closed(_clean = false):
     context["connected"] = false
     set_process(false)
