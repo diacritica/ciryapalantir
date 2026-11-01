@@ -11,14 +11,13 @@ signal user_logged
 
 var ws
 
-# Stores current session context data
-# Like current turn, player assignment, color assignment...
-var context = {
-    "host": server_host,
-    "port": server_port
-}
+# What this client knows of the session: the server, the user, the room, the
+# seat taken and the names by colour
+var context = {}
 
 func _ready():
+    context["host"] = server_host
+    context["port"] = server_port
     login_user()
 
 func login_user():
@@ -34,13 +33,7 @@ func on_user_request(result, response_code, headers, body):
     else:
         # Tries again until the server answers
         push_error("cannot log in: HTTP %d" % response_code)
-        var timer = Timer.new()
-        timer.set_one_shot(true)
-        timer.set_timer_process_mode(0)
-        timer.set_wait_time(2)
-        timer.connect("timeout", self, "login_user")
-        self.add_child(timer)
-        timer.start()
+        get_tree().create_timer(2).connect("timeout", self, "login_user")
 
 func create_room():
     $HttpClient.connect("request_completed", self, "on_room_request", [], CONNECT_ONESHOT)
@@ -61,6 +54,7 @@ func join_room(room_id):
 
     context["room_id"] = room_id
 
+    set_process(true)
     ws = WebSocketClient.new()
     ws.verify_ssl = false
 
@@ -71,14 +65,15 @@ func join_room(room_id):
 
     var ws_url = "ws://{host}:{port}/rooms/{room_id}".format(context)
     var err = ws.connect_to_url(ws_url, [], false, [
-        "Cookie: cirya-user={user_id}; SameSite=None; Secure".format(context),
+        "Cookie: cirya-user={user_id}".format(context),
     ])
 
     if err != OK:
         set_process(false)
         emit_signal("connection_error", "Cannot connect to %s" % ws_url)
 
-func ws_closed(clean = false):
+func ws_closed(_clean = false):
+    context["connected"] = false
     set_process(false)
 
 func ws_error():
@@ -137,7 +132,6 @@ func send_join_player(player, color, name):
     }
     context["player"] = player
     context["color"] = color
-    context["turn"] = 1
     ws_send_message(msg)
 
 func send_set_ready(is_ready):

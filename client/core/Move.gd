@@ -45,8 +45,8 @@ func includes(board, piece_id):
 # again when the hallacirya goes back
 func sync_tampar(board):
     for piece_id in tampar:
-        var stack = board.stack(board.square_of(piece_id))
-        var covered = stack.find(piece_id) < stack.size() - 1
+        var ids = board.stack(board.square_of(piece_id))
+        var covered = ids.find(piece_id) < ids.size() - 1
         var piece = instance_from_id(piece_id)
 
         if piece.block == covered:

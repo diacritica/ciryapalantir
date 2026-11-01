@@ -1,5 +1,7 @@
 extends Node
 
+# Graphics quality: the presets high, medium and low, applied to the game scene
+
 enum GIQuality {
     DISABLED = 0,
     LOW = 1,
@@ -37,7 +39,6 @@ var aa_quality = AAQuality.AA_2X
 var ssao_quality = SSAOQuality.DISABLED
 var bloom_quality = BloomQuality.HIGH
 var resolution = Resolution.NATIVE
-var fullscreen = true
 
 func high():
     gi_quality = GIQuality.HIGH
@@ -61,53 +62,25 @@ func low():
     resolution = Resolution.RES_720
 
 func apply_settings(node):
-    var world_environment = node.get_node('WorldEnvironment')
-    
-    if self.gi_quality == self.GIQuality.HIGH:
-        ProjectSettings["rendering/quality/voxel_cone_tracing/high_quality"] = true
-    elif self.gi_quality == self.GIQuality.LOW:
-        ProjectSettings["rendering/quality/voxel_cone_tracing/high_quality"] = false
-    else:
-        node.get_node('GIProbe').hide()
-        node.get_node('ReflectionProbe').show()
+    var environment = node.get_node("WorldEnvironment").environment
 
-    if self.aa_quality == self.AAQuality.AA_8X:
-        get_viewport().msaa = Viewport.MSAA_8X
-    elif self.aa_quality == self.AAQuality.AA_4X:
-        get_viewport().msaa = Viewport.MSAA_4X
-    elif self.aa_quality == self.AAQuality.AA_2X:
-        get_viewport().msaa = Viewport.MSAA_2X
-    else:
-        get_viewport().msaa = Viewport.MSAA_DISABLED
-        
-    if self.ssao_quality == self.SSAOQuality.HIGH:
-        world_environment.environment.ssao_enabled = true
-        world_environment.environment.ssao_quality = world_environment.environment.SSAO_QUALITY_HIGH
-    elif self.ssao_quality == self.SSAOQuality.LOW:
-        world_environment.environment.ssao_enabled = true
-        world_environment.environment.ssao_quality = world_environment.environment.SSAO_QUALITY_LOW
-    else:
-        world_environment.environment.ssao_enabled = false
+    # The scene has no GIProbe yet, so the GI quality changes nothing. Without
+    # GI the reflection probe lights the table
+    if gi_quality == GIQuality.DISABLED:
+        var probe = node.get_node_or_null("GIProbe")
+        if probe:
+            probe.hide()
+        node.get_node("ReflectionProbe").show()
 
-    if self.bloom_quality == self.BloomQuality.HIGH:
-        world_environment.environment.glow_enabled = true
-        world_environment.environment.glow_bicubic_upscale = true
-    elif self.bloom_quality == self.BloomQuality.LOW:
-        world_environment.environment.glow_enabled = true
-        world_environment.environment.glow_bicubic_upscale = false
-    else:
-        world_environment.environment.glow_enabled = false
-        world_environment.environment.glow_bicubic_upscale = false
+    # AAQuality follows the order of Viewport.MSAA_*
+    get_viewport().msaa = aa_quality
 
-    var window_size = OS.window_size
-    if self.resolution == self.Resolution.NATIVE:
-        pass
-    elif self.resolution == self.Resolution.RES_1080:
-        var minsize = Vector2(window_size.x * 1080 / window_size.y, 1080.0)
-        get_tree().set_screen_stretch(SceneTree.STRETCH_MODE_VIEWPORT, SceneTree.STRETCH_ASPECT_KEEP_HEIGHT, minsize)
-    elif self.resolution == self.Resolution.RES_720:
-        var minsize = Vector2(window_size.x * 720 / window_size.y, 720.0)
-        get_tree().set_screen_stretch(SceneTree.STRETCH_MODE_VIEWPORT, SceneTree.STRETCH_ASPECT_KEEP_HEIGHT, minsize)
-    elif self.resolution == self.Resolution.RES_540:
-        var minsize = Vector2(window_size.x * 540 / window_size.y, 540.0)
-        get_tree().set_screen_stretch(SceneTree.STRETCH_MODE_VIEWPORT, SceneTree.STRETCH_ASPECT_KEEP_HEIGHT, minsize)        
+    environment.ssao_enabled = ssao_quality != SSAOQuality.DISABLED
+    environment.ssao_quality = Environment.SSAO_QUALITY_HIGH if ssao_quality == SSAOQuality.HIGH else Environment.SSAO_QUALITY_LOW
+    environment.glow_enabled = bloom_quality != BloomQuality.DISABLED
+    environment.glow_bicubic_upscale = bloom_quality == BloomQuality.HIGH
+
+    if resolution != Resolution.NATIVE:
+        var height = [540.0, 720.0, 1080.0][resolution]
+        var size = OS.window_size
+        get_tree().set_screen_stretch(SceneTree.STRETCH_MODE_VIEWPORT, SceneTree.STRETCH_ASPECT_KEEP_HEIGHT, Vector2(size.x * height / size.y, height))

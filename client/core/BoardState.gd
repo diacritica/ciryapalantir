@@ -30,13 +30,13 @@ func square_of(piece_id):
 
 # The piece and the ones above it
 func pieces_from(piece_id):
-    var stack = stack(square_of(piece_id))
-    return stack.slice(stack.find(piece_id), stack.size() - 1)
+    var ids = stack(square_of(piece_id))
+    return ids.slice(ids.find(piece_id), ids.size() - 1)
 
 # The player with the piece on top of the square, and 0 when it is empty
 func owner(square):
-    var stack = stack(square)
-    return instance_from_id(stack.back()).player if stack else 0
+    var ids = stack(square)
+    return instance_from_id(ids.back()).player if ids else 0
 
 # Puts the pieces, in order, on top of the square
 func put(piece_ids, square):

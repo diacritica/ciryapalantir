@@ -1,20 +1,21 @@
 extends SceneTree
 
-# Loads the game scene in the sandbox and plays a few turns through Game.gd,
-# without the mouse. It catches errors in the scene code that the rules tests
-# cannot see. From the client folder:
+# Loads the game scene and plays through Game.gd without the mouse: a few
+# turns in the sandbox, then turns of an opponent and a refused turn as the
+# server would send them. It catches errors in the scene code that the rules
+# tests cannot see. From the client folder:
 #
 #   godot --no-window --path . -s tests/smoke_game.gd
 
 const Notation = preload("res://core/Notation.gd")
 
 var game
-var match_state
+var state
 var failures = 0
 
 func _initialize():
-    match_state = get_root().get_node("Match")
-    match_state.start_sandbox()
+    state = get_root().get_node("Match")
+    state.start_sandbox()
     change_scene("res://Game.tscn")
     call_deferred("_play")
 
@@ -28,55 +29,96 @@ func _play():
     yield(self, "idle_frame")
     game = current_scene
 
-    # Turn 1: white places a black cirya on c3
-    take(fleet_piece(2, "C"))
-    drop("c3")
-    check("turn 1 is c3", match_state.move_notation() == "c3")
-    game._on_turn_confirmation(true)
-
-    # Turn 2: black places a white cirya on d3
-    take(fleet_piece(1, "C"))
-    drop("d3")
-    game._on_turn_confirmation(true)
-
-    # Turn 3: white places a tampa on a1, changes its mind and undoes it
-    var tampa = fleet_piece(1, "C")
-    take(tampa)
-    game._rotate()
-    drop("a1")
-    check("a tampa", match_state.move_notation() == "Ta1")
-    game._on_turn_confirmation(false)
-    check("undone", match_state.board.stack(Notation.parse_square("a1")).empty())
-
-    # White moves d3 onto c3, but a drop two squares away flies back
-    var cirya = instance_from_id(match_state.board.stack(Notation.parse_square("d3"))[0])
-    take(cirya)
-    drop("a3")
-    check("the rejected drop changes nothing", match_state.move_notation() == "")
-    take(cirya)
-    drop("c3")
-    check("turn 3 is d3<", match_state.move_notation() == "d3<")
-    game._on_turn_confirmation(true)
-    check("turn 4 for black", match_state.turn == 4 and match_state.player == 2)
-    check("the moves are written down", game.get_node("UI/Moves/MovesText").text.find("3. d3<") != -1)
+    yield(_sandbox(), "completed")
+    _online()
 
     print("smoke: %d failures" % failures)
     quit(1 if failures else 0)
 
-func fleet_piece(player, kind):
+func _sandbox():
+    # Turn 1: white places a black cirya on c3
+    take(fleet_piece(2))
+    release("c3")
+    check("turn 1 is c3", state.move_notation() == "c3")
+    game._on_turn_confirmation(true)
+
+    # Turn 2: black places a white cirya on d3
+    take(fleet_piece(1))
+    release("d3")
+    game._on_turn_confirmation(true)
+
+    # Turn 3: white places a tampa on a1, changes its mind and undoes it
+    var tampa = fleet_piece(1)
+    take(tampa)
+    game._rotate()
+    release("a1")
+    check("a tampa", state.move_notation() == "Ta1")
+    game._on_turn_confirmation(false)
+    check("undone", stack("a1").empty())
+    check("the piece is flat again in the fleet", !tampa.block)
+
+    # White moves d3 onto c3, after a drop two squares away flies back
+    var cirya = instance_from_id(stack("d3")[0])
+    take(cirya)
+    release("a3")
+    check("the rejected drop changes nothing", state.move_notation() == "")
+    check("nothing can be taken while it flies back", game.drag == game.Drag.RETURNING)
+    yield(create_timer(game.RETURN_TIME + 0.2), "timeout")
+
+    take(cirya)
+    release("c3")
+    check("turn 3 is d3<", state.move_notation() == "d3<")
+    game._on_turn_confirmation(true)
+    check("turn 4 for black", state.turn == 4 and state.player == 2)
+    check("the moves are written down", game.get_node("UI/Moves/MovesText").text.find("3. d3<") != -1)
+
+# White online, against turns of black sent as the server sends them
+func _online():
+    state.sandbox = false
+    state.player = 1
+    state._next(4, 2)
+
+    notify("Turn", {"player": 2.0, "turn": 4.0, "move": "Tb4", "nextPlayer": 1.0, "nextTurn": 5.0})
+    var tampa = instance_from_id(stack("b4")[0])
+    check("black places a tampa", stack("b4").size() == 1 and tampa.player == 2 and tampa.block)
+
+    # The server refuses the turn of white: the piece goes back
+    var cirya = fleet_piece(1)
+    var tray = cirya.global_transform
+    take(cirya)
+    release("e1")
+    state._set_phase(state.Phase.SUBMITTED)
+    notify("InvalidTurn", {"error": "refused"})
+    check("the board is back", stack("e1").empty())
+    check("the piece is back in the fleet", cirya.global_transform.origin.distance_to(tray.origin) < 0.01)
+    check("white can move again", state.phase == state.Phase.MY_TURN)
+
+    # Black brings the hallacirya over its tampa, which lies down
+    notify("Turn", {"player": 2.0, "turn": 6.0, "move": "Hc4", "nextPlayer": 1.0, "nextTurn": 7.0})
+    notify("Turn", {"player": 2.0, "turn": 8.0, "move": "c4<", "nextPlayer": 1.0, "nextTurn": 9.0})
+    check("the hallacirya is on b4", stack("b4").size() == 2 and instance_from_id(stack("b4")[1]).get_notation_name() == "H")
+    check("the tampa is flat", !tampa.block)
+
+    # The last move comes in the status of GameFinished
+    state._next(10, 2)
+    state._on_notification({"type": "GameFinished", "params": {"result": "WIN_2", "winCondition": "FLAT", "turn": 10.0}, "status": {"moves": ["e5"]}})
+    check("the winning move is shown", stack("e5").size() == 1)
+    check("and written down", game.get_node("UI/Moves/MovesText").text.find("10. e5") != -1)
+
+func notify(type, params):
+    state._on_notification({"type": type, "params": params})
+
+func stack(square):
+    return state.board.stack(Notation.parse_square(square))
+
+func fleet_piece(player):
     for piece in game._pieces():
-        if piece.player == player and piece.get_notation_name() == kind and match_state.board.square_of(piece.get_instance_id()) == null:
+        if piece.player == player and piece.get_notation_name() == "C" and state.board.square_of(piece.get_instance_id()) == null:
             return piece
 
 func take(piece):
-    check("can take a piece", piece != null and match_state.can_take(piece.get_instance_id()))
+    check("can take a piece", piece != null and state.can_take(piece.get_instance_id()))
     game.take(piece)
 
-# Drops the hand on the square if it is legal, as a mouse release does
-func drop(square):
-    var tile = game.get_node("Board").tile(Notation.parse_square(square))
-
-    if match_state.can_drop(game._hand_ids(), Notation.parse_square(square)):
-        game.drop(tile)
-    else:
-        game.cancel()
+func release(square):
+    game.release(game.get_node("Board").tile(Notation.parse_square(square)))

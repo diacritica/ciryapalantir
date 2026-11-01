@@ -10,7 +10,7 @@ Reglas del refactor:
 - **Sin cambios de comportamiento.** El protocolo de `server/doc/Protocol.md` es el contrato entre los dos lados.
 - Un commit por paso, con todo en verde:
   - `go vet`, `gofmt` y `go test -race ./...` en el servidor.
-  - `tests/run.gd` y la carga de `Game.tscn` sin errores de script en el cliente.
+  - `tests/run.sh` (tests y prueba de humo de la escena) en el cliente.
 - Los arreglos de bugs que aparezcan van **después**, en commits propios, porque cambian el comportamiento.
 
 ## Lo que ya está bien y se conserva
@@ -55,6 +55,20 @@ Ficheros finales del servidor:
 - `api/`: `server.go`, `cookie.go`, `cors.go`, `socket.go`.
 
 ## Cliente
+
+**Hecho** (commits `86b5f66` a este). Las escenas se quedan donde estaban y solo se añade `core/`, para no reescribir rutas dentro de los `.tscn`.
+- `Match` (autoload) guarda el estado de la partida, con fases explícitas y señales.
+- `core/` contiene las reglas puras.
+- `Game.gd` lleva el ratón, el arrastre con estados `IDLE`/`DRAGGING`/`RETURNING`, la reproducción de jugadas del rival y deshacer.
+
+La segunda revisión independiente encontró varios bugs, todos arreglados y con un test que falla sin el arreglo:
+- Una pieza girada con R se quedaba de pie tras deshacer.
+- Se podía coger una pila mientras las piezas volvían volando.
+- `Board.gd` como `tool` guardaba nodos en `Game.tscn`.
+- El turno ganador no se anotaba ni se mostraba.
+- `Server.gd` no podía reintentar una conexión.
+
+Quedan para la 2.4: mostrar `connection_error` al jugador y la reconexión.
 
 | # | Paso | Riesgo |
 |---|---|---|

@@ -1,4 +1,3 @@
-tool
 extends Area
 
 # A square of the board. It lights up where the dragged pieces can go

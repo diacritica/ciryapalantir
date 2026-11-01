@@ -17,9 +17,9 @@ enum Phase { WAITING, MY_TURN, SUBMITTED, OPPONENT, FINISHED }
 
 signal phase_changed(phase)
 # Any turn played, to write it down
-signal turn_played(turn, move)
+signal turn_played(turn, notation)
 # A turn of the other player that the board has to show
-signal opponent_played(player, move, opening)
+signal opponent_played(player, notation, opening)
 # The server refused the turn sent: the board goes back to how it was
 signal turn_refused(reason)
 
@@ -107,14 +107,17 @@ func _on_notification(message):
             _next(params.nextTurn, params.nextPlayer)
 
         "Turn":
-            emit_signal("turn_played", int(params.turn), params.move)
-
-            if int(params.player) != player:
-                emit_signal("opponent_played", int(params.player), params.move, int(params.turn) <= 2)
-
+            _played(int(params.turn), int(params.player), params.move)
             _next(params.nextTurn, params.nextPlayer)
 
+        # It comes instead of the Turn that ends the game, without the move:
+        # the move is the last one of the status
         "GameFinished":
+            var moves = message.get("status", {}).get("moves", [])
+
+            if moves:
+                _played(int(params.turn), current, moves.back())
+
             move = null
             _set_phase(Phase.FINISHED)
 
@@ -122,6 +125,12 @@ func _on_notification(message):
             if phase == Phase.SUBMITTED:
                 emit_signal("turn_refused", params.get("error", params.get("message", "")))
                 _set_phase(Phase.MY_TURN)
+
+func _played(played_turn, by, notation):
+    emit_signal("turn_played", played_turn, notation)
+
+    if by != player:
+        emit_signal("opponent_played", by, notation, played_turn <= 2)
 
 func _next(next_turn, next_player):
     turn = int(next_turn)

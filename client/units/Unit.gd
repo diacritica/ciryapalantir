@@ -6,8 +6,6 @@ onready var Match = get_node("/root/Match")
 
 export(bool) var block = false
 export(String, "CIRYA", "HALLACIRYA") var type = "CIRYA"
-# Set by the fleet for every piece it creates
-export(int) var pieceid = 0
 export(int) var player = 0
 
 var fleet = null
@@ -60,8 +58,8 @@ func get_height():
 
 func get_notation_name():
     if type == "HALLACIRYA":
-        return 'H'
+        return "H"
     elif block:
-        return 'T'
+        return "T"
 
-    return 'C'
+    return "C"

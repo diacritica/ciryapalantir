@@ -6,19 +6,26 @@ extends Spatial
 
 const Rules = preload("res://core/Rules.gd")
 
-# The collision layer of the pieces, as a bit mask
+# Collision layers as bit masks: the tiles, the pieces, and what the dragged
+# pieces float over (pieces and the table)
+const TILES_LAYER = 1
 const PIECES_LAYER = 2
-const ALL_LAYERS = 0x7FFFFFFF
+const UNDER_HAND_LAYERS = 6
 const RAY_LENGTH = 200
 
 # A stack starts this high over the tiles, and the hand floats this much over it
 const STACK_BASE = 0.5
 const HAND_GAP = 0.2
 const HAND_MIN_HEIGHT = 2.2
+# A piece shown for the opponent appears at least this high, and falls
+const PLACE_MIN_HEIGHT = 1.0
+const FALL_IMPULSE = Vector3(0, -0.1, 0)
 # Seconds for rejected pieces to fly back
 const RETURN_TIME = 0.35
 
-enum Drag { IDLE, DRAGGING }
+# IDLE: nothing in the hand. DRAGGING: the hand follows the mouse.
+# RETURNING: rejected pieces fly back and nothing can be taken
+enum Drag { IDLE, DRAGGING, RETURNING }
 
 onready var Match = get_node("/root/Match")
 onready var Settings = get_node("/root/Settings")
@@ -31,7 +38,7 @@ var hand_origins = {}
 # The tile the hand was taken from, and the tile under the hand
 var origin_tile = null
 var hover_tile = null
-# Where every piece was when the turn started, to undo it
+# Where every piece was when the turn started, to undo it (global transforms)
 var turn_start = {}
 
 func _ready():
@@ -62,9 +69,6 @@ func _ready():
 
     $sandboxlogo.visible = Match.sandbox
 
-func _process(_delta):
-    OS.set_window_title("Cirya Online | fps: " + str(Engine.get_frames_per_second()))
-
 func _input(event):
     if event is InputEventMouseButton and event.button_index == BUTTON_LEFT:
         if event.pressed and drag == Drag.IDLE:
@@ -74,12 +78,7 @@ func _input(event):
                 take(cast.collider)
 
         elif !event.pressed and drag == Drag.DRAGGING:
-            var tile = _tile_under_hand()
-
-            if tile and Match.can_drop(_hand_ids(), _square(tile)):
-                drop(tile)
-            else:
-                cancel()
+            release(_tile_under_hand())
 
     elif event is InputEventMouseMotion and drag == Drag.DRAGGING:
         _follow_mouse()
@@ -125,7 +124,14 @@ func take(piece):
 
     $select.play()
 
-# Drops the hand on the tile. The move has been checked
+# Drops the hand on the tile when the move allows it, and otherwise sends the
+# pieces back. The tile is null when the hand is not over the board
+func release(tile):
+    if tile and Match.can_drop(_hand_ids(), _square(tile)):
+        drop(tile)
+    else:
+        cancel()
+
 func drop(tile):
     var square = _square(tile)
     Match.board.put(_hand_ids(), square)
@@ -133,13 +139,12 @@ func drop(tile):
     for piece in hand.get_children():
         var height = piece.global_transform.origin.y
         _land(piece)
-        piece.translation = Vector3(tile.global_transform.origin.x, height, tile.global_transform.origin.z)
-        piece.apply_central_impulse(Vector3(0, -0.1, 0))
+        _put_at(piece, Vector3(tile.global_transform.origin.x, height, tile.global_transform.origin.z))
 
     Match.move.sync_tampar(Match.board)
     _close_hand()
 
-# The drop is not legal: the pieces fly back and the board does not change
+# The pieces fly back and the board does not change
 func cancel():
     var tween = Tween.new()
     var pieces = hand.get_children()
@@ -149,13 +154,15 @@ func cancel():
         var current = piece.global_transform
         piece.hide_selected()
         piece.remove_from_group("hand")
-        _reparent(piece, self)
+        _reparent(piece, $Pieces)
         piece.global_transform = current
         tween.interpolate_property(piece, "global_transform", current, hand_origins[piece.get_instance_id()], RETURN_TIME, Tween.TRANS_QUAD, Tween.EASE_OUT)
 
     tween.connect("tween_all_completed", self, "_on_returned", [tween, pieces], CONNECT_ONESHOT)
     tween.start()
     _close_hand()
+    drag = Drag.RETURNING
+    _lay_fleet_down()
     $undo.play()
 
 func _on_returned(tween, pieces):
@@ -164,13 +171,14 @@ func _on_returned(tween, pieces):
         piece.get_node("CollisionShape").disabled = false
 
     tween.queue_free()
+    drag = Drag.IDLE
 
 func _land(piece):
     piece.mode = RigidBody.MODE_RIGID
     piece.get_node("CollisionShape").disabled = false
     piece.hide_selected()
     piece.remove_from_group("hand")
-    _reparent(piece, self)
+    _reparent(piece, $Pieces)
 
 func _close_hand():
     remove_child(hand)
@@ -211,10 +219,10 @@ func _follow_mouse():
 
 # A piece from the fleet can be placed standing, as a tampa, except in the opening
 func _rotate():
-    var pieces = hand.get_children()
+    var piece = hand.get_child(0)
 
-    if pieces.size() == 1 and Match.board.square_of(pieces[0].get_instance_id()) == null and !Match.opening():
-        pieces[0].toggle_block()
+    if hand.get_child_count() == 1 and piece.get_notation_name() != "H" and Match.board.square_of(piece.get_instance_id()) == null and !Match.opening():
+        piece.toggle_block()
         $piecerotation.play()
 
 func _on_turn_confirmation(confirmed):
@@ -231,25 +239,38 @@ func _undo():
         return
 
     for piece in _pieces():
-        piece.translation = turn_start[piece.get_instance_id()]
+        piece.global_transform = turn_start[piece.get_instance_id()]
 
+    _lay_fleet_down()
     $undo.play()
 
 func _remember_turn_start():
     turn_start = {}
 
     for piece in _pieces():
-        turn_start[piece.get_instance_id()] = piece.translation
+        turn_start[piece.get_instance_id()] = piece.global_transform
+
+# Pieces in the fleet are always flat: one turned into a tampa lies down again
+# when it goes back
+func _lay_fleet_down():
+    for piece in _pieces():
+        if piece.block and Match.board.square_of(piece.get_instance_id()) == null:
+            piece.toggle_block()
 
 # Shows a turn of the other player
-func _on_opponent_played(player, move, opening):
+func _on_opponent_played(player, notation, opening):
     var fleet = []
 
     for piece in _pieces():
         if Match.board.square_of(piece.get_instance_id()) == null:
             fleet.append(piece)
 
-    for step in Rules.replay(move, player, opening, Match.board, fleet):
+    var steps = Rules.replay(notation, player, opening, Match.board, fleet)
+
+    if steps.empty():
+        push_error("cannot show the turn %s of player %d" % [notation, player])
+
+    for step in steps:
         var piece = instance_from_id(step.piece)
 
         if step.stand:
@@ -265,10 +286,16 @@ func _place(piece, square):
         instance_from_id(stack.back()).toggle_block()
 
     var position = $Board.tile(square).global_transform.origin
-    position.y = max(_stack_height(square) + HAND_GAP, 1)
-    piece.translation = position
-    piece.apply_central_impulse(Vector3(0, -0.1, 0))
+    position.y = max(_stack_height(square) + HAND_GAP, PLACE_MIN_HEIGHT)
+    _put_at(piece, position)
     Match.board.put([piece.get_instance_id()], square)
+
+# Leaves the piece there and lets it fall on what is below
+func _put_at(piece, position):
+    var transform = piece.global_transform
+    transform.origin = position
+    piece.global_transform = transform
+    piece.apply_central_impulse(FALL_IMPULSE)
 
 func _stack_height(square, exclude = []):
     var height = STACK_BASE
@@ -284,19 +311,19 @@ func _mouse_cast():
     var mouse = get_viewport().get_mouse_position()
     var from = camera.project_ray_origin(mouse)
     var to = from + camera.project_ray_normal(mouse) * RAY_LENGTH
-    var exclude = [self]
+    var exclude = []
     var mask = PIECES_LAYER
 
     if hand:
-        mask = hand.get_children()[0].collision_mask
-        exclude.append(hand)
+        mask = UNDER_HAND_LAYERS
+        exclude = hand.get_children()
 
     var cast = get_world().direct_space_state.intersect_ray(from, to, exclude, mask, true, false)
     return cast if !cast.empty() else null
 
 func _tile_under_hand():
     var origin = hand.global_transform.origin
-    var cast = get_world().direct_space_state.intersect_ray(origin, origin + Vector3(0, -RAY_LENGTH, 0), [], ALL_LAYERS, false, true)
+    var cast = get_world().direct_space_state.intersect_ray(origin, origin + Vector3(0, -RAY_LENGTH, 0), [], TILES_LAYER, false, true)
     return cast.collider if !cast.empty() else null
 
 func _hand_ids():
@@ -316,4 +343,3 @@ func _square(tile):
 func _reparent(node, parent):
     node.get_parent().remove_child(node)
     parent.add_child(node)
-    node.set_owner(parent)

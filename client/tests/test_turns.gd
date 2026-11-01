@@ -36,11 +36,15 @@ func _on_turn_refused(reason):
 func notify(type, params = {}):
     game._on_notification({"type": type, "params": params})
 
-# Places a piece of the fleet as the player would drag it
-func place(name, square):
+# A piece of the fleet, kept alive for the whole test
+func fleet_piece(name):
     var piece = Piece.new(name)
     pieces.append(piece)
-    var piece_id = piece.get_instance_id()
+    return piece.get_instance_id()
+
+# Places a piece of the fleet as the player would drag it
+func place(name, square):
+    var piece_id = fleet_piece(name)
     check("can take " + name, game.can_take(piece_id))
     game.start_move(piece_id, pieces)
     game.board.put([piece_id], Notation.parse_square(square))
@@ -80,7 +84,7 @@ func test_submit_and_get_the_turn_back():
     check("sent", game.confirm())
     check_equal("the move", {"type": "SubmitTurn", "params": {"player": 1, "turn": 1, "move": "a1"}}, server.sent[0])
     check_equal("waiting for the server", game.Phase.SUBMITTED, game.phase)
-    check("no moving meanwhile", !game.can_take(Piece.new("C1").get_instance_id()))
+    check("no moving meanwhile", !game.can_take(fleet_piece("C1")))
 
     notify("Turn", {"player": 1.0, "turn": 1.0, "move": "a1", "nextPlayer": 2.0, "nextTurn": 2.0})
     check_equal("written down", [[1, "a1"]], played)
@@ -106,6 +110,13 @@ func test_refused_turn():
     notify("Error", {"code": "NOT_YOUR_TURN", "message": "it is not your turn"})
     check_equal("an Error out of a submission changes nothing", 1, refused.size())
 
+    # Game puts the board back when the turn is refused
+    game.undo()
+    place("C2", "b1")
+    game.confirm()
+    notify("Error", {"code": "STALE_TURN", "message": "expected turn 3"})
+    check_equal("an Error to a submission is a refusal too", ["a1 is not empty", "expected turn 3"], refused)
+
 func test_undo_puts_the_board_back():
     game.start_sandbox()
     check("nothing to undo", !game.undo())
@@ -115,9 +126,17 @@ func test_undo_puts_the_board_back():
     check_equal("empty again", [], game.board.stack(Vector2(1, 1)))
     check_equal("no move", null, game.move)
 
+# GameFinished comes instead of the last Turn: its move is the last of the status
 func test_game_over():
     game.player = 1
-    notify("StartGame", {"nextTurn": 1.0, "nextPlayer": 1.0})
-    notify("GameFinished", {"result": "WIN_2", "winCondition": "LONDI", "turn": 10.0})
+    notify("StartGame", {"nextTurn": 10.0, "nextPlayer": 2.0})
+    game._on_notification({
+        "type": "GameFinished",
+        "params": {"result": "WIN_2", "winCondition": "LONDI", "turn": 10.0},
+        "status": {"moves": ["a5", "e5", "e1"]},
+    })
+
     check_equal("finished", game.Phase.FINISHED, game.phase)
-    check("nobody moves", !game.can_take(Piece.new("C1").get_instance_id()))
+    check_equal("the last move is written down", [[10, "e1"]], played)
+    check_equal("and shown", [[2, "e1", false]], opponent)
+    check("nobody moves", !game.can_take(fleet_piece("C1")))

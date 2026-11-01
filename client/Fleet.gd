@@ -27,8 +27,6 @@ func _ready():
     white = colour == "W"
     add_child(load(TRAYS[traysize][0]).instance())
 
-    var pieceid = 1
-
     for row in range(TRAYS[traysize][1].size()):
         var stacks = TRAYS[traysize][1][row]
 
@@ -36,21 +34,19 @@ func _ready():
             var base = FIRST_STACK + Vector3(ROW_OFFSET * row, 0, STACK_OFFSET * column)
 
             if stacks[column] == HALLACIRYA:
-                var hallacirya = _new_piece(true, pieceid)
+                var hallacirya = _new_piece(true)
                 hallacirya.translation = base + Vector3(rand_range(-0.002, 0.002), 0, rand_range(-0.02, 0.02))
                 hallacirya.rotation.y = 110
                 add_child(hallacirya)
-                pieceid += 1
                 continue
 
             for level in range(stacks[column]):
-                var cirya = _new_piece(false, pieceid)
+                var cirya = _new_piece(false)
                 cirya.translation = base + Vector3(rand_range(-0.002, 0.002), PIECE_HEIGHT * level, rand_range(-0.02, 0.02))
                 cirya.rotation.y = randi() % 5 + 1
                 add_child(cirya)
-                pieceid += 1
 
-func _new_piece(hallacirya, pieceid):
+func _new_piece(hallacirya):
     var scene
 
     if style != "B":
@@ -61,7 +57,6 @@ func _new_piece(hallacirya, pieceid):
         scene = "res://units/cirya-w-basic.tscn" if white else "res://units/cirya-b-basic.tscn"
 
     var piece = load(scene).instance()
-    piece.pieceid = pieceid
     piece.player = 1 if white else 2
     piece.fleet = self
     return piece

@@ -135,9 +135,6 @@ environment = SubResource( 2 )
 [node name="Board" parent="." instance=ExtResource( 1 )]
 transform = Transform( -1.62921e-07, 0, 1, 0, 1, 0, -1, 0, -1.62921e-07, 0.001, -0.4, 0 )
 
-[node name="Tiles" type="Spatial" parent="Board"]
-transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, -4.32, 0, -4.32 )
-
 [node name="Fleet" parent="." instance=ExtResource( 4 )]
 transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 14.1913, -0.2, 3.39279 )
 

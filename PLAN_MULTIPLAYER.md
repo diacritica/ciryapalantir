@@ -170,8 +170,8 @@ Solo con turnos alternos se ejercita la regla de verdad. Hay que comprobar que, 
 - Al recibir un `Turn` o `StartGame`, o al confirmar o deshacer, el movimiento se da por terminado (`Match` lo pone a `null`).
 
 El servidor tiene estos casos en `server/internal/cirya/move_test.go` y el cliente en `client/tests/test_rules.gd`,
-que prueba las reglas de `client/core/` sin escena. Los tests del cliente se lanzan desde `client/` con
-`godot --no-window --path . -s tests/run.gd` y hay que pasarlos antes de cada commit que toque el arrastre.
+que prueba las reglas de `client/core/` sin escena. `client/tests/run.sh` lanza esos tests y una prueba de humo
+que carga la escena del juego, y hay que pasarlo antes de cada commit que toque el arrastre (`GODOT=ruta/al/binario`).
 
 El sandbox es una partida local por turnos con las mismas reglas: "Confirmar" pasa el turno al otro jugador en el mismo ordenador.
 Así la rotura del nossë se prueba en el sandbox igual que online. E11 compara cliente y servidor.
