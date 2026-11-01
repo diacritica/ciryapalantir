@@ -78,20 +78,20 @@ font_data = ExtResource( 15 )
 [sub_resource type="DynamicFont" id=10]
 font_data = ExtResource( 15 )
 
-[sub_resource type="StyleBoxFlat" id=11]
-content_margin_left = 8.0
-bg_color = Color( 1, 1, 1, 1 )
-
 [sub_resource type="DynamicFont" id=12]
 size = 14
 font_data = ExtResource( 10 )
 
-[sub_resource type="StyleBoxFlat" id=13]
+[sub_resource type="StyleBoxFlat" id=11]
 content_margin_left = 8.0
 bg_color = Color( 1, 1, 1, 1 )
 
 [sub_resource type="DynamicFont" id=14]
 font_data = ExtResource( 10 )
+
+[sub_resource type="StyleBoxFlat" id=13]
+content_margin_left = 8.0
+bg_color = Color( 1, 1, 1, 1 )
 
 [sub_resource type="DynamicFont" id=15]
 size = 48
@@ -165,12 +165,12 @@ margin_left = 134.539
 margin_top = 257.5
 margin_right = 384.539
 margin_bottom = 307.5
+custom_colors/font_color = Color( 1, 0.690196, 0.258824, 1 )
 custom_styles/hover = ExtResource( 7 )
 custom_styles/pressed = ExtResource( 7 )
 custom_styles/focus = ExtResource( 6 )
 custom_styles/disabled = ExtResource( 12 )
 custom_styles/normal = ExtResource( 6 )
-custom_colors/font_color = Color( 1, 0.690196, 0.258824, 1 )
 disabled = true
 text = "Nuevo Juego"
 __meta__ = {
@@ -207,12 +207,12 @@ margin_left = 134.539
 margin_top = 355.5
 margin_right = 384.539
 margin_bottom = 405.5
+custom_colors/font_color = Color( 1, 0.690196, 0.258824, 1 )
 custom_styles/hover = ExtResource( 7 )
 custom_styles/pressed = ExtResource( 7 )
 custom_styles/focus = ExtResource( 6 )
 custom_styles/disabled = ExtResource( 12 )
 custom_styles/normal = ExtResource( 6 )
-custom_colors/font_color = Color( 1, 0.690196, 0.258824, 1 )
 disabled = true
 text = "Unirse al Juego"
 __meta__ = {
@@ -243,6 +243,22 @@ texture = ExtResource( 8 )
 expand = true
 stretch_mode = 1
 flip_h = true
+
+[node name="SandboxButton" type="Button" parent="Welcome/Panel"]
+margin_left = 134.539
+margin_top = 440.5
+margin_right = 384.539
+margin_bottom = 490.5
+custom_colors/font_color = Color( 1, 0.690196, 0.258824, 1 )
+custom_styles/hover = ExtResource( 7 )
+custom_styles/pressed = ExtResource( 7 )
+custom_styles/focus = ExtResource( 6 )
+custom_styles/disabled = ExtResource( 12 )
+custom_styles/normal = ExtResource( 6 )
+text = "Sandbox"
+__meta__ = {
+"_edit_use_anchors_": false
+}
 
 [node name="RichTextLabel" type="RichTextLabel" parent="Welcome"]
 anchor_top = 1.0
@@ -309,8 +325,8 @@ margin_left = -25.6833
 margin_top = -2.43964
 margin_right = 474.317
 margin_bottom = 31.5604
-custom_fonts/font = SubResource( 4 )
 custom_colors/font_color = Color( 1, 0.690196, 0.258824, 1 )
+custom_fonts/font = SubResource( 4 )
 text = "Comparte el enlace"
 align = 1
 valign = 1
@@ -348,8 +364,8 @@ margin_left = -25.6833
 margin_top = -2.43964
 margin_right = 474.317
 margin_bottom = 31.5604
-custom_fonts/font = SubResource( 4 )
 custom_colors/font_color = Color( 1, 0.690196, 0.258824, 1 )
+custom_fonts/font = SubResource( 4 )
 text = "Código del juego"
 align = 1
 valign = 1
@@ -387,8 +403,8 @@ margin_left = -25.6833
 margin_top = -2.43964
 margin_right = 474.317
 margin_bottom = 31.5604
-custom_fonts/font = SubResource( 4 )
 custom_colors/font_color = Color( 1, 0.690196, 0.258824, 1 )
+custom_fonts/font = SubResource( 4 )
 text = "Elige tu Ciryarimbe"
 align = 1
 valign = 1
@@ -446,8 +462,8 @@ margin_left = -70.5
 margin_top = 155.0
 margin_right = 70.5
 margin_bottom = 189.0
-custom_fonts/font = SubResource( 9 )
 custom_colors/font_color = Color( 1, 0.690196, 0.258824, 1 )
+custom_fonts/font = SubResource( 9 )
 text = "Ninquë"
 align = 1
 valign = 1
@@ -471,16 +487,16 @@ margin_left = -59.5
 margin_top = -48.0
 margin_right = 60.5
 margin_bottom = -13.0
+custom_colors/font_color_disabled = Color( 1, 0.690196, 0.258824, 1 )
+custom_colors/font_color = Color( 1, 0.690196, 0.258824, 1 )
+custom_colors/font_color_hover = Color( 1, 0.690196, 0.258824, 1 )
+custom_colors/font_color_pressed = Color( 1, 0.690196, 0.258824, 1 )
+custom_fonts/font = SubResource( 10 )
 custom_styles/hover = ExtResource( 7 )
 custom_styles/pressed = ExtResource( 7 )
 custom_styles/focus = ExtResource( 7 )
 custom_styles/disabled = ExtResource( 6 )
 custom_styles/normal = ExtResource( 6 )
-custom_fonts/font = SubResource( 10 )
-custom_colors/font_color_disabled = Color( 1, 0.690196, 0.258824, 1 )
-custom_colors/font_color = Color( 1, 0.690196, 0.258824, 1 )
-custom_colors/font_color_hover = Color( 1, 0.690196, 0.258824, 1 )
-custom_colors/font_color_pressed = Color( 1, 0.690196, 0.258824, 1 )
 text = "Jugar"
 
 [node name="InputName" type="LineEdit" parent="CreateGame/Panel/WhiteButton/Edit"]
@@ -490,10 +506,10 @@ margin_left = -60.0
 margin_top = 10.0
 margin_right = 60.0
 margin_bottom = 54.0
-custom_styles/normal = SubResource( 11 )
-custom_fonts/font = SubResource( 12 )
 custom_colors/font_color_selected = Color( 0, 0, 0, 1 )
 custom_colors/font_color = Color( 0, 0, 0, 1 )
+custom_fonts/font = SubResource( 12 )
+custom_styles/normal = SubResource( 11 )
 placeholder_text = "Tu Nombre"
 __meta__ = {
 "_edit_use_anchors_": false
@@ -567,8 +583,8 @@ margin_left = -70.5
 margin_top = 155.0
 margin_right = 70.5
 margin_bottom = 189.0
-custom_fonts/font = SubResource( 9 )
 custom_colors/font_color = Color( 1, 0.690196, 0.258824, 1 )
+custom_fonts/font = SubResource( 9 )
 text = "Morque"
 align = 1
 valign = 1
@@ -592,16 +608,16 @@ margin_left = -59.5
 margin_top = -48.0
 margin_right = 60.5
 margin_bottom = -13.0
+custom_colors/font_color_disabled = Color( 1, 0.690196, 0.258824, 1 )
+custom_colors/font_color = Color( 1, 0.690196, 0.258824, 1 )
+custom_colors/font_color_hover = Color( 1, 0.690196, 0.258824, 1 )
+custom_colors/font_color_pressed = Color( 1, 0.690196, 0.258824, 1 )
+custom_fonts/font = SubResource( 10 )
 custom_styles/hover = ExtResource( 7 )
 custom_styles/pressed = ExtResource( 7 )
 custom_styles/focus = ExtResource( 7 )
 custom_styles/disabled = ExtResource( 6 )
 custom_styles/normal = ExtResource( 6 )
-custom_fonts/font = SubResource( 10 )
-custom_colors/font_color_disabled = Color( 1, 0.690196, 0.258824, 1 )
-custom_colors/font_color = Color( 1, 0.690196, 0.258824, 1 )
-custom_colors/font_color_hover = Color( 1, 0.690196, 0.258824, 1 )
-custom_colors/font_color_pressed = Color( 1, 0.690196, 0.258824, 1 )
 text = "Jugar"
 
 [node name="InputName" type="LineEdit" parent="CreateGame/Panel/BlackButton/Edit"]
@@ -611,10 +627,10 @@ margin_left = -60.0
 margin_top = 10.0
 margin_right = 60.0
 margin_bottom = 54.0
-custom_styles/normal = SubResource( 11 )
-custom_fonts/font = SubResource( 12 )
 custom_colors/font_color_selected = Color( 0, 0, 0, 1 )
 custom_colors/font_color = Color( 0, 0, 0, 1 )
+custom_fonts/font = SubResource( 12 )
+custom_styles/normal = SubResource( 11 )
 placeholder_text = "Tu Nombre"
 __meta__ = {
 "_edit_use_anchors_": false
@@ -687,8 +703,8 @@ margin_left = -25.6833
 margin_top = -2.43964
 margin_right = 474.317
 margin_bottom = 31.5604
-custom_fonts/font = SubResource( 4 )
 custom_colors/font_color = Color( 1, 0.690196, 0.258824, 1 )
+custom_fonts/font = SubResource( 4 )
 text = "Código del juego"
 align = 1
 valign = 1
@@ -704,9 +720,9 @@ margin_left = 56.0
 margin_top = 36.5
 margin_right = -53.0
 margin_bottom = 80.5
-custom_styles/normal = SubResource( 13 )
-custom_fonts/font = SubResource( 14 )
 custom_colors/font_color = Color( 0, 0, 0, 1 )
+custom_fonts/font = SubResource( 14 )
+custom_styles/normal = SubResource( 13 )
 placeholder_text = "Introduce un código válido..."
 
 [node name="JoinGameButton2" type="Button" parent="JoinGame/Panel"]
@@ -714,12 +730,12 @@ margin_left = 123.737
 margin_top = 267.689
 margin_right = 373.737
 margin_bottom = 317.689
+custom_colors/font_color = Color( 1, 0.690196, 0.258824, 1 )
 custom_styles/hover = ExtResource( 7 )
 custom_styles/pressed = ExtResource( 7 )
 custom_styles/focus = ExtResource( 6 )
 custom_styles/disabled = ExtResource( 6 )
 custom_styles/normal = ExtResource( 6 )
-custom_colors/font_color = Color( 1, 0.690196, 0.258824, 1 )
 text = "Unirse al Juego"
 __meta__ = {
 "_edit_use_anchors_": false
@@ -803,11 +819,13 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 margin_top = -83.0
 margin_bottom = -49.0
-custom_fonts/font = SubResource( 16 )
 custom_colors/font_color = Color( 1, 0.690196, 0.258824, 1 )
+custom_fonts/font = SubResource( 16 )
 text = "(Q. «alargar el juego es alargar la vida/el despertar»)"
 align = 1
 valign = 1
+
 [connection signal="pressed" from="Welcome/Panel/NewGameButton" to="." method="_on_NewGameButton_pressed"]
 [connection signal="pressed" from="Welcome/Panel/JoinGameButton" to="." method="_on_JoinGameButton_pressed"]
+[connection signal="pressed" from="Welcome/Panel/SandboxButton" to="." method="_on_SandboxButton_pressed"]
 [connection signal="pressed" from="JoinGame/Panel/JoinGameButton2" to="." method="_on_JoinGameCode_pressed"]

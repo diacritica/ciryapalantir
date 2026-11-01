@@ -1,11 +1,11 @@
 extends Control
 
 onready var Server = get_node("/root/Server")
+onready var Global = get_node("/root/Global")
 onready var NewGameButton = get_node("Welcome/Panel/NewGameButton")
 onready var JoinGameButton = get_node("Welcome/Panel/JoinGameButton")
 onready var WhiteButton = get_node("/root/Menu/CreateGame/Panel/WhiteButton")
 onready var BlackButton = get_node("/root/Menu/CreateGame/Panel/BlackButton")
-onready var GameScene = preload("res://Game.tscn").instance()
 
 func _ready():
     Server.connect("user_logged", self, "on_user_logged")
@@ -29,6 +29,7 @@ func _on_NewGameButton_pressed():
     Server.create_room()
     
 func _on_room_created(room_id):
+    Global.sandbox = false
     get_node("/root/Menu/CreateGame/Panel/Code/CodeLabel").text = room_id
     get_node("/root/Menu/Background").visible = false
     get_node("/root/Menu/BackgroundBlur").visible = true
@@ -119,4 +120,11 @@ func set_player_name(button, name):
 func _on_JoinGameCode_pressed():
     get_node("/root/Menu/JoinGame").visible = false
     var code = get_node("/root/Menu/JoinGame/Panel/Code/InputCode").text
-    _on_room_created(code)
+    # Room codes are uppercase, someone typing them in lowercase would end in an empty room
+    _on_room_created(code.strip_edges().to_upper())
+
+# Offline board to try moves: any piece can be moved and nothing is sent to the server
+func _on_SandboxButton_pressed():
+    Global.sandbox = true
+    Global.player = 1
+    get_tree().change_scene("res://Game.tscn")

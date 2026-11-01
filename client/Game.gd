@@ -23,7 +23,9 @@ func _ready():
 #        Server.connect("connection_success", self, "_on_connection_success")
 #        Server.join_room('test')
 
-    if global.player == 1:
+    # The player comes from the seat taken in the menu. Player 1, the sandbox
+    # and spectators look from the side of player 1
+    if global.player != 2:
         $CameraPlayer1.current = true
         self.remove_child($CameraPlayer2)
         self.remove_child($Particles2)
