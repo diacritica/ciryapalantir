@@ -73,8 +73,27 @@ func TestLeaveIsIdempotent(t *testing.T) {
 	r.Leave(c)
 	r.Leave(c)
 
-	_, open := <-c.Send()
-	for open {
-		_, open = <-c.Send()
+	closed := make(chan bool)
+	go func() {
+		for range c.Send() {
+		}
+		closed <- true
+	}()
+
+	select {
+	case <-closed:
+	case <-time.After(2 * time.Second):
+		t.Fatal("the client was never closed")
+	}
+
+	// And the room keeps working
+	other := NewClient("other")
+	r.Join(other)
+
+	select {
+	case data := <-other.Send():
+		assert.Contains(t, string(data), string(StatusResponse))
+	case <-time.After(2 * time.Second):
+		t.Fatal("the room stopped answering")
 	}
 }
