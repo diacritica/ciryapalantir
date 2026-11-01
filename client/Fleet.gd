@@ -19,7 +19,7 @@ var startZ = -4
 
 var heightOffset = 0.3
 
-var trays = {5:["res://assets/tray/tray-5x5.tscn",[[3,3,3,-1],[3,3,3,3]]],6:["res://assets/tray/tray-6x6.tscn",[[3,3,-1],[3,3,3,3],[3,3,3,3]]],7:["res://assets/tray/tray-7x7.tscn",[[3,3,3,3,-1],[3,3,3,3,3],[3,3,3,3,1]]]}
+var trays = {5:["res://assets/tray/tray-5x5.tscn",[[3,3,3,-1],[3,3,3,3]]],6:["res://assets/tray/tray-6x6.tscn",[[3,3,-1,-1],[3,3,3,3],[3,3,3,3]]],7:["res://assets/tray/tray-7x7.tscn",[[3,3,3,3,-1],[3,3,3,3,3],[3,3,3,4,-1]]]}
 export(int) var traysize = 5
 export(String) var colour = "W"
 export(String) var style = "B"

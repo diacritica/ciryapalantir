@@ -151,7 +151,8 @@ func _input(event):
     elif global.dragging_nosse and global.dragging_nosse.get_children().size() == 1 and Input.is_key_pressed(KEY_R):
         get_node("piecerotation").play()
         var tile = global.get_piece_tile(global.dragging_nosse.get_children()[0].get_instance_id())
-        if !tile:
+        # In the opening the cirya has to stay flat
+        if !tile and !global.opening():
             global.dragging_nosse.get_children()[0].toggle_block()
 
 func cancel_drag():

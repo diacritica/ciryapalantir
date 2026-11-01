@@ -15,6 +15,10 @@ func can_move(piece_id):
     if Global.move_started():
         return Global.part_of_move(piece_id)
 
+    # The opening only places a flat cirya from the fleet of the opponent
+    if Global.opening():
+        return !tile and piece.player != Global.player and piece.get_notation_name() == 'C'
+
     # Check if the player own the nosse
     var owner = piece.player
     if tile:
@@ -66,7 +70,12 @@ func move_state(move, state):
         if changed.size() != 1 or now.size() != 1 or now[0] != move.placed or !before[square.x][square.y].empty():
             return null
 
-        if instance_from_id(move.placed).player != Global.player:
+        var placed = instance_from_id(move.placed)
+
+        if Global.opening():
+            if placed.player == Global.player or placed.get_notation_name() != 'C':
+                return null
+        elif placed.player != Global.player:
             return null
 
         return {"placed": move.placed, "square": square}

@@ -25,6 +25,10 @@ func get_notation_name():
     return 'C'
 func toggle_block():
     block = !block
+func get_height():
+    return 0.2
+func apply_central_impulse(impulse):
+    pass
 """
     piece_script.reload()
 
@@ -42,6 +46,10 @@ func toggle_block():
         "test_turns_alternate",
         "test_carry_limit",
         "test_placement",
+        "test_opening_places_a_cirya_of_the_opponent",
+        "test_opening_has_no_moves",
+        "test_opening_ends_after_turn_2",
+        "test_opening_of_the_opponent_is_replayed",
     ]:
         setup()
         print("- ", test)
@@ -65,7 +73,8 @@ func setup():
     G.Validation = V
     G.sandbox = true
     G.player = 1
-    G.turn = 1
+    # After the opening, unless the test says otherwise
+    G.turn = 3
 
     var tile_script = GDScript.new()
     tile_script.source_code = "extends Spatial\nvar row = 0\nvar column = 0\n"
@@ -75,6 +84,7 @@ func setup():
     var tiles = Spatial.new()
     tiles.name = "Tiles"
     G.board.add_child(tiles)
+    get_root().add_child(G.board)
 
     for row in range(5):
         G.board_state.append([])
@@ -266,7 +276,7 @@ func test_turns_alternate():
 
     check("player 1 moves", move(one[0], "a2"))
     G.next_sandbox_turn()
-    check("now it is player 2", G.player == 2 and G.turn == 2)
+    check("now it is player 2", G.player == 2 and G.turn == 4)
     check("player 2 cannot take the cirya of player 1", !V.can_move(one[0]))
     check("player 2 moves", move(two[0], "e4"))
 
@@ -289,3 +299,48 @@ func test_placement():
     check("the placed piece can change square", move(c, "d4") and G.move_notation() == "d4")
     var mine = piece("C2")
     check("not a piece of the opponent", !V.can_move(mine))
+
+func test_opening_places_a_cirya_of_the_opponent():
+    G.turn = 1
+    var own = piece("C1")
+    var hallacirya = piece("H2")
+    var tampa = piece("T2")
+    var cirya = piece("C2")
+
+    check("not an own piece", !V.can_move(own))
+    check("not the hallacirya of the opponent", !V.can_move(hallacirya))
+    check("not a tampa", !V.can_move(tampa))
+    check("a cirya of the opponent", move(cirya, "c3"))
+    check("written as a plain placement", G.move_notation() == "c3")
+    check("only one", !V.can_move(piece("C2")))
+
+func test_opening_has_no_moves():
+    G.turn = 2
+    G.player = 2
+    var placed = put("a1", ["C2"])
+
+    check("the cirya on the board cannot move", !V.can_move(placed[0]))
+    check("a cirya of player 1 from the fleet can be placed", move(piece("C1"), "e5"))
+
+func test_opening_ends_after_turn_2():
+    G.turn = 1
+    G.next_sandbox_turn()
+    check("turn 2 is still the opening", G.opening() and G.player == 2)
+    G.next_sandbox_turn()
+    check("turn 3 is not", !G.opening() and G.player == 1)
+    check("now the own pieces", V.can_move(piece("C1")))
+    check("and not the ones of the opponent", !V.can_move(piece("C2")))
+
+# Player 1 places a cirya of player 2: the other client has to take it from
+# the fleet of player 2, and never the hallacirya
+func test_opening_of_the_opponent_is_replayed():
+    var hallacirya = piece("H2")
+    var cirya = piece("C2")
+    piece("C1")
+
+    G.notation_movement(1, "c3", true)
+    check("the cirya of player 2 is on c3", stack("c3") == [cirya])
+    check("the hallacirya stays in the fleet", !G.get_piece_tile(hallacirya))
+
+    G.notation_movement(1, "d3")
+    check("after the opening the piece is of the player", instance_from_id(stack("d3")[0]).player == 1)

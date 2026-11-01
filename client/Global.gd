@@ -154,6 +154,10 @@ func start_move(piece_id):
 func end_move():
     move = null
 
+# Turns 1 and 2: each player places a flat cirya of the opponent, as in Tak
+func opening():
+    return turn <= 2
+
 # In the sandbox the turn goes to the other player when it is confirmed
 func next_sandbox_turn():
     end_move()
@@ -350,7 +354,7 @@ func data_received(data):
         #print('data received: ', data.params)
         turn = int(data.params.turn) + 1
         var player = int(data.params.player)
-        notation_movement(player, data.params.move)
+        notation_movement(player, data.params.move, int(data.params.turn) <= 2)
      
 func unassigned_piece(player, stone):
     for piece in pieces:
@@ -361,18 +365,20 @@ func unassigned_piece(player, stone):
                     return piece  
                 elif piece.get_notation_name() == stone:
                     return piece
-            else:
+            elif piece.get_notation_name() == 'C':
                 return piece
     
     return null
     
-func notation_movement(player, move):
+# In the opening the piece placed is one of the opponent
+func notation_movement(player, move, opening = false):
     var regex = RegEx.new()
     regex.compile("^(?P<stone>[HT])?(?P<position>[a-j][1-9])$")
     
     var result = regex.search(move)
     if result:
-        var piece = unassigned_piece(player, result.get_string("stone"))
+        var owner = 3 - player if opening else player
+        var piece = unassigned_piece(owner, result.get_string("stone"))
         var origin = notation_to_vector(result.get_string("position"))
         if piece:
             move_piece(piece.get_instance_id(), origin.x, origin.y)
