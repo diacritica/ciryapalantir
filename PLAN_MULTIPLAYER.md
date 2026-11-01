@@ -220,21 +220,21 @@ godot --path client -- --profile=negras            # otro cliente (sin exportar)
 
 ### 2.5 Pruebas de punta a punta (por la tarde)
 
-Con el servidor lanzado con `go run -race ./cmd/cirya-server`:
+Con el servidor lanzado con `go run -race ./cmd/cirya-server`. Los casos automáticos se lanzan con `GODOT=… client/tests/e2e.sh`, que arranca el servidor y el bot:
 
-| # | Escenario | Resultado esperado |
-|---|---|---|
-| E1 | Dos clientes nativos en local, partida completa hasta Londë | `GameFinished` correcto en ambos y tableros idénticos durante toda la partida |
-| E2 | Nativo contra navegador (exportación web servida desde `/game`) | Igual que E1 |
-| E3 | Movimiento ilegal (por ejemplo, encima de una Tampa con una Cirya) | Aviso, la pieza vuelve a su sitio y el turno sigue siendo del mismo jugador |
-| E4 | Cerrar un cliente a mitad de partida, abrirlo y volver a entrar con el código | Recupera su asiento y el tablero completo, y la partida sigue |
-| E5 | Cortar la red de un cliente unos 20 s (desactivar la wifi; reiniciar el servidor no vale porque se pierde la memoria) | "Reconectando…" y vuelve sin perder estado |
-| E6 | Los dos jugadores pulsan "ready" casi a la vez | `StartGame` llega una sola vez |
-| E7 | Un tercer usuario entra con el código | Ve la partida como espectador y no puede sentarse ni mover |
-| E8 | Agotar la flota en una partida de 5×5 | Fin por `FLAT` con el resultado correcto |
-| E9 | Confirmar sin mover, o mover fuera de turno | El botón está desactivado o el servidor responde `Error`, y no se rompe nada |
-| E10 | Desplegar en play.cirya.me por https | Funciona con `wss://` y E1 se repite en remoto |
-| E11 | Rotura del nossë con turnos (2.3b): carga de 3–5 en un nossë mixto, repartida en varios pasos; intentar cambiar de sentido, saltar casillas, superar la carga, coger otro nossë a mitad y aplanar Tampa con Hallacirya sola y acompañada | Lo legal se acepta y se ve igual en los dos clientes; lo ilegal lo frena el cliente antes de enviar, y si se escapa, el servidor responde `InvalidTurn` |
+| # | Escenario | Resultado esperado | Cobertura |
+|---|---|---|---|
+| E1 | Dos clientes nativos en local, partida completa hasta Londë | `GameFinished` correcto en ambos y tableros idénticos durante toda la partida | Auto: `e2e.sh` juega una partida guionizada hasta Londë (`e2e_nosse.gd`) y otra completa hasta `FLAT` (`e2e_player.gd`), y compara el tablero con el del servidor en cada turno. Dos clientes con interfaz: a mano |
+| E2 | Nativo contra navegador (exportación web servida desde `/game`) | Igual que E1 | A mano: falta la exportación web |
+| E3 | Movimiento ilegal (por ejemplo, encima de una Tampa con una Cirya) | Aviso, la pieza vuelve a su sitio y el turno sigue siendo del mismo jugador | Auto: `test_rules.gd`, `smoke_game.gd` (la pieza vuelve) y `e2e_nosse.gd` |
+| E4 | Cerrar un cliente a mitad de partida, abrirlo y volver a entrar con el código | Recupera su asiento y el tablero completo, y la partida sigue | Auto: `TestReconnectRestoresBoard`, `TestSeatOwnerCanRejoin`, `smoke_game.gd` (reabrir) y `e2e_player.gd` (corte a mitad) |
+| E5 | Cortar la red de un cliente unos 20 s (desactivar la wifi; reiniciar el servidor no vale porque se pierde la memoria) | "Reconectando…" y vuelve sin perder estado | A mano: está probado el corte del socket, pero no el de la red real |
+| E6 | Los dos jugadores pulsan "ready" casi a la vez | `StartGame` llega una sola vez | Auto: `TestSimultaneousReadyStartsGameOnce` |
+| E7 | Un tercer usuario entra con el código | Ve la partida como espectador y no puede sentarse ni mover | Auto: `TestSpectatorCannotPlay`, `test_spectators_never_move` y `e2e_spectator.gd` desde el menú |
+| E8 | Agotar la flota en una partida de 5×5 | Fin por `FLAT` con el resultado correcto | Auto: `TestEmptyFleetEndsGame`, `TestFullBoardCountsFlats`, `TestEqualFlatsAreADraw` y `e2e_player.gd` |
+| E9 | Confirmar sin mover, o mover fuera de turno | El botón está desactivado o el servidor responde `Error`, y no se rompe nada | Auto: `TestOutOfTurnIsAnswered`, `TestCannotSubmitTurnForOtherPlayer` y el botón desactivado en `smoke_game.gd` |
+| E10 | Desplegar en play.cirya.me por https | Funciona con `wss://` y E1 se repite en remoto | Pendiente: se desplegará en un servidor Linux propio |
+| E11 | Rotura del nossë con turnos (2.3b): carga de 3–5 en un nossë mixto, repartida en varios pasos; intentar cambiar de sentido, saltar casillas, superar la carga, coger otro nossë a mitad y aplanar Tampa con Hallacirya sola y acompañada | Lo legal se acepta y se ve igual en los dos clientes; lo ilegal lo frena el cliente antes de enviar, y si se escapa, el servidor responde `InvalidTurn` | Auto: `e2e_nosse.gd` rompe un nossë mixto de 4 en `4a1+211`, con pasos de ida y vuelta, y la Hallacirya aplana la Tampa. Lo ilegal lo frena el cliente y el servidor lo rechaza. `test_rules.gd` cubre el límite de carga y casos sueltos. A mano: dos clientes con interfaz |
 
 **Hecho cuando:** pasan E1 a E9 y E11 en local y E10 en remoto, sin errores en la consola de Godot ni en el log del servidor.
 
