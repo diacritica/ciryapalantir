@@ -13,6 +13,11 @@ func _init():
     for path in _test_files():
         var script = load(path)
 
+        if !script or !script.can_instance():
+            print("FAIL %s does not load" % path.get_file())
+            failures += 1
+            continue
+
         for method in script.get_script_method_list():
             if !method.name.begins_with("test_"):
                 continue
@@ -20,6 +25,7 @@ func _init():
             var test = script.new()
             test.setup()
             test.call(method.name)
+            test.teardown()
             total += 1
 
             for failure in test.failures:

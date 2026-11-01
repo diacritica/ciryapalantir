@@ -1,13 +1,16 @@
 extends Reference
 
 # The base of the test files: every method starting with test_ is a test,
-# run on a new instance after setup()
+# run on a new instance between setup() and teardown()
 
 const Piece = preload("res://tests/fakes/Piece.gd")
 
 var failures = []
 
 func setup():
+    pass
+
+func teardown():
     pass
 
 func check(label, condition):

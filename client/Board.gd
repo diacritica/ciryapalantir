@@ -1,51 +1,54 @@
 tool
 extends Spatial
 
+# The squares of the board: a tile (an Area) for every one, built when the
+# scene starts so their size follows the board
+
 export(int) var columns = 5
 export(int) var rows = 5
 export(bool) var auto = true
 
-var border_width = 0.04
-var tile_size = 2.35
-var offset_width = tile_size + border_width
-var map_border = 2.58
+const TILE_SIZE = 2.35
+const BORDER_WIDTH = 0.04
+const TILE_STEP = TILE_SIZE + BORDER_WIDTH
 
-onready var global = get_node("/root/Global")
-var tile = preload("res://Tile.tscn")
+var tile_scene = preload("res://Tile.tscn")
+# tiles[row][column]
+var tiles = []
 
-# Called when the node enters the scene tree for the first time.
 func _ready():
-    global.board = self
-    var tiles = get_node_or_null("Tiles")
-    
-    if tiles && auto:
-        self.remove_child(tiles)
-        
-    tiles = get_node_or_null("Tiles")
-    
-    if !tiles:
-        tiles = Spatial.new()
-        tiles.name = 'Tiles'
-        
-        if auto:            
-            tiles.translation.x = -(rows * offset_width) / 2 + (offset_width / 2)
-            tiles.translation.z = -(columns * offset_width) / 2 + (offset_width / 2)
-            tiles.translation.y = -0.7
-        
-        self.add_child(tiles)    
-        tiles.set_owner(get_tree().edited_scene_root)
-        
-    if tiles.get_child_count() == 0:
-        for row in range(rows):
-            global.board_state.append([])
-            for column in range(columns):
-                global.board_state[row].append([])
-                
-                var new_tile = tile.instance()
-                new_tile.translation.x = row * offset_width
-                new_tile.translation.z = column * offset_width
-                new_tile.visible = false
-                new_tile.row = row
-                new_tile.column = column
-                tiles.add_child(new_tile)
-                new_tile.set_owner(get_tree().edited_scene_root)
+    var old = get_node_or_null("Tiles")
+
+    if old and auto:
+        remove_child(old)
+        old.queue_free()
+
+    var container = get_node_or_null("Tiles")
+
+    if container:
+        return
+
+    container = Spatial.new()
+    container.name = "Tiles"
+
+    if auto:
+        container.translation = Vector3(-(rows * TILE_STEP) / 2 + TILE_STEP / 2, -0.7, -(columns * TILE_STEP) / 2 + TILE_STEP / 2)
+
+    add_child(container)
+    container.set_owner(get_tree().edited_scene_root)
+
+    for row in range(rows):
+        tiles.append([])
+
+        for column in range(columns):
+            var tile = tile_scene.instance()
+            tile.translation = Vector3(row * TILE_STEP, 0, column * TILE_STEP)
+            tile.visible = false
+            tile.row = row
+            tile.column = column
+            container.add_child(tile)
+            tile.set_owner(get_tree().edited_scene_root)
+            tiles[row].append(tile)
+
+func tile(square):
+    return tiles[square.x][square.y]

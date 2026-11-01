@@ -3,8 +3,6 @@ extends Node
 export var server_host = "play.cirya.me"
 export var server_port = 3333
 
-onready var global = get_node("/root/Global")
-
 signal connection_error(error)
 signal connection_success
 signal notification_received(message)
@@ -107,7 +105,6 @@ func ws_data_received():
         if players.get("2", null) != null:
             context[players["2"]["color"]] = players["2"]["name"]
     
-    global.data_received(data.result)
     emit_signal("notification_received", data.result)
 
 func _process(delta):
@@ -139,7 +136,6 @@ func send_join_player(player, color, name):
         }
     }
     context["player"] = player
-    global.player = player
     context["color"] = color
     context["turn"] = 1
     ws_send_message(msg)

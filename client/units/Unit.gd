@@ -2,8 +2,7 @@ extends RigidBody
 
 # A cirya or a hallacirya. A cirya standing up (block) is a tampa
 
-onready var global = get_node("/root/Global")
-onready var Validation = get_node("/root/Validation")
+onready var Match = get_node("/root/Match")
 
 export(bool) var block = false
 export(String, "CIRYA", "HALLACIRYA") var type = "CIRYA"
@@ -14,20 +13,17 @@ export(int) var player = 0
 var fleet = null
 
 func _ready():
-    global.register_piece(self)
+    add_to_group("pieces")
     connect("mouse_entered", self, "_on_mouse_entered")
     connect("mouse_exited", self, "_on_mouse_exited")
 
 func _on_mouse_entered():
-    if !_dragged() and Validation.can_move(get_instance_id()):
+    if !is_in_group("hand") and Match.can_take(get_instance_id()):
         _glow(true)
 
 func _on_mouse_exited():
-    if !_dragged():
+    if !is_in_group("hand"):
         _glow(false)
-
-func _dragged():
-    return global.get_dragging_nosse_pieces_ids().has(get_instance_id())
 
 func show_selected():
     _glow(true)

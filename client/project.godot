@@ -10,7 +10,6 @@ config_version=4
 
 _global_script_classes=[  ]
 _global_script_class_icons={
-
 }
 
 [application]
@@ -22,10 +21,9 @@ config/icon="res://assets/sat.png"
 
 [autoload]
 
-Global="*res://Global.gd"
 Server="*res://Server.tscn"
 Settings="*res://Settings.gd"
-Validation="*res://Validation.gd"
+Match="*res://Match.gd"
 
 [display]
 

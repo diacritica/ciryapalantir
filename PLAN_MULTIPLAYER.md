@@ -129,7 +129,7 @@ Reestructurar `internal/app` siguiendo el patrón del ejemplo de chat de gorilla
 
 ### 2.2 El servidor manda (arregla C2)
 
-- Nuevo `Global.apply_status(status)`:
+- Nuevo `Match.apply_status(status)`, con la parte visual en `Game.gd`:
   1. Devuelve todas las piezas a su flota.
   2. Recorre `status.board[rank][file]` de abajo a arriba y coloca cada pieza con `unassigned_piece(player, type)` y `move_piece`,
      poniendo la pieza de pie (`toggle_block`) cuando es una `T`.
@@ -161,13 +161,13 @@ Solo con turnos alternos se ejercita la regla de verdad. Hay que comprobar que, 
 - Una sola dirección y un solo sentido, casillas seguidas y al menos una pieza en cada casilla al confirmar.
 - **Romper y "desromper":** mientras dura el turno se puede soltar, recoger y volver a soltar al ritmo que se quiera,
   también en la misma casilla o devolviendo piezas atrás. Cada suelta deja el tablero en un movimiento legal, aunque sea a medias:
-  `Validation.move_state` compara el tablero con el de antes del turno y deduce de ahí qué se ha movido.
-  La notación se calcula al confirmar (`Global.move_notation`), no suelta a suelta.
+  `Rules.move_state` (en `client/core/`) compara el tablero con el de antes del turno y deduce de ahí qué se ha movido.
+  La notación se calcula al confirmar (`Match.move_notation`), no suelta a suelta.
 - Tampa y Hallacirya: no se suelta encima de una Hallacirya, y encima de una Tampa solo la Hallacirya **sola**, que la aplana.
-  Si la Hallacirya vuelve atrás, la Tampa se levanta otra vez (`Global.sync_tampar`).
+  Si la Hallacirya vuelve atrás, la Tampa se levanta otra vez (`Move.sync_tampar`).
 - La notación que genera el cliente (`3a2>12`) coincide con lo que se ha hecho en pantalla y el servidor la acepta;
   el rival la reproduce con `notation_movement` y los dos tableros quedan iguales.
-- Al recibir un `Turn` o `StartGame`, o al confirmar o deshacer, el movimiento se da por terminado (`Global.end_move`).
+- Al recibir un `Turn` o `StartGame`, o al confirmar o deshacer, el movimiento se da por terminado (`Match` lo pone a `null`).
 
 El servidor tiene estos casos en `server/internal/cirya/move_test.go` y el cliente en `client/tests/test_rules.gd`,
 que prueba las reglas de `client/core/` sin escena. Los tests del cliente se lanzan desde `client/` con

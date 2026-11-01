@@ -1,196 +1,319 @@
 extends Spatial
 
+# The table. It turns the mouse into taking and dropping pieces, shows the
+# turns of the opponent and puts the pieces back when a turn is undone. What
+# is legal is decided by Match and the rules in core/
+
+const Rules = preload("res://core/Rules.gd")
+
+# The collision layer of the pieces, as a bit mask
+const PIECES_LAYER = 2
+const ALL_LAYERS = 0x7FFFFFFF
+const RAY_LENGTH = 200
+
+# A stack starts this high over the tiles, and the hand floats this much over it
+const STACK_BASE = 0.5
+const HAND_GAP = 0.2
+const HAND_MIN_HEIGHT = 2.2
+# Seconds for rejected pieces to fly back
+const RETURN_TIME = 0.35
+
+enum Drag { IDLE, DRAGGING }
+
+onready var Match = get_node("/root/Match")
 onready var Settings = get_node("/root/Settings")
-onready var Server = get_node("/root/Server")
-onready var Validation = get_node("/root/Validation")
-onready var global = get_node("/root/Global")
 
-var ray_length = 200
+var drag = Drag.IDLE
+# The node carrying the pieces being dragged
+var hand = null
+# Where every piece of the hand was, to fly it back
+var hand_origins = {}
+# The tile the hand was taken from, and the tile under the hand
+var origin_tile = null
+var hover_tile = null
+# Where every piece was when the turn started, to undo it
+var turn_start = {}
 
-func _ready():     
-    global.game = self
+func _ready():
     Settings.medium()
     Settings.apply_settings(self)
-
-    var camera = get_viewport().get_camera()
+    Match.new_board($Board.rows)
 
     $UI.connect("turn_confirmation", self, "_on_turn_confirmation")
-    
-    # $ambient.autoplay = false
+    Match.connect("opponent_played", self, "_on_opponent_played")
+    Match.connect("turn_refused", self, "_on_turn_refused")
 
-    # simulation()
-#    if 'connected' in Server && !Server.is_ws_connected():
-#        Server.connect("connection_success", self, "_on_connection_success")
-#        Server.join_room('test')
-
-    # The player comes from the seat taken in the menu. Player 1, the sandbox
-    # and spectators look from the side of player 1
-    if global.player != 2:
+    # Player 1, the sandbox and spectators look from the side of player 1
+    if Match.player != 2:
         $CameraPlayer1.current = true
-        self.remove_child($CameraPlayer2)
-        self.remove_child($Particles2)
+        remove_child($CameraPlayer2)
+        remove_child($Particles2)
     else:
         $CameraPlayer2.current = true
-        self.remove_child($CameraPlayer1)
-        self.remove_child($Particles)
-        
-    move_fleet($Fleet)
-    move_fleet($Fleet2)
-    
-    if global.sandbox:
-        global.turn = 1
-        $UI/CodePanel.visible = false
-        $UI.show_turn_buttons()
-        $sandboxlogo.visible = true
+        remove_child($CameraPlayer1)
+        remove_child($Particles)
 
-func simulation():
-    global.simulation(['a3', 'c3', 'b3', 'd3', 'a3>', 'a1', 'b3>'])
+    for fleet in [$Fleet, $Fleet2]:
+        for piece in fleet.get_children():
+            if piece.is_in_group("pieces"):
+                var position = piece.global_transform.origin
+                _reparent(piece, $Pieces)
+                piece.translation = position
 
-func move_fleet(fleet):            
-    for piece in fleet.get_children():
-        if piece.get('pieceid'):
-            var position = piece.global_transform.origin
-            global.move_to(piece, $Pieces)
-            piece.translation = position
+    $sandboxlogo.visible = Match.sandbox
 
-func get_mouse_cast(exclude_current_piece = true):
-    var mouse_raycast_collision = 2
+func _process(_delta):
+    OS.set_window_title("Cirya Online | fps: " + str(Engine.get_frames_per_second()))
 
+func _input(event):
+    if event is InputEventMouseButton and event.button_index == BUTTON_LEFT:
+        if event.pressed and drag == Drag.IDLE:
+            var cast = _mouse_cast()
+
+            if cast and cast.collider.is_in_group("pieces") and Match.can_take(cast.collider.get_instance_id()):
+                take(cast.collider)
+
+        elif !event.pressed and drag == Drag.DRAGGING:
+            var tile = _tile_under_hand()
+
+            if tile and Match.can_drop(_hand_ids(), _square(tile)):
+                drop(tile)
+            else:
+                cancel()
+
+    elif event is InputEventMouseMotion and drag == Drag.DRAGGING:
+        _follow_mouse()
+
+    elif event is InputEventKey and event.pressed and !event.echo and event.scancode == KEY_R and drag == Drag.DRAGGING:
+        _rotate()
+
+# Takes the piece and the ones above it
+func take(piece):
+    var piece_id = piece.get_instance_id()
+
+    if !Match.move_started():
+        Match.start_move(piece_id, _pieces())
+        _remember_turn_start()
+
+    var square = Match.board.square_of(piece_id)
+    var ids = [piece_id] if square == null else Match.board.pieces_from(piece_id)
+
+    hand = Spatial.new()
+    hand.translation = piece.translation
+    hand_origins = {}
+
+    for id in ids:
+        var each = instance_from_id(id)
+        hand_origins[id] = each.global_transform
+        each.get_node("CollisionShape").disabled = true
+        # The locks stay after the drop, so the pieces do not slide off their stack
+        each.axis_lock_linear_x = true
+        each.axis_lock_linear_z = true
+        each.mode = RigidBody.MODE_STATIC
+        each.translation.x = 0
+        each.translation.z = 0
+        each.show_selected()
+        each.add_to_group("hand")
+        _reparent(each, hand)
+
+    add_child(hand)
+    drag = Drag.DRAGGING
+    origin_tile = $Board.tile(square) if square != null else null
+
+    if origin_tile:
+        origin_tile.show_highlight()
+
+    $select.play()
+
+# Drops the hand on the tile. The move has been checked
+func drop(tile):
+    var square = _square(tile)
+    Match.board.put(_hand_ids(), square)
+
+    for piece in hand.get_children():
+        var height = piece.global_transform.origin.y
+        _land(piece)
+        piece.translation = Vector3(tile.global_transform.origin.x, height, tile.global_transform.origin.z)
+        piece.apply_central_impulse(Vector3(0, -0.1, 0))
+
+    Match.move.sync_tampar(Match.board)
+    _close_hand()
+
+# The drop is not legal: the pieces fly back and the board does not change
+func cancel():
+    var tween = Tween.new()
+    var pieces = hand.get_children()
+    add_child(tween)
+
+    for piece in pieces:
+        var current = piece.global_transform
+        piece.hide_selected()
+        piece.remove_from_group("hand")
+        _reparent(piece, self)
+        piece.global_transform = current
+        tween.interpolate_property(piece, "global_transform", current, hand_origins[piece.get_instance_id()], RETURN_TIME, Tween.TRANS_QUAD, Tween.EASE_OUT)
+
+    tween.connect("tween_all_completed", self, "_on_returned", [tween, pieces], CONNECT_ONESHOT)
+    tween.start()
+    _close_hand()
+    $undo.play()
+
+func _on_returned(tween, pieces):
+    for piece in pieces:
+        piece.mode = RigidBody.MODE_RIGID
+        piece.get_node("CollisionShape").disabled = false
+
+    tween.queue_free()
+
+func _land(piece):
+    piece.mode = RigidBody.MODE_RIGID
+    piece.get_node("CollisionShape").disabled = false
+    piece.hide_selected()
+    piece.remove_from_group("hand")
+    _reparent(piece, self)
+
+func _close_hand():
+    remove_child(hand)
+    hand.queue_free()
+    hand = null
+    drag = Drag.IDLE
+
+    for tile in [origin_tile, hover_tile]:
+        if tile:
+            tile.hide_highlight()
+
+    origin_tile = null
+    hover_tile = null
+
+# The hand follows the mouse over the stacks, and the tile under it lights up
+# when the pieces can go there
+func _follow_mouse():
+    if hover_tile and hover_tile != origin_tile:
+        hover_tile.hide_highlight()
+
+    hover_tile = _tile_under_hand()
+
+    if hover_tile and Match.can_drop(_hand_ids(), _square(hover_tile)):
+        hover_tile.show_highlight()
+
+    var cast = _mouse_cast()
+
+    if !cast:
+        return
+
+    var position = cast.position
+
+    if hover_tile:
+        position.y = _stack_height(_square(hover_tile), _hand_ids()) + HAND_GAP
+
+    position.y = max(position.y, HAND_MIN_HEIGHT)
+    hand.translation = position
+
+# A piece from the fleet can be placed standing, as a tampa, except in the opening
+func _rotate():
+    var pieces = hand.get_children()
+
+    if pieces.size() == 1 and Match.board.square_of(pieces[0].get_instance_id()) == null and !Match.opening():
+        pieces[0].toggle_block()
+        $piecerotation.play()
+
+func _on_turn_confirmation(confirmed):
+    if confirmed:
+        Match.confirm()
+    else:
+        _undo()
+
+func _on_turn_refused(_reason):
+    _undo()
+
+func _undo():
+    if !Match.undo():
+        return
+
+    for piece in _pieces():
+        piece.translation = turn_start[piece.get_instance_id()]
+
+    $undo.play()
+
+func _remember_turn_start():
+    turn_start = {}
+
+    for piece in _pieces():
+        turn_start[piece.get_instance_id()] = piece.translation
+
+# Shows a turn of the other player
+func _on_opponent_played(player, move, opening):
+    var fleet = []
+
+    for piece in _pieces():
+        if Match.board.square_of(piece.get_instance_id()) == null:
+            fleet.append(piece)
+
+    for step in Rules.replay(move, player, opening, Match.board, fleet):
+        var piece = instance_from_id(step.piece)
+
+        if step.stand:
+            piece.toggle_block()
+
+        _place(piece, step.square)
+
+# Puts a piece on top of a square. A hallacirya flattens the tampa under it
+func _place(piece, square):
+    var stack = Match.board.stack(square)
+
+    if piece.get_notation_name() == "H" and stack and instance_from_id(stack.back()).get_notation_name() == "T":
+        instance_from_id(stack.back()).toggle_block()
+
+    var position = $Board.tile(square).global_transform.origin
+    position.y = max(_stack_height(square) + HAND_GAP, 1)
+    piece.translation = position
+    piece.apply_central_impulse(Vector3(0, -0.1, 0))
+    Match.board.put([piece.get_instance_id()], square)
+
+func _stack_height(square, exclude = []):
+    var height = STACK_BASE
+
+    for piece_id in Match.board.stack(square):
+        if !exclude.has(piece_id):
+            height += instance_from_id(piece_id).get_height()
+
+    return height
+
+func _mouse_cast():
     var camera = get_viewport().get_camera()
     var mouse = get_viewport().get_mouse_position()
     var from = camera.project_ray_origin(mouse)
-    var to = from + camera.project_ray_normal(mouse) * ray_length
+    var to = from + camera.project_ray_normal(mouse) * RAY_LENGTH
     var exclude = [self]
+    var mask = PIECES_LAYER
 
-    if exclude_current_piece and global.dragging_nosse:
-        mouse_raycast_collision = global.dragging_nosse.get_children()[0].collision_mask
-        exclude.append(global.dragging_nosse)
+    if hand:
+        mask = hand.get_children()[0].collision_mask
+        exclude.append(hand)
 
-    # https://docs.godotengine.org/es/stable/classes/class_physicsdirectspacestate.html
-    return camera.get_world().direct_space_state.intersect_ray(from, to, exclude, mouse_raycast_collision, true, false)
-                
-var piece_cast_tile = null
-var piece_source_tile = null
-var show_fps = true
+    var cast = get_world().direct_space_state.intersect_ray(from, to, exclude, mask, true, false)
+    return cast if !cast.empty() else null
 
-func _process(delta):
-    if show_fps:
-        OS.set_window_title("Cirya Online | fps: " + str(Engine.get_frames_per_second()))
+func _tile_under_hand():
+    var origin = hand.global_transform.origin
+    var cast = get_world().direct_space_state.intersect_ray(origin, origin + Vector3(0, -RAY_LENGTH, 0), [], ALL_LAYERS, false, true)
+    return cast.collider if !cast.empty() else null
 
-func _input(event):
-    if (event is InputEventMouseButton and event.button_index == BUTTON_LEFT) or (event is InputEventMouseMotion and global.dragging_nosse):
-        if piece_cast_tile and piece_cast_tile.collider != piece_source_tile:
-            piece_cast_tile.collider.hideHighlight()
+func _hand_ids():
+    var ids = []
 
-        if global.dragging_nosse:
-            # The tile right below the dragged pieces
-            var space_state = get_world().direct_space_state
-            var origin = global.dragging_nosse.global_transform.origin
-            piece_cast_tile = space_state.intersect_ray(origin, origin + Vector3(0, -ray_length, 0), [], 2147483647, false, true)
-            if piece_cast_tile and Validation.can_drop(piece_cast_tile.collider.row, piece_cast_tile.collider.column):
-                piece_cast_tile.collider.showHighlight()
+    for piece in hand.get_children():
+        ids.append(piece.get_instance_id())
 
-        var cast = get_mouse_cast()
+    return ids
 
-        if not cast.empty():
-            if event is InputEventMouseButton and event.button_index == BUTTON_LEFT:
-                
-                # init drag
-                if event.is_pressed() and Validation.can_move(cast.collider.get_instance_id()):
-                    if !global.move_started():
-                        global.start_move(cast.collider.get_instance_id())
-                    
-                    get_node("select").play()
-                    var piece = cast.collider
-                    var tile = global.get_piece_tile(piece.get_instance_id())
+func _pieces():
+    return get_tree().get_nodes_in_group("pieces")
 
-                    if !tile:
-                        global.move_to(piece, self)
-                        global.init_drag_drop([piece])
-                    else:
-                        var pieces = global.get_top_pieces(piece.get_instance_id())
-                        global.init_drag_drop(pieces)
+func _square(tile):
+    return Vector2(tile.row, tile.column)
 
-                # stop drag
-                elif global.dragging_nosse and not piece_cast_tile.empty() and Validation.can_drop(piece_cast_tile.collider.row, piece_cast_tile.collider.column):
-                    var tile = piece_cast_tile.collider
-
-                    global.stop_drag_drop(tile)
-                    global.sync_tampar()
-                    print('drop on ', global.notation_tile(Vector2(tile.row, tile.column)), ', move so far: ', global.move_notation())
-
-                    piece_cast_tile.collider.hideHighlight()
-
-                    if piece_source_tile:
-                        piece_source_tile.hideHighlight()
-                        piece_source_tile = null
-                # Released where the pieces cannot go
-                elif global.dragging_nosse and not event.is_pressed():
-                    if not piece_cast_tile.empty():
-                        print('drop on ', global.notation_tile(Vector2(piece_cast_tile.collider.row, piece_cast_tile.collider.column)), ' rejected')
-                    cancel_drag()
-            # drag movement
-            elif global.dragging_nosse and event is InputEventMouseMotion:
-                if not piece_source_tile and piece_cast_tile and Validation.can_drop(piece_cast_tile.collider.row, piece_cast_tile.collider.column):
-                    piece_source_tile = piece_cast_tile.collider
-                    piece_source_tile.showHighlight()
-
-                var new_position = cast.position
-
-                if piece_cast_tile:
-                    var piece = global.dragging_nosse
-                    new_position.y = global.get_stack_height(piece_cast_tile.collider.row, piece_cast_tile.collider.column, global.get_dragging_nosse_pieces_ids()) + 0.2
-                    
-                if new_position.y < 2.2:
-                    new_position.y = 2.2
-
-                global.dragging_nosse.set_translation(new_position)
-                
-        elif global.dragging_nosse and event is InputEventMouseButton and not event.is_pressed():
-            cancel_drag()
-    elif global.dragging_nosse and global.dragging_nosse.get_children().size() == 1 and Input.is_key_pressed(KEY_R):
-        get_node("piecerotation").play()
-        var tile = global.get_piece_tile(global.dragging_nosse.get_children()[0].get_instance_id())
-        # In the opening the cirya has to stay flat
-        if !tile and !global.opening():
-            global.dragging_nosse.get_children()[0].toggle_block()
-
-func cancel_drag():
-    if piece_cast_tile:
-        piece_cast_tile.collider.hideHighlight()
-
-    if piece_source_tile:
-        piece_source_tile.hideHighlight()
-        piece_source_tile = null
-
-    global.cancel_drag_drop()
-
-func _on_turn_confirmation(value):
-    if value:
-        var move = global.move_notation()
-
-        # Nothing moved, or the move is not finished yet
-        if !move:
-            return
-
-        var msg = {
-            "type": "SubmitTurn",
-            "params": {
-                "player": global.player,
-                "turn": global.turn,
-                "move": move,
-            }
-        }
-        print('sending: ')
-        print(msg)
-        
-        if global.sandbox:
-            $UI.add_move(move)
-            global.next_sandbox_turn()
-            $UI.set_turn_color("white" if global.player == 1 else "black")
-        else:
-            Server.ws_send_message(msg)
-            global.end_move()
-        
-    else:
-        global.restore_initial_position()
+func _reparent(node, parent):
+    node.get_parent().remove_child(node)
+    parent.add_child(node)
+    node.set_owner(parent)

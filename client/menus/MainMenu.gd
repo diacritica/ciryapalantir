@@ -1,7 +1,7 @@
 extends Control
 
 onready var Server = get_node("/root/Server")
-onready var Global = get_node("/root/Global")
+onready var Match = get_node("/root/Match")
 onready var NewGameButton = get_node("Welcome/Panel/NewGameButton")
 onready var JoinGameButton = get_node("Welcome/Panel/JoinGameButton")
 onready var WhiteButton = get_node("/root/Menu/CreateGame/Panel/WhiteButton")
@@ -29,7 +29,7 @@ func _on_NewGameButton_pressed():
     Server.create_room()
     
 func _on_room_created(room_id):
-    Global.sandbox = false
+    Match.sandbox = false
     get_node("/root/Menu/CreateGame/Panel/Code/CodeLabel").text = room_id
     get_node("/root/Menu/Background").visible = false
     get_node("/root/Menu/BackgroundBlur").visible = true
@@ -82,10 +82,8 @@ func on_play_pressed(button):
     var name = button.get_node("Edit/InputName").text
     disconnect_handlers()
     
-    if button == WhiteButton:
-        Server.send_join_player(1, "white", name)
-    else:
-        Server.send_join_player(2, "black", name)
+    Match.player = 1 if button == WhiteButton else 2
+    Server.send_join_player(Match.player, "white" if Match.player == 1 else "black", name)
 
 func disconnect_handlers():
     disconnect_button(WhiteButton)
@@ -106,6 +104,5 @@ func _on_JoinGameCode_pressed():
 
 # A local game on one computer: the same rules and turns, without the server
 func _on_SandboxButton_pressed():
-    Global.sandbox = true
-    Global.player = 1
+    Match.start_sandbox()
     get_tree().change_scene("res://Game.tscn")
