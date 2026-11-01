@@ -117,6 +117,9 @@ Reestructurar `internal/app` siguiendo el patrón del ejemplo de chat de gorilla
 
 ### 2.1b Reglas nuevas en el cliente
 
+**Hecho** salvo la comprobación con `status.fleets`, que va con 2.2. La puesta a punto se centra en 5×5:
+6×6 y 7×7 no se pueden probar porque solo existe el tablero de 5×5 (ver "Fuera de alcance").
+
 - **Apertura:** en los turnos 1 y 2 el jugador arrastra una Cirya de la flota **del rival** (hoy `is_valid_drag` solo deja coger las propias),
   y `notation_movement` coloca la pieza del rival al reproducir esas jugadas (`unassigned_piece(opponent, "")`).
   Solo se permite colocar en esos turnos: nada de Tampa, Hallacirya ni movimientos.
@@ -210,6 +213,13 @@ Con el servidor lanzado con `go run -race ./cmd/cirya-server`:
 
 Cámara en raíl, revancha, chat, persistencia en base de datos (si se reinicia el servidor se pierden las partidas),
 emparejamiento, Godot 4.
+
+**Tableros de 6×6 y 7×7.** Hoy solo está hecho el tablero de 5×5 (`tablero-5x5-simple-color.png`), que copia el tablero físico.
+Hay bandejas para 6×6 y 7×7 en `client/assets/tray/`, pero falta:
+- Modelar en Blender los tableros de 6×6 y 7×7 y exportarlos a Godot (`.glb`), con sus casillas.
+- Comprobar que las bandejas de 6×6 y 7×7 tienen sitio para 2 Hallaciryar ([Fleet.gd](client/Fleet.gd) ya monta 30+2 y 40+2).
+- Elegir el tamaño al crear la sala. Las reglas del servidor ya conocen las flotas de 5, 6 y 7, pero la partida siempre se crea con 5:
+  `DoChangeConfig` está vacío. El cliente tiene que montar el tablero y la bandeja de ese tamaño.
 
 ## Decisiones de reglas (respondidas por Pablo)
 
