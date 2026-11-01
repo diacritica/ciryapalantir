@@ -28,6 +28,7 @@ func _play():
     yield(self, "idle_frame")
     yield(self, "idle_frame")
     game = current_scene
+    _board()
 
     yield(_sandbox(), "completed")
     _online()
@@ -35,10 +36,22 @@ func _play():
     print("smoke: %d failures" % failures)
     quit(1 if failures else 0)
 
+# The tiles light up where the pieces would fall, so they have to be at the
+# height Tile.tscn gives them, just over the board, and not hidden under it
+func _board():
+    var height = load("res://Tile.tscn").instance().translation.y
+    var tile = game.get_node("Board").tile(Vector2(2, 3))
+
+    check("the tiles keep the height of Tile.tscn", is_equal_approx(tile.translation.y, height))
+    check("and the highlight is over the board", tile.global_transform.origin.y > game.get_node("Board").global_transform.origin.y)
+
 func _sandbox():
-    # Turn 1: white places a black cirya on c3
+    # Turn 1: white places a black cirya on c3, and c3 lights up under the hand
     take(fleet_piece(2))
+    hover("c3")
+    check("the tile under the hand lights up", tile("c3").visible)
     release("c3")
+    check("and goes off after the drop", !tile("c3").visible)
     check("turn 1 is c3", state.move_notation() == "c3")
     game._on_turn_confirmation(true)
 
@@ -120,5 +133,13 @@ func take(piece):
     check("can take a piece", piece != null and state.can_take(piece.get_instance_id()))
     game.take(piece)
 
+func tile(square):
+    return game.get_node("Board").tile(Notation.parse_square(square))
+
+# Puts the hand over the square, as the mouse does
+func hover(square):
+    game.hand.global_transform.origin = tile(square).global_transform.origin + Vector3(0, game.HAND_MIN_HEIGHT, 0)
+    game._follow_mouse()
+
 func release(square):
-    game.release(game.get_node("Board").tile(Notation.parse_square(square)))
+    game.release(tile(square))

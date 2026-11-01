@@ -26,7 +26,9 @@ func _ready():
 
         for column in range(columns):
             var tile = tile_scene.instance()
-            tile.translation = Vector3(row * TILE_STEP, 0, column * TILE_STEP)
+            # Tile.tscn sets the height that puts the highlight just over the board
+            tile.translation.x = row * TILE_STEP
+            tile.translation.z = column * TILE_STEP
             tile.row = row
             tile.column = column
             tile.hide_highlight()
