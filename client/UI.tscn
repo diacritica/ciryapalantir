@@ -409,3 +409,12 @@ text = "?????"
 align = 1
 valign = 1
 clip_text = true
+
+[node name="Exit" type="Button" parent="."]
+anchor_top = 1.0
+anchor_bottom = 1.0
+margin_top = -120.0
+margin_right = 160.0
+focus_mode = 0
+enabled_focus_mode = 0
+flat = true

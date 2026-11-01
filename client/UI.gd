@@ -35,6 +35,8 @@ func _ready():
     Match.connect("game_over", self, "_on_game_over")
     $TurnPanel/Confirm.connect("pressed", self, "_on_confirm_pressed")
     $TurnPanel/Undo.connect("pressed", self, "_on_undo_pressed")
+    # Invisible for now, in the bottom left corner
+    $Exit.connect("pressed", self, "_ask_to_leave")
 
     _show_room()
     _on_phase_changed(Match.phase)
@@ -136,6 +138,32 @@ func _on_game_over(result, condition):
     dialog.show()
     dialog.rect_size = dialog.get_combined_minimum_size()
     dialog.rect_position = (get_viewport_rect().size - dialog.rect_size) / 2
+
+# Escape asks too
+func _unhandled_input(event):
+    if event.is_action_pressed("ui_cancel"):
+        _ask_to_leave()
+
+func _ask_to_leave():
+    if has_node("Leave"):
+        return
+
+    var dialog = ConfirmationDialog.new()
+    dialog.name = "Leave"
+    dialog.window_title = "Salir de la partida"
+    dialog.dialog_text = "¿Volver al menú de inicio?"
+
+    if Match.sandbox:
+        dialog.dialog_text += "\nLa partida de sandbox se pierde."
+    elif Match.player != 0 and Match.phase != Match.Phase.FINISHED:
+        dialog.dialog_text += "\nTu asiento te espera: entra con el código %s para seguir." % Server.get_code()
+
+    dialog.get_ok().text = "Salir"
+    dialog.get_cancel().text = "Seguir jugando"
+    dialog.connect("confirmed", self, "_back_to_menu")
+    dialog.connect("popup_hide", dialog, "queue_free")
+    add_child(dialog)
+    dialog.popup_centered()
 
 func _back_to_menu():
     Match.leave()

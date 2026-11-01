@@ -36,6 +36,7 @@ func _play():
     _out_of_step()
     yield(_long_game(), "completed")
     yield(_reopen(), "completed")
+    yield(_leave_from_the_corner(), "completed")
     yield(_back_to_menu(), "completed")
 
     print("smoke: %d failures" % failures)
@@ -245,6 +246,34 @@ func _over(piece, square):
     return Vector2(a.x, a.z).distance_to(Vector2(b.x, b.z)) < 0.01
 
 # The button of the game over dialog goes back to the menu, out of the room
+# The corner at the bottom left asks before leaving, and staying changes nothing
+func _leave_from_the_corner():
+    var ui = game.get_node("UI")
+    var exit = ui.get_node("Exit")
+    var screen = game.get_viewport().get_visible_rect()
+    check("the exit is in the bottom left corner", exit.get_global_rect().position.x == 0 and is_equal_approx(exit.get_global_rect().end.y, screen.end.y))
+
+    exit.emit_signal("pressed")
+    var dialog = ui.get_node_or_null("Leave")
+    check("it asks first", dialog != null and dialog.visible and dialog.dialog_text.begins_with("¿Volver al menú de inicio?"))
+    exit.emit_signal("pressed")
+    check("only once", ui.get_children().count(dialog) == 1 and _count_dialogs(ui, "Leave") == 1)
+
+    dialog.get_cancel().emit_signal("pressed")
+    yield(self, "idle_frame")
+    yield(self, "idle_frame")
+    check("staying closes it", !ui.has_node("Leave"))
+    check("and the game goes on", current_scene == game)
+
+func _count_dialogs(ui, prefix):
+    var count = 0
+
+    for child in ui.get_children():
+        if child.name.begins_with(prefix):
+            count += 1
+
+    return count
+
 func _back_to_menu():
     state._on_notification({"type": "GameFinished", "params": {"result": "WIN_1", "winCondition": "LONDI", "turn": 13.0}})
     game_over_dialog().emit_signal("confirmed")
