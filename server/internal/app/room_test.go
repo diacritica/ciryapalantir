@@ -9,62 +9,95 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func parse(t *testing.T, kind MessageType, params map[string]interface{}) *Message {
-	data, _ := json.Marshal(map[string]interface{}{"type": kind, "params": params})
+const waitTimeout = 2 * time.Second
+
+func parse(t *testing.T, kind MessageType, params Params) *Message {
+	data, _ := json.Marshal(map[string]any{"type": kind, "params": params})
 	m, err := ParseMessage(data)
 	require.NoError(t, err)
 	return m
 }
 
-// S3: a client that does not read its messages is dropped instead of
-// blocking the room for everybody else
-func TestSlowClientIsDropped(t *testing.T) {
-	r := NewRoom("slow")
+// The next message of the given type for the client, skipping the others
+func expect(t *testing.T, c *Client, kind MessageType) map[string]any {
+	t.Helper()
+	timeout := time.After(waitTimeout)
 
-	frozen := NewClient("frozen")
-	healthy := NewClient("healthy")
-	r.Join(frozen)
-	r.Join(healthy)
+	for {
+		select {
+		case data, ok := <-c.Send():
+			require.True(t, ok, "the client was closed waiting for %s", kind)
 
-	received := make(chan int)
+			var msg map[string]any
+			require.NoError(t, json.Unmarshal(data, &msg))
 
-	go func() {
-		n := 0
-		for data := range healthy.Send() {
-			var msg map[string]interface{}
-			json.Unmarshal(data, &msg)
-			if msg["type"] == string(ReadyChanged) {
-				n++
+			if msg["type"] == string(kind) {
+				return msg
 			}
-			if n == 2*sendBuffer {
-				received <- n
-				return
-			}
+
+		case <-timeout:
+			t.Fatalf("timeout waiting for %s", kind)
 		}
-	}()
-
-	r.Receive(healthy, parse(t, JoinGame, map[string]interface{}{"player": 1, "color": "white", "name": "healthy"}))
-
-	for i := 0; i < 2*sendBuffer; i++ {
-		r.Receive(healthy, parse(t, SetReady, map[string]interface{}{"player": 1, "ready": i%2 == 0}))
 	}
-
-	select {
-	case n := <-received:
-		assert.Equal(t, 2*sendBuffer, n)
-	case <-time.After(2 * time.Second):
-		t.Fatal("room blocked by the frozen client")
-	}
-
-	// The frozen client gets what fitted in its buffer and then its channel is closed
-	count := 0
-	for range frozen.Send() {
-		count++
-	}
-	assert.LessOrEqual(t, count, sendBuffer)
 }
 
-// Leaving twice, or after being dropped, is harmless
+// How many messages the client still had before the room closed it
+func drain(t *testing.T, c *Client) int {
+	t.Helper()
+	count := 0
+	timeout := time.After(waitTimeout)
+
+	for {
+		select {
+		case _, ok := <-c.Send():
+			if !ok {
+				return count
+			}
+			count++
+
+		case <-timeout:
+			t.Fatal("the client was never closed")
+		}
+	}
+}
+
+func TestUsersJoinAndLeave(t *testing.T) {
+	r := NewRoom("users")
+	alice, bob := NewClient("alice"), NewClient("bob")
+
+	r.Join(alice)
+	expect(t, alice, StatusResponse)
+	r.Join(bob)
+
+	assert.Equal(t, "bob", expect(t, alice, UserJoined)["params"].(map[string]any)["username"])
+
+	r.Leave(bob)
+	assert.Equal(t, "bob", expect(t, alice, UserLeft)["params"].(map[string]any)["username"])
+}
+
+// A client that does not read its messages is dropped instead of blocking
+// the room, and the others hear it left when its connection ends
+func TestSlowClientIsDropped(t *testing.T) {
+	r := NewRoom("slow")
+	frozen, healthy := NewClient("frozen"), NewClient("healthy")
+
+	r.Join(frozen)
+	r.Join(healthy)
+	r.Receive(healthy, parse(t, JoinGame, Params{"player": 1, "color": "white", "name": "healthy"}))
+
+	// More broadcasts than fit in a client buffer, read by the healthy client one by one
+	for i := 0; i < sendBuffer+10; i++ {
+		r.Receive(healthy, parse(t, SetReady, Params{"player": 1, "ready": i%2 == 0}))
+		expect(t, healthy, ReadyChanged)
+	}
+
+	assert.LessOrEqual(t, drain(t, frozen), sendBuffer, "the frozen client got what fitted, then it was closed")
+
+	r.Leave(frozen)
+	assert.Equal(t, "frozen", expect(t, healthy, UserLeft)["params"].(map[string]any)["username"])
+}
+
+// Leaving twice is harmless and the room keeps working
 func TestLeaveIsIdempotent(t *testing.T) {
 	r := NewRoom("leave")
 	c := NewClient("user")
@@ -72,28 +105,9 @@ func TestLeaveIsIdempotent(t *testing.T) {
 	r.Join(c)
 	r.Leave(c)
 	r.Leave(c)
+	drain(t, c)
 
-	closed := make(chan bool)
-	go func() {
-		for range c.Send() {
-		}
-		closed <- true
-	}()
-
-	select {
-	case <-closed:
-	case <-time.After(2 * time.Second):
-		t.Fatal("the client was never closed")
-	}
-
-	// And the room keeps working
 	other := NewClient("other")
 	r.Join(other)
-
-	select {
-	case data := <-other.Send():
-		assert.Contains(t, string(data), string(StatusResponse))
-	case <-time.After(2 * time.Second):
-		t.Fatal("the room stopped answering")
-	}
+	expect(t, other, StatusResponse)
 }

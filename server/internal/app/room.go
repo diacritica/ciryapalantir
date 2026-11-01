@@ -33,8 +33,9 @@ type envelope struct {
 // the room goroutine, one message after the other, so no locks are needed.
 // Rooms live as long as the server: nothing removes them yet
 type Room struct {
-	code    ID
-	game    *Game
+	code ID
+	game *Game
+	// False once the room has dropped the client, until it leaves
 	clients map[*Client]bool
 
 	register   chan *Client
@@ -81,8 +82,14 @@ func (r *Room) run() {
 			r.safely("connect", func() { r.onConnect(c) })
 
 		case c := <-r.unregister:
-			if r.clients[c] {
-				r.drop(c)
+			active, known := r.clients[c]
+
+			if known {
+				if active {
+					close(c.send)
+				}
+
+				delete(r.clients, c)
 				r.safely("disconnect", func() { r.onDisconnect(c) })
 			}
 
@@ -103,8 +110,10 @@ func (r *Room) safely(what string, handle func()) {
 	handle()
 }
 
+// Stops sending to a client that cannot keep up. Its connection then ends
+// and it leaves the room as any other client
 func (r *Room) drop(c *Client) {
-	delete(r.clients, c)
+	r.clients[c] = false
 	close(c.send)
 }
 
@@ -142,8 +151,8 @@ func (r *Room) broadcastExcept(except *Client, m *Message) {
 		return
 	}
 
-	for c := range r.clients {
-		if c != except {
+	for c, active := range r.clients {
+		if active && c != except {
 			r.deliver(c, data)
 		}
 	}
