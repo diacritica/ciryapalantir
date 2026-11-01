@@ -83,7 +83,7 @@ Players keep their seat: they can connect again with the same cookie and keep pl
 
 ### ChangeConfig
 
-TODO
+Reserved: the server accepts it and does nothing yet.
 
 ### JoinGame
 
@@ -134,8 +134,9 @@ Only the owner of the seat, and only before the game starts (**Error** `NOT_YOUR
 => If both players are ready, will send a **StartGame** to every user
 
 Only the owner of the seat, and only before the game starts (**Error** `NOT_YOUR_SEAT`, `GAME_STARTED`).
+`ready` has to be true or false (**Error** `BAD_MESSAGE`).
 
-### Submit
+### SubmitTurn
 
 ```json
 {
@@ -197,13 +198,14 @@ The move does not follow the rules. The turn does not change and the player can 
 {
     "type": "StatusResponse",
     "status": {
-        "config": { .. },
+        "config": { "ambient": "TAVERN", "pieces": "WOOD", "size": 5 },
         "players": {
-            1: { "name: "Name1", "color": "white", "ready": true },
-            2: { "name: "Name2", "color": "black", "ready": true }
+            "1": { "name": "Name1", "color": "white", "ready": true },
+            "2": { "name": "Name2", "color": "black", "ready": true }
         },
         "state": "TURN_1",
-        "turn: 20,
+        "turn": 21,
+        "currentPlayer": 1,
         "moves": [ "a5", "e5", "3a2>12", ... ],
         "board": {
             "1": {
@@ -212,21 +214,25 @@ The move does not follow the rules. The turn does not change and the player can 
             "3": {
                 "d": ["H1"]
             }
+        },
+        "fleets": {
+            "1": { "ciryar": 12, "hallaciryar": 0 },
+            "2": { "ciryar": 13, "hallaciryar": 1 }
         }
     }
 }
 ```
 
-### ConfigChanged
-
-TODO
+`players` only has the seats taken and is left out when there are none.
+`turn`, `currentPlayer`, `moves`, `board` and `fleets` only come once the game has started; empty squares are left out of `board`.
+When the game is over `currentPlayer` is 0.
 
 ### UserJoined
 
 ```json
 {
     "type": "UserJoined",
-    "params: {
+    "params": {
         "username": "alan-turing"
     }
 }
@@ -237,7 +243,7 @@ TODO
 ```json
 {
     "type": "UserLeft",
-    "params: {
+    "params": {
         "username": "alan-turing"
     }
 }
@@ -297,11 +303,11 @@ TODO
 {
     "type": "Turn",
     "params": {
-        "player": 1,
+        "player": 2,
         "turn": 10,
-        "move": "a6 f6",
-        "nextPlayer": 2,
-        "nextTurn": 2
+        "move": "3a2>12",
+        "nextPlayer": 1,
+        "nextTurn": 11
     },
     "status": { ... }
 }
@@ -338,19 +344,17 @@ TODO
 
 ## Normal game flow
 
-This will be a "normal" game flow. After the room has been created the users will join the room by connecting to the Websocket for that room. Everyone player that connects will receive a "**Status**" and the rest of the users will receive a notification "UserJoined".
-
-After that, we need both players. Two of the users should send messages "**RequestPlayer**" with both slots (player 1/2).
-
-Every player need to send a "**Ready**" message before the game can start. When both players send a "**Ready**" the game status will change to show the turn of the first player and a "**TurnPlayer**" will be send to all peers indicating that the system is waiting for the turn of the player.
-
-Only the player whose turn is now can send the message "SendTurn" with his next move. The game will process the turn and eventually will notify the "TurnPlayer" with the next player and the new board state.
-
-One after the other both players send turns until one of them wins the match and a message "GameFinished" is send.
+1. A user creates a room (`PUT /rooms`) and shares its code. Everybody connects to the websocket of the room:
+   each one gets a **StatusResponse** and the others a **UserJoined**.
+2. Two users take the seats with **JoinGame** (players 1 and 2) and everybody gets **PlayerJoined**.
+3. Both send **SetReady**. When the second one is ready everybody gets **StartGame**, and it is the turn of player 1.
+4. The player whose turn it is sends **SubmitTurn**. Everybody gets **Turn** with the move and who plays next.
+   A move against the rules gets **InvalidTurn** and the same player tries again.
+5. When a move ends the game everybody gets **GameFinished** instead of **Turn**.
 
 ## Board representation
 
-A game board is a square grid where the corner bottom/left is "a1". The opposite corner depends on the board size. For a board of 5x5 is 5e and for 7x7 is 7g
+A game board is a square grid where the corner bottom/left is "a1". The opposite corner depends on the board size. For a board of 5x5 it is e5 and for 7x7 it is g7.
 
 Inside a square there is a list of "stones". The first index represents the stone at the **bottom** of the stack. 
 
@@ -375,10 +379,9 @@ When there is no entry for a row/column it means it's an empty position (so equi
 
 ```json
 {
-    "type": "Status"
+    "type": "StatusResponse",
     "status": {
         "config": { ... },
-        "players": {},
         "state": "NOT_STARTED"
     }
 }
@@ -388,32 +391,32 @@ When there is no entry for a row/column it means it's an empty position (so equi
 
 ```json
 {
-    "type": "Status"
+    "type": "StatusResponse",
     "status": {
         "config": { ... },
         "players": {
-            "2": { "name: "Name2", "color": "white", "ready": false }
+            "2": { "name": "Name2", "color": "white", "ready": false }
         },
         "state": "NOT_STARTED"
     }
 }
 ```
 
-**Both players joined and ready. Wainting for first move**
+**Both players joined and ready. Waiting for the first move**
 
 ```json
 {
-    "type": "Status"
+    "type": "StatusResponse",
     "status": {
-        "owner": "USER_ID",
         "config": { ... },
         "players": {
-            "1": { "name: "Name1", "color": "white", "ready": true },
-            "2": { "name: "Name2", "color": "white", "ready": true }
+            "1": { "name": "Name1", "color": "white", "ready": true },
+            "2": { "name": "Name2", "color": "black", "ready": true }
         },
         "state": "TURN_1",
-        "moves": [],
-        "board": {}
+        "turn": 1,
+        "currentPlayer": 1,
+        "fleets": { "1": { "ciryar": 21, "hallaciryar": 1 }, "2": { "ciryar": 21, "hallaciryar": 1 } }
     }
 }
 ```

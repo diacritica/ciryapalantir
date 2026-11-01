@@ -31,7 +31,7 @@ func New(store *app.Store) http.Handler {
 	r.HandleFunc("/check", cors(s.check)).Methods(http.MethodGet, http.MethodOptions)
 	r.HandleFunc("/users", cors(s.user)).Methods(http.MethodPut, http.MethodOptions)
 	r.HandleFunc("/rooms", cors(s.createRoom)).Methods(http.MethodPut, http.MethodOptions)
-	r.HandleFunc("/rooms/{code}", cors(s.roomSocket)).Methods(http.MethodGet, http.MethodPost, http.MethodOptions)
+	r.HandleFunc("/rooms/{code}", cors(s.roomSocket)).Methods(http.MethodGet, http.MethodOptions)
 	r.Use(mux.CORSMethodMiddleware(r))
 
 	return r

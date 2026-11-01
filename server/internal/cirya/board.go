@@ -2,11 +2,6 @@
 // notation and how a game ends.
 package cirya
 
-import (
-	"fmt"
-	"strings"
-)
-
 // BoardData holds the stacks by rank and file, bottom stone first: data["3"]["c"]
 // is the stack on c3. A stone is its kind and its owner: "C1" is a flat cirya
 // of player 1, "T2" a tampa of player 2 and "H1" a hallacirya of player 1.
@@ -20,6 +15,7 @@ type Board struct {
 	Fleets map[int]*Fleet
 }
 
+// NewBoard makes an empty board with the official fleets for its size
 func NewBoard(size int) *Board {
 	return &Board{
 		Data:   make(BoardData),
@@ -83,33 +79,4 @@ func owner(stone string) int {
 	}
 
 	return digit(stone[1])
-}
-
-// String draws the board as text, rank 1 at the bottom, with the height of the stacks
-func (b *Board) String() string {
-	var sb strings.Builder
-
-	sb.WriteString("  ")
-	for file := 0; file < b.Size; file++ {
-		fmt.Fprintf(&sb, "%7c", fileNames[file])
-	}
-
-	for rank := b.Size - 1; rank >= 0; rank-- {
-		fmt.Fprintf(&sb, "\n%c ", rankNames[rank])
-
-		for file := 0; file < b.Size; file++ {
-			stack := b.stack(square{file, rank})
-
-			switch len(stack) {
-			case 0:
-				sb.WriteString("      _")
-			case 1:
-				fmt.Fprintf(&sb, "%7s", stack[0])
-			default:
-				fmt.Fprintf(&sb, "%7s", fmt.Sprintf("[%d]%s", len(stack)-1, top(stack)))
-			}
-		}
-	}
-
-	return sb.String()
 }

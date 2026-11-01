@@ -2,7 +2,6 @@ package app
 
 import (
 	"fmt"
-	"strconv"
 
 	"cirya.me/server/internal/cirya"
 )
@@ -50,10 +49,10 @@ func (r refusal) Error() string {
 // Game is the game of a room. It is only used from the room goroutine
 type Game struct {
 	config GameConfig
-	// By seat number, "1" or "2", as the protocol sends them
-	seats map[string]Seat
+	// By seat number, 1 or 2
+	seats map[int]Seat
 	state GameState
-	// Turns played by both players, from 1
+	// The turn being played, counting the turns of both players from 1
 	turn  int
 	moves []string
 	board *cirya.Board
@@ -77,9 +76,9 @@ type Seat struct {
 // GameStatus is the whole game as the clients see it. The board, the turn
 // and the fleets are only there once the game has started
 type GameStatus struct {
-	Config  GameConfig           `json:"config,omitempty"`
-	Players map[string]Seat      `json:"players,omitempty"`
-	State   GameState            `json:"state,omitempty"`
+	Config  GameConfig           `json:"config"`
+	Players map[int]Seat         `json:"players,omitempty"`
+	State   GameState            `json:"state"`
 	Moves   []string             `json:"moves,omitempty"`
 	Board   cirya.BoardData      `json:"board,omitempty"`
 	Turn    *int                 `json:"turn,omitempty"`
@@ -87,16 +86,12 @@ type GameStatus struct {
 	Fleets  map[int]*cirya.Fleet `json:"fleets,omitempty"`
 }
 
+// NewGame makes a game waiting for its players. The board comes when it starts
 func NewGame() *Game {
-	config := GameConfig{Ambient: "TAVERN", Pieces: "WOOD", Size: 5}
-
 	return &Game{
-		config: config,
-		seats:  make(map[string]Seat),
+		config: GameConfig{Ambient: "TAVERN", Pieces: "WOOD", Size: 5},
+		seats:  make(map[int]Seat),
 		state:  NotStarted,
-		turn:   1,
-		moves:  make([]string, 0),
-		board:  cirya.NewBoard(config.Size),
 	}
 }
 
@@ -150,7 +145,7 @@ func (g *Game) Sit(user ID, player int, name, color string) (rejoined bool, err 
 		return false, err
 	}
 
-	seat, taken := g.seats[strconv.Itoa(player)]
+	seat, taken := g.seats[player]
 
 	switch {
 	case taken && seat.UserID != user:
@@ -161,7 +156,7 @@ func (g *Game) Sit(user ID, player int, name, color string) (rejoined bool, err 
 		return false, refusal{CodeGameStarted, "the game has already started"}
 	}
 
-	g.seats[strconv.Itoa(player)] = Seat{UserID: user, Name: name, Color: color}
+	g.seats[player] = Seat{UserID: user, Name: name, Color: color}
 	return false, nil
 }
 
@@ -175,7 +170,7 @@ func (g *Game) Stand(user ID, player int) error {
 		return refusal{CodeGameStarted, "cannot leave a started game"}
 	}
 
-	delete(g.seats, strconv.Itoa(player))
+	delete(g.seats, player)
 	return nil
 }
 
@@ -189,16 +184,17 @@ func (g *Game) SetReady(user ID, player int, ready bool) (started bool, err erro
 		return false, refusal{CodeGameStarted, "the game has already started"}
 	}
 
-	seat := g.seats[strconv.Itoa(player)]
+	seat := g.seats[player]
 	seat.Ready = ready
-	g.seats[strconv.Itoa(player)] = seat
+	g.seats[player] = seat
 
-	if !g.seats["1"].Ready || !g.seats["2"].Ready {
+	if !g.seats[1].Ready || !g.seats[2].Ready {
 		return false, nil
 	}
 
 	g.state = Turn1
 	g.turn = 1
+	g.moves = make([]string, 0)
 	g.board = cirya.NewBoard(g.config.Size)
 	return true, nil
 }
@@ -269,7 +265,7 @@ func (g *Game) checkOwner(user ID, player int) error {
 		return err
 	}
 
-	if seat, ok := g.seats[strconv.Itoa(player)]; !ok || seat.UserID != user {
+	if seat, ok := g.seats[player]; !ok || seat.UserID != user {
 		return refusal{CodeNotYourSeat, "this seat belongs to another user"}
 	}
 

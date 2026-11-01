@@ -9,6 +9,7 @@ import "regexp"
 //
 // Without a count one stone is taken, and without drops all of them go to the
 // next square. Directions: + up a rank, - down a rank, > right a file, < left a file.
+// A move can end with the kind of its top stone, as in "2c3>11H", which is ignored.
 var (
 	placementRe = regexp.MustCompile(`^([HT]?)([a-i][1-9])$`)
 	moveRe      = regexp.MustCompile(`^([1-9]?)([a-i][1-9])([-+<>])([1-9]*)[HT]?$`)

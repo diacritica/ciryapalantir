@@ -5,8 +5,13 @@ import (
 	"runtime/debug"
 )
 
-// Messages waiting for a client before it is considered too slow and dropped
-const sendBuffer = 256
+const (
+	// Messages waiting for a client before it is considered too slow and dropped
+	sendBuffer = 256
+
+	// Messages from the clients waiting for the room
+	inboxSize = 256
+)
 
 // Client is a websocket connection. A user can have several (two tabs, a reconnection)
 type Client struct {
@@ -50,7 +55,7 @@ func NewRoom(code ID) *Room {
 		clients:    make(map[*Client]bool),
 		register:   make(chan *Client),
 		unregister: make(chan *Client),
-		inbox:      make(chan envelope, sendBuffer),
+		inbox:      make(chan envelope, inboxSize),
 	}
 
 	go r.run()
@@ -62,14 +67,19 @@ func (r *Room) Code() ID {
 	return r.code
 }
 
+// Join adds the client to the room, which answers with the status. Every
+// Join needs a Leave when the connection ends. Join, Leave and Receive
+// wait for the room to take them
 func (r *Room) Join(c *Client) {
 	r.register <- c
 }
 
+// Leave takes the client out of the room and closes it. Leaving twice is harmless
 func (r *Room) Leave(c *Client) {
 	r.unregister <- c
 }
 
+// Receive hands an action of the client to the room
 func (r *Room) Receive(c *Client, m *Message) {
 	r.inbox <- envelope{client: c, message: m}
 }
@@ -132,7 +142,7 @@ func (r *Room) reply(c *Client, m *Message) {
 		return
 	}
 
-	data, err := m.Format()
+	data, err := m.format()
 
 	if err != nil {
 		log.Printf("room %s: %v", r.code, err)
@@ -144,7 +154,7 @@ func (r *Room) reply(c *Client, m *Message) {
 
 // Sends a message to every client in the room except the given one, which can be nil
 func (r *Room) broadcastExcept(except *Client, m *Message) {
-	data, err := m.Format()
+	data, err := m.format()
 
 	if err != nil {
 		log.Printf("room %s: %v", r.code, err)

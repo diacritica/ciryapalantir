@@ -1,6 +1,7 @@
 package app
 
 import (
+	"errors"
 	"testing"
 
 	"cirya.me/server/internal/cirya"
@@ -28,8 +29,8 @@ func startedGame(t *testing.T) *Game {
 func assertRefused(t *testing.T, code ErrorCode, err error) {
 	t.Helper()
 
-	refused, ok := err.(refusal)
-	if assert.True(t, ok, "expected a refusal, got %v", err) {
+	var refused refusal
+	if assert.True(t, errors.As(err, &refused), "expected a refusal, got %v", err) {
 		assert.Equal(t, code, refused.code)
 	}
 }
@@ -55,10 +56,12 @@ func TestSeats(t *testing.T) {
 
 func TestStartsWhenBothAreReady(t *testing.T) {
 	g := NewGame()
-	g.Sit("alice", 1, "Alice", "white")
-	g.Sit("bob", 2, "Bob", "black")
+	_, err := g.Sit("alice", 1, "Alice", "white")
+	require.NoError(t, err)
+	_, err = g.Sit("bob", 2, "Bob", "black")
+	require.NoError(t, err)
 
-	_, err := g.SetReady("carol", 1, true)
+	_, err = g.SetReady("carol", 1, true)
 	assertRefused(t, CodeNotYourSeat, err)
 
 	started, err := g.SetReady("alice", 1, true)
@@ -81,7 +84,6 @@ func TestNoSeatChangesOnceStarted(t *testing.T) {
 	_, err := g.Sit("carol", 1, "Carol", "white")
 	assertRefused(t, CodeSeatTaken, err)
 
-	g.Stand("alice", 1)
 	assertRefused(t, CodeGameStarted, g.Stand("alice", 1))
 
 	_, err = g.SetReady("alice", 1, false)
@@ -108,8 +110,8 @@ func TestPlayRefusals(t *testing.T) {
 	assertRefused(t, CodeStaleTurn, err)
 
 	_, err = g.Play("alice", 1, 1, "a1>")
-	_, refused := err.(refusal)
-	assert.False(t, refused, "a move against the rules is not a refusal")
+	assert.Error(t, err)
+	assert.False(t, errors.As(err, &refusal{}), "a move against the rules is not a refusal")
 	assert.Equal(t, Turn1, g.State(), "and changes nothing")
 	assert.Equal(t, 1, g.Turn())
 }

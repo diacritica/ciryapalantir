@@ -21,11 +21,11 @@ func NewUserID() ID {
 }
 
 func randomCode(length int) ID {
-	max := big.NewInt(int64(len(codeAlphabet)))
+	letters := big.NewInt(int64(len(codeAlphabet)))
 	code := make([]byte, length)
 
 	for i := range code {
-		n, err := rand.Int(rand.Reader, max)
+		n, err := rand.Int(rand.Reader, letters)
 
 		if err != nil {
 			panic(err)

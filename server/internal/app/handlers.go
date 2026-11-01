@@ -6,7 +6,8 @@ import (
 )
 
 // The handlers run in the room goroutine. They read the params, ask the game
-// and tell the clients: the rules about seats and turns live in Game
+// and tell the clients: the rules about seats and turns live in Game. A
+// missing player, turn or move gets the answer of the game for a wrong one
 
 func (r *Room) dispatch(m *Message, c *Client) {
 	switch m.Type {
@@ -65,7 +66,13 @@ func (r *Room) onLeaveGame(m *Message, c *Client) {
 
 func (r *Room) onSetReady(m *Message, c *Client) {
 	player, _ := m.intParam("player")
-	ready, _ := m.boolParam("ready")
+	ready, ok := m.boolParam("ready")
+
+	if !ok {
+		r.reply(c, errorMessage(CodeBadMessage, "ready has to be true or false"))
+		return
+	}
+
 	started, err := r.game.SetReady(c.user, player, ready)
 
 	if err != nil {

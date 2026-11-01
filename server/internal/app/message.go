@@ -63,37 +63,25 @@ func ParseMessage(data []byte) (*Message, error) {
 	return &m, nil
 }
 
-func (m *Message) Format() ([]byte, error) {
-	return json.MarshalIndent(m, "", "  ")
+func (m *Message) format() ([]byte, error) {
+	return json.Marshal(m)
 }
 
-func (m *Message) stringParam(name string) (string, error) {
+// The params getters give the zero value, and false, when the param is
+// missing or has another type
+
+func (m *Message) stringParam(name string) (string, bool) {
 	value, ok := m.Params[name].(string)
-
-	if !ok {
-		return "", fmt.Errorf("param %s has to be a string", name)
-	}
-
-	return value, nil
+	return value, ok
 }
 
 // JSON numbers arrive as float64
-func (m *Message) intParam(name string) (int, error) {
+func (m *Message) intParam(name string) (int, bool) {
 	value, ok := m.Params[name].(float64)
-
-	if !ok {
-		return 0, fmt.Errorf("param %s has to be a number", name)
-	}
-
-	return int(value), nil
+	return int(value), ok
 }
 
-func (m *Message) boolParam(name string) (bool, error) {
+func (m *Message) boolParam(name string) (bool, bool) {
 	value, ok := m.Params[name].(bool)
-
-	if !ok {
-		return false, fmt.Errorf("param %s has to be a boolean", name)
-	}
-
-	return value, nil
+	return value, ok
 }

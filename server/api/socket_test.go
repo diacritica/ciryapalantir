@@ -26,9 +26,9 @@ type testClient struct {
 	t        *testing.T
 	user     string
 	conn     *websocket.Conn
-	messages chan map[string]interface{}
+	messages chan map[string]any
 	// The status the server sends when the client connects
-	status map[string]interface{}
+	status map[string]any
 }
 
 func newServer(t *testing.T) *httptest.Server {
@@ -65,7 +65,7 @@ func dial(t *testing.T, s *httptest.Server, room string, user string) (*testClie
 		t:        t,
 		user:     user,
 		conn:     conn,
-		messages: make(chan map[string]interface{}, 100000),
+		messages: make(chan map[string]any, 100000),
 	}
 
 	go func() {
@@ -77,7 +77,7 @@ func dial(t *testing.T, s *httptest.Server, room string, user string) (*testClie
 				return
 			}
 
-			var msg map[string]interface{}
+			var msg map[string]any
 
 			if json.Unmarshal(data, &msg) == nil {
 				c.messages <- msg
@@ -92,7 +92,7 @@ func dial(t *testing.T, s *httptest.Server, room string, user string) (*testClie
 		if msg["type"] != "StatusResponse" {
 			return nil, fmt.Errorf("%s: the first message is %v, not the status", user, msg["type"])
 		}
-		c.status = msg["status"].(map[string]interface{})
+		c.status = msg["status"].(map[string]any)
 	case <-time.After(waitTimeout):
 		return nil, fmt.Errorf("%s: no status after connecting", user)
 	}
@@ -100,19 +100,20 @@ func dial(t *testing.T, s *httptest.Server, room string, user string) (*testClie
 	return c, nil
 }
 
-func (c *testClient) send(kind string, params map[string]interface{}) {
-	msg := map[string]interface{}{"type": kind}
+func (c *testClient) send(kind string, params map[string]any) {
+	msg := map[string]any{"type": kind}
 
 	if params != nil {
 		msg["params"] = params
 	}
 
 	data, _ := json.Marshal(msg)
-	require.NoError(c.t, c.conn.WriteMessage(websocket.TextMessage, data))
+	// assert and not require: it is also called from other goroutines
+	assert.NoError(c.t, c.conn.WriteMessage(websocket.TextMessage, data))
 }
 
 // Waits for a message of the given type, skipping any other
-func (c *testClient) expect(kind string) map[string]interface{} {
+func (c *testClient) expect(kind string) map[string]any {
 	c.t.Helper()
 	timeout := time.After(waitTimeout)
 
@@ -136,11 +137,11 @@ func (c *testClient) expect(kind string) map[string]interface{} {
 // The messages that arrive before the answer to a GetStatus sent now. The
 // room handles the messages of a client in order, so they are all the
 // effects of what this client sent before
-func (c *testClient) sync() []map[string]interface{} {
+func (c *testClient) sync() []map[string]any {
 	c.t.Helper()
 	c.send("GetStatus", nil)
 
-	var before []map[string]interface{}
+	var before []map[string]any
 	timeout := time.After(waitTimeout)
 
 	for {
@@ -162,7 +163,7 @@ func (c *testClient) sync() []map[string]interface{} {
 	}
 }
 
-func count(messages []map[string]interface{}, kind string) int {
+func count(messages []map[string]any, kind string) int {
 	n := 0
 
 	for _, msg := range messages {
@@ -175,7 +176,7 @@ func count(messages []map[string]interface{}, kind string) int {
 }
 
 func join(c *testClient, player int, color string) {
-	c.send("JoinGame", map[string]interface{}{
+	c.send("JoinGame", map[string]any{
 		"player": player,
 		"color":  color,
 		"name":   c.user,
@@ -183,14 +184,14 @@ func join(c *testClient, player int, color string) {
 }
 
 func ready(c *testClient, player int, isReady bool) {
-	c.send("SetReady", map[string]interface{}{
+	c.send("SetReady", map[string]any{
 		"player": player,
 		"ready":  isReady,
 	})
 }
 
 func submit(c *testClient, player int, turn int, move string) {
-	c.send("SubmitTurn", map[string]interface{}{
+	c.send("SubmitTurn", map[string]any{
 		"player": player,
 		"turn":   turn,
 		"move":   move,
@@ -200,7 +201,7 @@ func submit(c *testClient, player int, turn int, move string) {
 func expectError(t *testing.T, c *testClient, code string) {
 	t.Helper()
 	msg := c.expect("Error")
-	assert.Equal(t, code, msg["params"].(map[string]interface{})["code"])
+	assert.Equal(t, code, msg["params"].(map[string]any)["code"])
 }
 
 // Two players seated and ready, game started
@@ -419,55 +420,15 @@ func TestReconnectRestoresBoard(t *testing.T) {
 	black.conn.Close()
 	black = connect(t, s, room, black.user)
 
-	board := black.status["board"].(map[string]interface{})
+	board := black.status["board"].(map[string]any)
 
 	// The first move places a cirya of the opponent
-	assert.Equal(t, []interface{}{"C2"}, board["1"].(map[string]interface{})["a"])
+	assert.Equal(t, []any{"C2"}, board["1"].(map[string]any)["a"])
 }
 
-// Two users logging in during the same second get different ids
-func TestUsersGetDistinctIds(t *testing.T) {
-	s := newServer(t)
-	ids := make(map[string]bool)
-
-	for i := 0; i < 10; i++ {
-		req, _ := http.NewRequest(http.MethodPut, s.URL+"/users", nil)
-		res, err := http.DefaultClient.Do(req)
-		require.NoError(t, err)
-
-		var body map[string]string
-		require.NoError(t, json.NewDecoder(res.Body).Decode(&body))
-		res.Body.Close()
-
-		assert.False(t, ids[body["id"]], "repeated id %s", body["id"])
-		ids[body["id"]] = true
-	}
-}
-
-// Rooms created during the same second get different codes
-func TestRoomsGetDistinctCodes(t *testing.T) {
-	s := newServer(t)
-	codes := make(map[string]bool)
-
-	for i := 0; i < 10; i++ {
-		req, _ := http.NewRequest(http.MethodPut, s.URL+"/rooms", nil)
-		res, err := http.DefaultClient.Do(req)
-		require.NoError(t, err)
-
-		var body map[string]string
-		require.NoError(t, json.NewDecoder(res.Body).Decode(&body))
-		res.Body.Close()
-
-		assert.False(t, codes[body["id"]], "repeated code %s", body["id"])
-		codes[body["id"]] = true
-	}
-}
-
-// The id in the response is the one stored in the cookie
-func TestUserIdMatchesCookie(t *testing.T) {
-	s := newServer(t)
-
-	req, _ := http.NewRequest(http.MethodPut, s.URL+"/users", nil)
+// A PUT to the server: the JSON body and the cookies of the answer
+func put(t *testing.T, s *httptest.Server, path string) (map[string]string, []*http.Cookie) {
+	req, _ := http.NewRequest(http.MethodPut, s.URL+path, nil)
 	res, err := http.DefaultClient.Do(req)
 	require.NoError(t, err)
 	defer res.Body.Close()
@@ -475,7 +436,28 @@ func TestUserIdMatchesCookie(t *testing.T) {
 	var body map[string]string
 	require.NoError(t, json.NewDecoder(res.Body).Decode(&body))
 
-	cookies := res.Cookies()
+	return body, res.Cookies()
+}
+
+// Two users logging in during the same second get different ids, and so do rooms
+func TestDistinctIds(t *testing.T) {
+	s := newServer(t)
+
+	for _, path := range []string{"/users", "/rooms"} {
+		seen := make(map[string]bool)
+
+		for i := 0; i < 10; i++ {
+			body, _ := put(t, s, path)
+			assert.False(t, seen[body["id"]], "%s repeated %s", path, body["id"])
+			seen[body["id"]] = true
+		}
+	}
+}
+
+// The id in the response is the one stored in the cookie
+func TestUserIdMatchesCookie(t *testing.T) {
+	body, cookies := put(t, newServer(t), "/users")
+
 	require.Len(t, cookies, 1)
 	assert.Equal(t, body["id"], cookies[0].Value)
 	assert.Equal(t, "/", cookies[0].Path)
@@ -502,7 +484,7 @@ func TestCannotLeaveStartedGame(t *testing.T) {
 	s := newServer(t)
 	white, _ := startGame(t, s)
 
-	white.send("LeaveGame", map[string]interface{}{"player": 1})
+	white.send("LeaveGame", map[string]any{"player": 1})
 	expectError(t, white, "GAME_STARTED")
 }
 
@@ -538,17 +520,33 @@ func TestReadyNeedsASeat(t *testing.T) {
 
 // Room codes are short, easy to read and dictate
 func TestRoomCodeFormat(t *testing.T) {
-	s := newServer(t)
-
-	req, _ := http.NewRequest(http.MethodPut, s.URL+"/rooms", nil)
-	res, err := http.DefaultClient.Do(req)
-	require.NoError(t, err)
-	defer res.Body.Close()
-
-	var body map[string]string
-	require.NoError(t, json.NewDecoder(res.Body).Decode(&body))
+	body, _ := put(t, newServer(t), "/rooms")
 
 	assert.Regexp(t, `^[ABCDEFGHJKMNPQRSTUVWXYZ2-9]{6}$`, body["id"])
+}
+
+// The status as the Godot client reads it: seats by "1" and "2", the board
+// by rank and file, the current player and the fleets
+func TestStatusShape(t *testing.T) {
+	s := newServer(t)
+	room := roomCode(t)
+	white, black := startGame(t, s)
+
+	submit(white, 1, 1, "c3")
+	black.expect("Turn")
+
+	status := connect(t, s, room, "spectator").status
+	players := status["players"].(map[string]any)
+
+	assert.Equal(t, "TURN_2", status["state"])
+	assert.Equal(t, white.user, players["1"].(map[string]any)["name"])
+	assert.Equal(t, black.user, players["2"].(map[string]any)["name"])
+	assert.Equal(t, []any{"C2"}, status["board"].(map[string]any)["3"].(map[string]any)["c"])
+	assert.Equal(t, float64(2), status["turn"])
+	assert.Equal(t, float64(2), status["currentPlayer"])
+	assert.Equal(t, []any{"c3"}, status["moves"])
+	assert.Equal(t, float64(20), status["fleets"].(map[string]any)["2"].(map[string]any)["ciryar"])
+	assert.Equal(t, float64(5), status["config"].(map[string]any)["size"])
 }
 
 // A whole game until white completes a londë along rank 2
@@ -573,26 +571,28 @@ func TestFullGameToLonde(t *testing.T) {
 		submit(clients[i%2], player, i+1, move)
 
 		// Every client gets every turn in order, also its own ones
-		msg := spectator.expect("Turn")
-		assert.Equal(t, float64(i+2), msg["params"].(map[string]interface{})["nextTurn"])
+		for _, c := range []*testClient{white, black, spectator} {
+			msg := c.expect("Turn")
+			assert.Equal(t, float64(i+2), msg["params"].(map[string]any)["nextTurn"])
+		}
 	}
 
 	submit(white, 1, 11, "e2")
 
-	var finished map[string]interface{}
+	var finished map[string]any
 
 	for _, c := range []*testClient{white, black, spectator} {
 		finished = c.expect("GameFinished")
-		params := finished["params"].(map[string]interface{})
+		params := finished["params"].(map[string]any)
 
 		assert.Equal(t, "WIN_1", params["result"])
 		assert.Equal(t, "LONDI", params["winCondition"])
 	}
 
 	// White placed 5 ciryar and black one of white's in the opening; black 4 and white one
-	fleets := finished["status"].(map[string]interface{})["fleets"].(map[string]interface{})
-	assert.Equal(t, float64(21-6), fleets["1"].(map[string]interface{})["ciryar"])
-	assert.Equal(t, float64(21-5), fleets["2"].(map[string]interface{})["ciryar"])
+	fleets := finished["status"].(map[string]any)["fleets"].(map[string]any)
+	assert.Equal(t, float64(21-6), fleets["1"].(map[string]any)["ciryar"])
+	assert.Equal(t, float64(21-5), fleets["2"].(map[string]any)["ciryar"])
 
 	submit(black, 2, 12, "e4")
 	expectError(t, black, "GAME_FINISHED")
