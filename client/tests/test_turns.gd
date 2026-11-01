@@ -97,6 +97,15 @@ func test_submit_and_get_the_turn_back():
     check_equal("back to player 1", game.Phase.MY_TURN, game.phase)
     check("out of the opening", !game.opening())
 
+# The same user in two windows: the turn played in the other one is shown here
+func test_own_turn_from_another_window():
+    game.player = 2
+    notify("StartGame", {"nextTurn": 1.0, "nextPlayer": 1.0})
+    notify("Turn", {"player": 1.0, "turn": 1.0, "move": "a1", "nextPlayer": 2.0, "nextTurn": 2.0})
+    notify("Turn", {"player": 2.0, "turn": 2.0, "move": "e5", "nextPlayer": 1.0, "nextTurn": 3.0})
+    check_equal("both shown", [[1, "a1", true], [2, "e5", true]], opponent)
+    check_equal("white moves", game.Phase.OPPONENT, game.phase)
+
 func test_refused_turn():
     game.player = 1
     notify("StartGame", {"nextTurn": 1.0, "nextPlayer": 1.0})

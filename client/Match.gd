@@ -186,10 +186,12 @@ func _follow(game):
             move = null
             _set_phase(Phase.FINISHED)
 
+# A turn this client did not send is shown: one of the opponent, or one of
+# the same user from another window
 func _played(played_turn, by, notation):
     emit_signal("turn_played", played_turn, notation)
 
-    if by != player:
+    if by != player or phase != Phase.SUBMITTED:
         emit_signal("opponent_played", by, notation, played_turn <= 2)
 
 func _next(next_turn, next_player):
