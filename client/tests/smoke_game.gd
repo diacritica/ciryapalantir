@@ -53,6 +53,10 @@ func _board():
 
 func _sandbox():
     check("the opening hint", help_text().begins_with("Toma una cirya de tu oponente"))
+    var help = game.get_node("UI/HelpPanel").get_global_rect()
+    var undo = game.get_node("UI/TurnPanel/Undo").get_global_rect()
+    check("the help is over the turn buttons", help.end.y <= undo.position.y and !help.intersects(undo))
+    check("and centred", abs(help.get_center().x - game.get_node("UI/TurnPanel").get_global_rect().get_center().x) < 1)
     check("nothing to confirm yet", confirm_button().disabled)
 
     # Turn 1: white places a black cirya on c3, and c3 lights up under the hand

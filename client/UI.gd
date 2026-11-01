@@ -7,6 +7,8 @@ signal turn_confirmation(confirmed)
 
 # Seconds a passing message stays before the help comes back
 const MESSAGE_TIME = 4.0
+# Space between the help and the turn buttons under it
+const HELP_GAP = 8
 
 const RESULTS = {"WIN_1": "Ganan las blancas", "WIN_2": "Ganan las negras", "DRAW": "Empate"}
 const CONDITIONS = {"LONDI": "por Londë", "FLAT": "por recuento de ciryar"}
@@ -79,15 +81,24 @@ func _show_help():
         Match.Phase.OPPONENT:
             text = "Turno de las blancas" if Match.current == 1 else "Turno de las negras"
 
-    $HelpPanel/AdviceLavel.text = text
-    $HelpPanel.visible = text != ""
+    _help(text)
+
+# The help sits where the turn buttons are, or just above them when they show
+func _help(text):
+    var panel = $HelpPanel
+    var height = panel.rect_size.y
+    var bottom = $TurnPanel.margin_top - HELP_GAP if $TurnPanel.visible else $TurnPanel.margin_top + ($TurnPanel.rect_size.y + height) / 2
+
+    panel.margin_bottom = bottom
+    panel.margin_top = bottom - height
+    panel.get_node("AdviceLavel").text = text
+    panel.visible = text != ""
 
 # A message for a few seconds, then the help again
 func _say(text):
     messages += 1
     var mine = messages
-    $HelpPanel/AdviceLavel.text = text
-    $HelpPanel.visible = true
+    _help(text)
     yield(get_tree().create_timer(MESSAGE_TIME), "timeout")
 
     if mine == messages:
@@ -96,8 +107,7 @@ func _say(text):
 # It stays until the connection is back
 func _on_connection_lost():
     messages += 1
-    $HelpPanel/AdviceLavel.text = "Reconectando…"
-    $HelpPanel.visible = true
+    _help("Reconectando…")
 
 func _on_move_changed(notation):
     $TurnPanel/Confirm.disabled = notation == ""
