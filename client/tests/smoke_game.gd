@@ -8,6 +8,7 @@ extends SceneTree
 #   godot --no-window --path . -s tests/smoke_game.gd
 
 const Notation = preload("res://core/Notation.gd")
+const Status = preload("res://core/Status.gd")
 
 var game
 var state
@@ -32,6 +33,8 @@ func _play():
 
     yield(_sandbox(), "completed")
     _online()
+    _out_of_step()
+    yield(_reopen(), "completed")
 
     print("smoke: %d failures" % failures)
     quit(1 if failures else 0)
@@ -117,6 +120,60 @@ func _online():
     state._on_notification({"type": "GameFinished", "params": {"result": "WIN_2", "winCondition": "FLAT", "turn": 10.0}, "status": {"moves": ["e5"]}})
     check("the winning move is shown", stack("e5").size() == 1)
     check("and written down", game.get_node("UI/Moves/MovesText").text.find("10. e5") != -1)
+
+# The client missed where a piece went: the status of the next turn says it
+func _out_of_step():
+    state._next(11, 2)
+    var status = _status_of_board()
+    status.board["2"] = status.board.get("2", {})
+    status.board["2"]["d"] = ["C2"]
+    status.turn = 12.0
+    status.currentPlayer = 1.0
+
+    # Black played d1 for this client, but the server has the cirya on d2
+    state._on_notification({"type": "Turn", "params": {"player": 2.0, "turn": 11.0, "move": "d1", "nextPlayer": 1.0, "nextTurn": 12.0}, "status": status})
+    check("d1 is empty, as the server says", stack("d1").empty())
+    check("the cirya is on d2", stack("d2").size() == 1 and instance_from_id(stack("d2")[0]).player == 2)
+    check("and it is there on the table", _over(instance_from_id(stack("d2")[0]), "d2"))
+
+# A game scene opened in a game already started takes the board of the status
+func _reopen():
+    var status = _status_of_board()
+    state.status = status
+    change_scene("res://Game.tscn")
+    yield(self, "idle_frame")
+    yield(self, "idle_frame")
+    game = current_scene
+
+    check("the board is back", Status.matches(status.board, state.board))
+    check("b4 has its two pieces", stack("b4").size() == 2)
+    check("on the table", _over(instance_from_id(stack("b4")[1]), "b4"))
+    check("the tampa of b4 lies under the hallacirya", !instance_from_id(stack("b4")[0]).block)
+
+# The board of the client as a status of the server
+func _status_of_board():
+    var data = {}
+
+    for row in range(state.board.size()):
+        for column in range(state.board.size()):
+            var square = Vector2(row, column)
+            var name = Notation.square_name(square)
+
+            for piece_id in state.board.stack(square):
+                var piece = instance_from_id(piece_id)
+                if !data.has(name.substr(1)):
+                    data[name.substr(1)] = {}
+                if !data[name.substr(1)].has(name.substr(0, 1)):
+                    data[name.substr(1)][name.substr(0, 1)] = []
+                data[name.substr(1)][name.substr(0, 1)].append(piece.get_notation_name() + str(piece.player))
+
+    return {"state": "TURN_1", "turn": 13.0, "currentPlayer": 1.0, "moves": [], "board": data}
+
+# Whether the piece stands over the tile of the square
+func _over(piece, square):
+    var a = piece.global_transform.origin
+    var b = tile(square).global_transform.origin
+    return Vector2(a.x, a.z).distance_to(Vector2(b.x, b.z)) < 0.01
 
 func notify(type, params):
     state._on_notification({"type": type, "params": params})

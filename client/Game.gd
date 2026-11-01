@@ -5,6 +5,7 @@ extends Spatial
 # is legal is decided by Match and the rules in core/
 
 const Rules = preload("res://core/Rules.gd")
+const Status = preload("res://core/Status.gd")
 
 # Collision layers as bit masks: the tiles, the pieces, and what the dragged
 # pieces float over (pieces and the table)
@@ -40,6 +41,8 @@ var origin_tile = null
 var hover_tile = null
 # Where every piece was when the turn started, to undo it (global transforms)
 var turn_start = {}
+# Where every piece sits in its fleet, to put it back there
+var home = {}
 
 func _ready():
     Settings.medium()
@@ -49,6 +52,7 @@ func _ready():
     $UI.connect("turn_confirmation", self, "_on_turn_confirmation")
     Match.connect("opponent_played", self, "_on_opponent_played")
     Match.connect("turn_refused", self, "_on_turn_refused")
+    Match.connect("status_received", self, "_on_status_received")
 
     # Player 1, the sandbox and spectators look from the side of player 1
     if Match.player != 2:
@@ -66,8 +70,13 @@ func _ready():
                 var position = piece.global_transform.origin
                 _reparent(piece, $Pieces)
                 piece.translation = position
+                home[piece.get_instance_id()] = piece.global_transform
 
     $sandboxlogo.visible = Match.sandbox
+
+    # Opened in a game already started
+    if Match.status:
+        _on_status_received(Match.status)
 
 func _input(event):
     if event is InputEventMouseButton and event.button_index == BUTTON_LEFT:
@@ -277,6 +286,49 @@ func _on_opponent_played(player, notation, opening):
             piece.toggle_block()
 
         _place(piece, step.square)
+
+# The server is the reference: when the board differs from its status, the
+# board is rebuilt from it and every piece goes to its place
+func _on_status_received(status):
+    var board_data = status.get("board", {})
+
+    if !Status.matches(board_data, Match.board):
+        var rebuilt = Status.board(board_data, Match.board, _pieces())
+
+        if rebuilt == null:
+            push_error("the board of the server needs more pieces than this client has")
+            return
+
+        # An empty board is a game opened late, not a mistake
+        if !Match.board.equals(Match.BoardState.new(Match.board.size())):
+            push_warning("the board was out of step with the server and is rebuilt from it")
+
+        Match.set_board(rebuilt.board)
+
+        for piece_id in rebuilt.turn_over:
+            instance_from_id(piece_id).toggle_block()
+
+        _lay_out()
+
+    for difference in Status.fleet_differences(status.get("fleets", {}), Match.board, _pieces()):
+        push_warning(difference)
+
+# Every piece where the board says: on its square, or back in its fleet
+func _lay_out():
+    for piece in _pieces():
+        if Match.board.square_of(piece.get_instance_id()) == null:
+            piece.global_transform = home[piece.get_instance_id()]
+
+    for row in range(Match.board.size()):
+        for column in range(Match.board.size()):
+            var square = Vector2(row, column)
+            var position = $Board.tile(square).global_transform.origin
+            position.y = STACK_BASE
+
+            for piece_id in Match.board.stack(square):
+                var piece = instance_from_id(piece_id)
+                _put_at(piece, position + Vector3(0, HAND_GAP, 0))
+                position.y += piece.get_height()
 
 # Puts a piece on top of a square. A hallacirya flattens the tampa under it
 func _place(piece, square):

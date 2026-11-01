@@ -17,6 +17,7 @@ func _ready():
     Server.connect("connection_success", self, "_show_room")
     Match.connect("phase_changed", self, "_on_phase_changed")
     Match.connect("turn_played", self, "_on_turn_played")
+    Match.connect("history", self, "_on_history")
     $TurnPanel/Confirm.connect("pressed", self, "_on_confirm_pressed")
     $TurnPanel/Undo.connect("pressed", self, "_on_undo_pressed")
 
@@ -45,5 +46,11 @@ func _on_confirm_pressed():
 func _on_undo_pressed():
     emit_signal("turn_confirmation", false)
 
-func _on_turn_played(turn, move):
-    $Moves/MovesText.text += "\n%d. %s" % [turn, move]
+func _on_turn_played(turn, notation):
+    $Moves/MovesText.text += "\n%d. %s" % [turn, notation]
+
+func _on_history(moves):
+    $Moves/MovesText.text = ""
+
+    for i in range(moves.size()):
+        _on_turn_played(i + 1, moves[i])

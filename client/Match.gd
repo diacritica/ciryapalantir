@@ -22,6 +22,10 @@ signal turn_played(turn, notation)
 signal opponent_played(player, notation, opening)
 # The server refused the turn sent: the board goes back to how it was
 signal turn_refused(reason)
+# The whole game as the server has it, after every turn and on reconnection
+signal status_received(status)
+# All the moves of the game, when joining one already started
+signal history(moves)
 
 # The same rules and turns, without the server
 var sandbox = false
@@ -34,6 +38,8 @@ var phase = Phase.WAITING
 var board = BoardState.new()
 # The move of this turn, null until a piece is taken
 var move = null
+# The last status of a started game, for a game scene that opens later
+var status = null
 
 onready var Server = get_node("/root/Server")
 
@@ -43,11 +49,16 @@ func _ready():
 func start_sandbox():
     sandbox = true
     player = 1
+    status = null
     _next(1, 1)
 
 # A new board for the game scene, which knows its size
 func new_board(size):
-    board = BoardState.new(size)
+    set_board(BoardState.new(size))
+
+# The board changes as a whole, so the move of the turn is over
+func set_board(value):
+    board = value
     move = null
 
 # Turns 1 and 2: each player places a flat cirya of the opponent, as in Tak
@@ -103,6 +114,10 @@ func _on_notification(message):
     var params = message.get("params", {})
 
     match message.type:
+        # Asked for, or sent when connecting: it can be a game already started
+        "StatusResponse":
+            _follow(message.status)
+
         "StartGame":
             _next(params.nextTurn, params.nextPlayer)
 
@@ -125,6 +140,26 @@ func _on_notification(message):
             if phase == Phase.SUBMITTED:
                 emit_signal("turn_refused", params.get("error", params.get("message", "")))
                 _set_phase(Phase.MY_TURN)
+
+    var received = message.get("status", {})
+
+    if received.get("state", "NOT_STARTED") != "NOT_STARTED":
+        status = received
+        emit_signal("status_received", status)
+
+# Takes the turn and the phase of a status
+func _follow(game):
+    match game.state:
+        "NOT_STARTED":
+            status = null
+            _set_phase(Phase.WAITING)
+        "TURN_1", "TURN_2":
+            emit_signal("history", game.get("moves", []))
+            _next(game.turn, game.currentPlayer)
+        _:
+            emit_signal("history", game.get("moves", []))
+            move = null
+            _set_phase(Phase.FINISHED)
 
 func _played(played_turn, by, notation):
     emit_signal("turn_played", played_turn, notation)

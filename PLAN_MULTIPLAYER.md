@@ -129,6 +129,13 @@ Reestructurar `internal/app` siguiendo el patrón del ejemplo de chat de gorilla
 
 ### 2.2 El servidor manda (arregla C2)
 
+**Hecho.**
+- `core/Status.gd` reconstruye el tablero del estado con las piezas del cliente. Deja en su sitio las que ya coinciden y dice qué piezas hay que levantar o tumbar.
+- `Game` concilia con cada `StartGame`, `Turn`, `GameFinished` y `StatusResponse`: si el tablero no coincide, lo reconstruye y coloca las piezas, y avisa en la consola.
+- `Match` retoma turno, jugador y fase de un `StatusResponse`, y la UI rehace la lista de jugadas.
+- Las diferencias con `status.fleets` salen como aviso.
+- Falta que el menú abra la partida al reconectarse, que va con 2.4.
+
 - Nuevo `Match.apply_status(status)`, con la parte visual en `Game.gd`:
   1. Devuelve todas las piezas a su flota.
   2. Recorre `status.board[rank][file]` de abajo a arriba y coloca cada pieza con `unassigned_piece(player, type)` y `move_piece`,

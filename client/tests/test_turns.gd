@@ -140,3 +140,30 @@ func test_game_over():
     check_equal("the last move is written down", [[10, "e1"]], played)
     check_equal("and shown", [[2, "e1", false]], opponent)
     check("nobody moves", !game.can_take(fleet_piece("C1")))
+
+# A status of a started game, when reconnecting, gives the turn, the phase and
+# the moves
+func test_follow_a_started_game():
+    var statuses = []
+    var histories = []
+    game.connect("status_received", self, "_keep", [statuses])
+    game.connect("history", self, "_keep", [histories])
+    game.player = 2
+
+    game._on_notification({"type": "StatusResponse", "status": {"state": "NOT_STARTED"}})
+    check_equal("waiting", game.Phase.WAITING, game.phase)
+    check_equal("no board to follow yet", [], statuses)
+
+    var status = {"state": "TURN_2", "turn": 4.0, "currentPlayer": 2.0, "moves": ["a5", "e5", "b2"], "board": {}}
+    game._on_notification({"type": "StatusResponse", "status": status})
+    check_equal("turn 4", 4, game.turn)
+    check_equal("player 2 moves", game.Phase.MY_TURN, game.phase)
+    check_equal("the moves so far", [["a5", "e5", "b2"]], histories)
+    check_equal("the board to follow", 1, statuses.size())
+    check_equal("kept for a scene opened later", status, game.status)
+
+    game._on_notification({"type": "StatusResponse", "status": {"state": "WIN_1", "moves": []}})
+    check_equal("over", game.Phase.FINISHED, game.phase)
+
+func _keep(value, into):
+    into.append(value)
