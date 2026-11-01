@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func parse(t *testing.T, kind string, params map[string]interface{}) Message {
+func parse(t *testing.T, kind MessageType, params map[string]interface{}) *Message {
 	data, _ := json.Marshal(map[string]interface{}{"type": kind, "params": params})
 	m, err := ParseMessage(data)
 	require.NoError(t, err)
@@ -21,8 +21,8 @@ func parse(t *testing.T, kind string, params map[string]interface{}) Message {
 func TestSlowClientIsDropped(t *testing.T) {
 	r := NewRoom("slow")
 
-	frozen := NewClient(NewUser("frozen"))
-	healthy := NewClient(NewUser("healthy"))
+	frozen := NewClient("frozen")
+	healthy := NewClient("healthy")
 	r.Join(frozen)
 	r.Join(healthy)
 
@@ -33,7 +33,7 @@ func TestSlowClientIsDropped(t *testing.T) {
 		for data := range healthy.Send() {
 			var msg map[string]interface{}
 			json.Unmarshal(data, &msg)
-			if msg["type"] == ReadyChanged {
+			if msg["type"] == string(ReadyChanged) {
 				n++
 			}
 			if n == 2*sendBuffer {
@@ -67,7 +67,7 @@ func TestSlowClientIsDropped(t *testing.T) {
 // Leaving twice, or after being dropped, is harmless
 func TestLeaveIsIdempotent(t *testing.T) {
 	r := NewRoom("leave")
-	c := NewClient(NewUser("user"))
+	c := NewClient("user")
 
 	r.Join(c)
 	r.Leave(c)

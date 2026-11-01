@@ -67,7 +67,7 @@ func (a *Api) GetRoomSocket(w http.ResponseWriter, r *http.Request) {
 }
 
 // Main read loop. Delegates every message to the room
-func ReadMessages(c *websocket.Conn, room app.Room, client *app.Client) {
+func ReadMessages(c *websocket.Conn, room *app.Room, client *app.Client) {
 	defer func() {
 		room.Leave(client)
 		c.Close()
@@ -150,7 +150,7 @@ func corsHandler(r *http.Request) bool {
 /*
 Retrieves a Room given the request
 */
-func getRoom(r *http.Request) (app.Room, error) {
+func getRoom(r *http.Request) (*app.Room, error) {
 	vars := mux.Vars(r)
 	roomId, ok := vars["room"]
 
@@ -159,18 +159,18 @@ func getRoom(r *http.Request) (app.Room, error) {
 		return nil, fmt.Errorf("Error, couldn't find room in parameters")
 	}
 
-	return app.GetStore().Room(app.ID(roomId)), nil
+	return store.Room(app.ID(roomId)), nil
 }
 
 /*
 Extracts a User from the current request
 */
-func getUser(r *http.Request) (app.User, error) {
+func getUser(r *http.Request) (app.ID, error) {
 	userId, err := GetUserCookieValue(r)
 
 	if err != nil {
-		return nil, fmt.Errorf("Error, user not present in cookie")
+		return "", fmt.Errorf("Error, user not present in cookie")
 	}
 
-	return app.NewUser(userId), nil
+	return app.ID(userId), nil
 }

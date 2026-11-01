@@ -5,209 +5,103 @@ import (
 	"fmt"
 )
 
-type ParamMap map[string]interface{}
-
-type message struct {
-	FromUser ID          `json:"user,omitempty"`
-	Kind     MessageType `json:"type,omitempty"`
-	Params   ParamMap    `json:"params,omitempty"`
-	Status   *GameStatus `json:"status,omitempty"`
+// Message is what travels on the websocket, in both directions, as JSON.
+// doc/Protocol.md describes every type and its params
+type Message struct {
+	Type   MessageType `json:"type,omitempty"`
+	Params Params      `json:"params,omitempty"`
+	Status *GameStatus `json:"status,omitempty"`
 }
 
-type Message interface {
-	Type() MessageType
-	User() User
-	Format() ([]byte, error)
-	Validate() error
+type Params map[string]any
 
-	AddUser(u User)
-	AddStatus(s GameStatus)
-
-	// Params access
-	GetString(param string) (string, error)
-	GetInt(param string) (int, error)
-	GetBool(param string) (bool, error)
-}
-
-// Types
 type MessageType string
 
+// Actions, sent by the clients
 const (
-	Connect      MessageType = "Connect"
-	Disconnect               = "Disconnect"
-	GetStatus                = "GetStatus"
-	ChangeConfig             = "ChangeConfig"
-	JoinGame                 = "JoinGame"
-	LeaveGame                = "LeaveGame"
-	SetReady                 = "SetReady"
-	SubmitTurn               = "SubmitTurn"
-
-	// Notifications
-	StatusResponse = "StatusResponse"
-	ConfigChanged  = "ConfigChanged"
-	UserJoined     = "UserJoined"
-	UserLeft       = "UserLeft"
-	PlayerJoined   = "PlayerJoined"
-	PlayerLeft     = "PlayerLeft"
-	ReadyChanged   = "ReadyChanged"
-	StartGame      = "StartGame"
-	Turn           = "Turn"
-	GameFinished   = "GameFinished"
-	InvalidTurn    = "InvalidTurn"
-	Error          = "Error"
+	GetStatus    MessageType = "GetStatus"
+	ChangeConfig MessageType = "ChangeConfig"
+	JoinGame     MessageType = "JoinGame"
+	LeaveGame    MessageType = "LeaveGame"
+	SetReady     MessageType = "SetReady"
+	SubmitTurn   MessageType = "SubmitTurn"
 )
 
-var MessageTypes = []MessageType{
-	Connect,
-	Disconnect,
-	GetStatus,
-	ChangeConfig,
-	JoinGame,
-	LeaveGame,
-	SetReady,
-	SubmitTurn,
-	StatusResponse,
-	ConfigChanged,
-	UserJoined,
-	UserLeft,
-	PlayerJoined,
-	PlayerLeft,
-	ReadyChanged,
-	StartGame,
-	Turn,
-	GameFinished,
-	InvalidTurn,
-	Error,
+// Notifications, sent by the server
+const (
+	StatusResponse MessageType = "StatusResponse"
+	UserJoined     MessageType = "UserJoined"
+	UserLeft       MessageType = "UserLeft"
+	PlayerJoined   MessageType = "PlayerJoined"
+	PlayerLeft     MessageType = "PlayerLeft"
+	ReadyChanged   MessageType = "ReadyChanged"
+	StartGame      MessageType = "StartGame"
+	Turn           MessageType = "Turn"
+	GameFinished   MessageType = "GameFinished"
+	InvalidTurn    MessageType = "InvalidTurn"
+	Error          MessageType = "Error"
+)
+
+var actions = map[MessageType]bool{
+	GetStatus: true, ChangeConfig: true, JoinGame: true, LeaveGame: true, SetReady: true, SubmitTurn: true,
 }
 
-func ParseMessage(data []byte) (Message, error) {
-	var result message
-	err := json.Unmarshal(data, &result)
+// ParseMessage reads an action sent by a client
+func ParseMessage(data []byte) (*Message, error) {
+	var m Message
 
-	if err != nil {
+	if err := json.Unmarshal(data, &m); err != nil {
 		return nil, err
 	}
 
-	err = result.Validate()
-
-	if err != nil {
-		return nil, err
+	if !actions[m.Type] {
+		return nil, fmt.Errorf("%q is not an action", m.Type)
 	}
 
-	return &result, err
+	return &m, nil
 }
 
-func (m *message) Type() MessageType {
-	return MessageType(m.Kind)
-}
-
-func (m *message) Format() ([]byte, error) {
+func (m *Message) Format() ([]byte, error) {
 	return json.MarshalIndent(m, "", "  ")
 }
 
-func (m *message) User() User {
-	return &user{
-		id: m.FromUser,
-	}
-}
-
-func (m *message) AddUser(u User) {
-	m.FromUser = u.Id()
-}
-
-func (m *message) Get(param string) (interface{}, error) {
-	if m.Params == nil {
-		return nil, fmt.Errorf("Message doesn't have parameters")
-	}
-
-	result, ok := m.Params[param]
-
-	if !ok {
-		return nil, fmt.Errorf("Message have parameters but key not found")
-	}
-
-	return result, nil
-}
-
-func (m *message) Validate() error {
-	if m.Kind == "" {
-		return fmt.Errorf("No type found in the message")
-	}
-
-	// Check that the type is one of the allowed types
-	valid := false
-	for _, t := range MessageTypes {
-		if t == m.Type() {
-			valid = true
-			break
-		}
-	}
-
-	if !valid {
-		return fmt.Errorf("Type %s is not valid type", m.Type())
-	}
-
-	return nil
-}
-
-func (m *message) String() string {
-	ret, err := m.Format()
+func (m *Message) String() string {
+	data, err := m.Format()
 
 	if err != nil {
-		return "Cannot format object " + err.Error()
+		return "cannot format message: " + err.Error()
 	}
 
-	return string(ret)
+	return string(data)
 }
 
-func (m *message) AddStatus(s GameStatus) {
-	m.Status = &s
+func (m *Message) stringParam(name string) (string, error) {
+	value, ok := m.Params[name].(string)
+
+	if !ok {
+		return "", fmt.Errorf("param %s has to be a string", name)
+	}
+
+	return value, nil
 }
 
-func (m *message) GetString(param string) (string, error) {
-	val, ok := m.Params[param]
+// JSON numbers arrive as float64
+func (m *Message) intParam(name string) (int, error) {
+	value, ok := m.Params[name].(float64)
 
 	if !ok {
-		return "", fmt.Errorf("Cannot find param %s", param)
+		return 0, fmt.Errorf("param %s has to be a number", name)
 	}
 
-	result, ok := val.(string)
-
-	if !ok {
-		return "", fmt.Errorf("Parameter %s is not a string", param)
-	}
-
-	return result, nil
+	return int(value), nil
 }
 
-func (m *message) GetInt(param string) (int, error) {
-	val, ok := m.Params[param]
+func (m *Message) boolParam(name string) (bool, error) {
+	value, ok := m.Params[name].(bool)
 
 	if !ok {
-		return 0, fmt.Errorf("Cannot find param %s", param)
+		return false, fmt.Errorf("param %s has to be a boolean", name)
 	}
 
-	result, ok := val.(float64)
-
-	if !ok {
-		return 0, fmt.Errorf("Parameter %s is not a number. Is %s", param, fmt.Sprintf("%T\n", val))
-	}
-
-	return int(result), nil
-}
-
-func (m *message) GetBool(param string) (bool, error) {
-	val, ok := m.Params[param]
-
-	if !ok {
-		return false, fmt.Errorf("Cannot find param %s", param)
-	}
-
-	result, ok := val.(bool)
-
-	if !ok {
-		return false, fmt.Errorf("Parameter %s is not a string", param)
-	}
-
-	return result, nil
+	return value, nil
 }

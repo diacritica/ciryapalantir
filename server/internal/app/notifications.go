@@ -1,150 +1,63 @@
 package app
 
-func ConnectMessage(user User) Message {
-	return &message{
-		FromUser: user.Id(),
-		Kind:     Connect,
+import "cirya.me/server/internal/cirya"
+
+func statusResponse(status GameStatus) *Message {
+	return &Message{Type: StatusResponse, Status: &status}
+}
+
+func userJoined(user ID) *Message {
+	return &Message{Type: UserJoined, Params: Params{"username": user}}
+}
+
+func userLeft(user ID) *Message {
+	return &Message{Type: UserLeft, Params: Params{"username": user}}
+}
+
+func playerJoined(name string, player int, color string) *Message {
+	return &Message{Type: PlayerJoined, Params: Params{"name": name, "player": player, "color": color}}
+}
+
+func playerLeft(player int) *Message {
+	return &Message{Type: PlayerLeft, Params: Params{"player": player}}
+}
+
+func readyChanged(player int, ready bool) *Message {
+	return &Message{Type: ReadyChanged, Params: Params{"player": player, "ready": ready}}
+}
+
+func gameStarted(status GameStatus) *Message {
+	return &Message{Type: StartGame, Params: Params{"nextPlayer": 1, "nextTurn": 1}, Status: &status}
+}
+
+func turnPlayed(player, turn int, move string, nextPlayer, nextTurn int, status GameStatus) *Message {
+	return &Message{
+		Type: Turn,
+		Params: Params{
+			"player":     player,
+			"turn":       turn,
+			"move":       move,
+			"nextPlayer": nextPlayer,
+			"nextTurn":   nextTurn,
+		},
+		Status: &status,
 	}
 }
 
-func DisconnectMessage(user User) Message {
-	return &message{
-		FromUser: user.Id(),
-		Kind:     Disconnect,
+func gameFinished(result GameState, condition cirya.WinCondition, turn int, status GameStatus) *Message {
+	return &Message{
+		Type:   GameFinished,
+		Params: Params{"result": result, "winCondition": condition, "turn": turn},
+		Status: &status,
 	}
 }
 
-func StatusResponseMessage(g Game) Message {
-	return &message{
-		Kind: StatusResponse,
-	}
+// The move is not legal: only the player who sent it gets this
+func invalidTurn(err error) *Message {
+	return &Message{Type: InvalidTurn, Params: Params{"error": err.Error()}}
 }
 
-func ConfigChangedMessage() Message {
-	return nil
-}
-
-func UserJoinedMessage(user User) Message {
-	params := make(ParamMap)
-	params["username"] = user.Id()
-
-	return &message{
-		Kind:   UserJoined,
-		Params: params,
-	}
-}
-
-func UserLeftMessage(user User) Message {
-	params := make(ParamMap)
-	params["username"] = user.Id()
-
-	return &message{
-		Kind:   UserLeft,
-		Params: params,
-	}
-}
-
-func PlayerJoinedMessage(name string, player int, color string) Message {
-	params := make(ParamMap)
-	params["name"] = name
-	params["player"] = player
-	params["color"] = color
-
-	return &message{
-		Kind:   PlayerJoined,
-		Params: params,
-	}
-}
-
-func PlayerLeftMessage(player int) Message {
-	params := make(ParamMap)
-	params["player"] = player
-
-	return &message{
-		Kind:   PlayerLeft,
-		Params: params,
-	}
-}
-
-func ReadyChangedMessage(player int, ready bool) Message {
-	params := make(ParamMap)
-	params["player"] = player
-	params["ready"] = ready
-
-	return &message{
-		Kind:   ReadyChanged,
-		Params: params,
-	}
-}
-
-func StartGameMessage() Message {
-	params := make(ParamMap)
-	params["nextPlayer"] = 1
-	params["nextTurn"] = 1
-
-	return &message{
-		Kind:   StartGame,
-		Params: params,
-	}
-}
-
-func TurnMessage(player int, turn int, move string, nextPlayer int, nextTurn int) Message {
-	params := make(ParamMap)
-	params["player"] = player
-	params["turn"] = turn
-	params["move"] = move
-	params["nextPlayer"] = nextPlayer
-	params["nextTurn"] = nextTurn
-
-	return &message{
-		Kind:   Turn,
-		Params: params,
-	}
-}
-
-func GameFinishedMessage(state GameState, winCondition WinCondition, turn int) Message {
-	params := make(ParamMap)
-	params["result"] = string(state)
-	params["winCondition"] = string(winCondition)
-	params["turn"] = turn
-
-	return &message{
-		Kind:   GameFinished,
-		Params: params,
-	}
-}
-
-func InvalidTurnMessage(error string) Message {
-	params := make(ParamMap)
-	params["error"] = error
-
-	return &message{
-		Kind:   InvalidTurn,
-		Params: params,
-	}
-}
-
-type ErrorCode string
-
-const (
-	BAD_MESSAGE      ErrorCode = "BAD_MESSAGE"
-	SEAT_TAKEN                 = "SEAT_TAKEN"
-	NOT_YOUR_SEAT              = "NOT_YOUR_SEAT"
-	NOT_YOUR_TURN              = "NOT_YOUR_TURN"
-	STALE_TURN                 = "STALE_TURN"
-	GAME_NOT_STARTED           = "GAME_NOT_STARTED"
-	GAME_STARTED               = "GAME_STARTED"
-	GAME_FINISHED              = "GAME_FINISHED"
-)
-
-// A request that cannot be done. Only sent to the user who asked for it
-func ErrorMessage(code ErrorCode, text string) Message {
-	params := make(ParamMap)
-	params["code"] = string(code)
-	params["message"] = text
-
-	return &message{
-		Kind:   Error,
-		Params: params,
-	}
+// A request the game refuses: only the user who sent it gets this
+func errorMessage(code ErrorCode, text string) *Message {
+	return &Message{Type: Error, Params: Params{"code": code, "message": text}}
 }

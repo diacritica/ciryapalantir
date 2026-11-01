@@ -1,55 +1,39 @@
 package app
 
-import (
-	"sync"
-)
+import "sync"
 
-// Rooms by code, kept in memory
-type MemoryStore struct {
+// Store keeps the rooms in memory, by code. A restart loses them
+type Store struct {
 	mu    sync.Mutex
-	rooms map[ID]Room
+	rooms map[ID]*Room
 }
 
-type Store interface {
-	// Returns the room with the given code, creating it if needed
-	Room(i ID) Room
-
-	// Creates a room with a new code, not used by any other room
-	CreateRoom() Room
+func NewStore() *Store {
+	return &Store{rooms: make(map[ID]*Room)}
 }
 
-var store = NewStore()
-
-func GetStore() Store {
-	return store
-}
-
-func NewStore() Store {
-	return &MemoryStore{
-		rooms: make(map[ID]Room),
-	}
-}
-
-func (s *MemoryStore) Room(i ID) Room {
+// Room returns the room with the given code, creating it if needed
+func (s *Store) Room(code ID) *Room {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	r, ok := s.rooms[i]
+	r, ok := s.rooms[code]
 
 	if !ok {
-		r = NewRoom(i)
-		s.rooms[i] = r
+		r = NewRoom(code)
+		s.rooms[code] = r
 	}
 
 	return r
 }
 
-func (s *MemoryStore) CreateRoom() Room {
+// CreateRoom makes a room with a code no other room has
+func (s *Store) CreateRoom() *Room {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	for {
-		code := RandomCode(roomCodeLength)
+		code := randomCode(roomCodeLength)
 
 		if _, taken := s.rooms[code]; !taken {
 			r := NewRoom(code)

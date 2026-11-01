@@ -5,17 +5,22 @@ import (
 	"math/big"
 )
 
+// ID names users and rooms
 type ID string
 
 // Without characters that are easy to confuse (0/O, 1/I/L)
 const codeAlphabet = "ABCDEFGHJKMNPQRSTUVWXYZ23456789"
 
 const (
-	userIdLength   = 16
+	userIDLength   = 16
 	roomCodeLength = 6
 )
 
-func RandomCode(length int) ID {
+func NewUserID() ID {
+	return randomCode(userIDLength)
+}
+
+func randomCode(length int) ID {
 	max := big.NewInt(int64(len(codeAlphabet)))
 	code := make([]byte, length)
 
@@ -30,8 +35,4 @@ func RandomCode(length int) ID {
 	}
 
 	return ID(code)
-}
-
-func NewUserId() ID {
-	return RandomCode(userIdLength)
 }

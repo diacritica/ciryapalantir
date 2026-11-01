@@ -1,85 +1,62 @@
 package app
 
 import (
-	"cirya.me/server/internal/cirya"
+	"fmt"
 	"strconv"
+
+	"cirya.me/server/internal/cirya"
 )
 
-type GameStatus struct {
-	Config  GameConfig              `json:"config,omitempty"`
-	Players map[string]PlayerStatus `json:"players,omitempty"`
-	State   GameState               `json:"state,omitempty"`
-	Moves   []string                `json:"moves,omitempty"`
-	Board   cirya.BoardData         `json:"board,omitempty"`
-	Turn    *int                    `json:"turn,omitempty"`
-	Player  *int                    `json:"currentPlayer,omitempty"`
-	Fleets  map[int]*cirya.Fleet    `json:"fleets,omitempty"`
-}
-
-type game struct {
-	id      ID
-	config  GameConfig
-	players map[string]PlayerStatus
-	state   GameState
-	moves   []string
-	board   *cirya.Board
-	turn    int
-	player  int
-}
-
+// GameState is where a game is:
+//
+//	NOT_STARTED → TURN_1 ⇄ TURN_2 → WIN_1, WIN_2 or DRAW
+//
+// Players sit and get ready while it has not started, and it starts when
+// both are ready.
 type GameState string
 
 const (
-	NOT_STARTED GameState = "NOT_STARTED"
-
-	TURN_1 = "TURN_1"
-	TURN_2 = "TURN_2"
-
-	// End states
-	WIN_1 = "WIN_1"
-	WIN_2 = "WIN_2"
-	DRAW  = "DRAW"
+	NotStarted GameState = "NOT_STARTED"
+	Turn1      GameState = "TURN_1"
+	Turn2      GameState = "TURN_2"
+	Win1       GameState = "WIN_1"
+	Win2       GameState = "WIN_2"
+	Draw       GameState = "DRAW"
 )
 
-type WinCondition string
+// The reason the game refuses a request, sent back in an Error notification
+type ErrorCode string
 
 const (
-	NONE   WinCondition = "NONE"
-	LONDI               = "LONDI"
-	FLAT                = "FLAT"
-	RESIGN              = "RESIGN"
+	CodeBadMessage     ErrorCode = "BAD_MESSAGE"
+	CodeSeatTaken      ErrorCode = "SEAT_TAKEN"
+	CodeNotYourSeat    ErrorCode = "NOT_YOUR_SEAT"
+	CodeNotYourTurn    ErrorCode = "NOT_YOUR_TURN"
+	CodeStaleTurn      ErrorCode = "STALE_TURN"
+	CodeGameNotStarted ErrorCode = "GAME_NOT_STARTED"
+	CodeGameStarted    ErrorCode = "GAME_STARTED"
+	CodeGameFinished   ErrorCode = "GAME_FINISHED"
 )
 
-type TurnResult struct {
-	State        GameState
-	NextTurn     int
-	NextPlayer   int
-	EndGame      bool
-	WinCondition WinCondition
+type refusal struct {
+	code ErrorCode
+	text string
 }
 
-type Game interface {
-	Status() GameStatus
-	State() GameState
-	Seat(player int) (PlayerStatus, bool)
-	AddPlayer(user ID, name string, player int, color string)
-	RemovePlayer(player int)
-	SetReady(player int, ready bool)
-
-	ArePlayersReady() bool
-	StartGame()
-
-	CurrentPlayer() int
-	CurrentTurn() int
-	Turn(move string) (TurnResult, error)
+func (r refusal) Error() string {
+	return string(r.code) + ": " + r.text
 }
 
-type PlayerStatus struct {
-	// The user sitting in this seat, the only one who can play with it
-	UserID ID     `json:"-"`
-	Name   string `json:"name"`
-	Color  string `json:"color"`
-	Ready  bool   `json:"ready"`
+// A game in a room. It is only used from the room goroutine
+type Game struct {
+	config GameConfig
+	// By seat number, "1" or "2", as the protocol sends them
+	seats map[string]Seat
+	state GameState
+	// Turns played by both players, from 1
+	turn  int
+	moves []string
+	board *cirya.Board
 }
 
 type GameConfig struct {
@@ -88,142 +65,211 @@ type GameConfig struct {
 	Size    int    `json:"size"`
 }
 
-func NewGame(id ID) Game {
-	return &game{
-		id: id,
-		config: GameConfig{
-			Ambient: "TAVERN",
-			Pieces:  "WOOD",
-			Size:    5,
-		},
-		players: make(map[string]PlayerStatus),
-		state:   NOT_STARTED,
-		moves:   make([]string, 0),
-		board:   cirya.NewBoard(5),
-		turn:    1,
-		player:  1,
+type Seat struct {
+	// The user sitting here, the only one who can play with this seat
+	UserID ID     `json:"-"`
+	Name   string `json:"name"`
+	Color  string `json:"color"`
+	Ready  bool   `json:"ready"`
+}
+
+// GameStatus is the whole game as the clients see it. The board, the turn
+// and the fleets are only there once the game has started
+type GameStatus struct {
+	Config  GameConfig           `json:"config,omitempty"`
+	Players map[string]Seat      `json:"players,omitempty"`
+	State   GameState            `json:"state,omitempty"`
+	Moves   []string             `json:"moves,omitempty"`
+	Board   cirya.BoardData      `json:"board,omitempty"`
+	Turn    *int                 `json:"turn,omitempty"`
+	Player  *int                 `json:"currentPlayer,omitempty"`
+	Fleets  map[int]*cirya.Fleet `json:"fleets,omitempty"`
+}
+
+func NewGame() *Game {
+	config := GameConfig{Ambient: "TAVERN", Pieces: "WOOD", Size: 5}
+
+	return &Game{
+		config: config,
+		seats:  make(map[string]Seat),
+		state:  NotStarted,
+		turn:   1,
+		moves:  make([]string, 0),
+		board:  cirya.NewBoard(config.Size),
 	}
 }
 
-func (g *game) Status() GameStatus {
-	status := GameStatus{
-		Config:  g.config,
-		Players: g.players,
-		State:   g.state,
+func (g *Game) State() GameState {
+	return g.state
+}
+
+func (g *Game) Turn() int {
+	return g.turn
+}
+
+// Player is the player whose turn it is, and 0 when nobody can play
+func (g *Game) Player() int {
+	switch g.state {
+	case Turn1:
+		return 1
+	case Turn2:
+		return 2
 	}
 
-	if g.state != NOT_STARTED {
+	return 0
+}
+
+func (g *Game) Started() bool {
+	return g.state != NotStarted
+}
+
+func (g *Game) Finished() bool {
+	return g.state == Win1 || g.state == Win2 || g.state == Draw
+}
+
+func (g *Game) Status() GameStatus {
+	status := GameStatus{Config: g.config, Players: g.seats, State: g.state}
+
+	if g.Started() {
+		turn, player := g.turn, g.Player()
 		status.Moves = g.moves
 		status.Board = g.board.Data
-		status.Turn = &g.turn
-		status.Player = &g.player
+		status.Turn = &turn
+		status.Player = &player
 		status.Fleets = g.board.Fleets
 	}
 
 	return status
 }
 
-func (g *game) State() GameState {
-	return g.state
-}
-
-func (g *game) Seat(player int) (PlayerStatus, bool) {
-	status, ok := g.players[strconv.Itoa(player)]
-	return status, ok
-}
-
-func (g *game) AddPlayer(user ID, name string, player int, color string) {
-	status := PlayerStatus{
-		UserID: user,
-		Name:   name,
-		Color:  color,
-		Ready:  false,
+// Sit gives the seat to the user. Once the game has started only its owner
+// can come back to it, and then rejoined is true
+func (g *Game) Sit(user ID, player int, name, color string) (rejoined bool, err error) {
+	if err := checkSeat(player); err != nil {
+		return false, err
 	}
 
-	g.players[strconv.Itoa(player)] = status
+	seat, taken := g.seats[strconv.Itoa(player)]
+
+	switch {
+	case taken && seat.UserID != user:
+		return false, refusal{CodeSeatTaken, "this seat is taken by another user"}
+	case g.Started() && taken:
+		return true, nil
+	case g.Started():
+		return false, refusal{CodeGameStarted, "the game has already started"}
+	}
+
+	g.seats[strconv.Itoa(player)] = Seat{UserID: user, Name: name, Color: color}
+	return false, nil
 }
 
-func (g *game) RemovePlayer(player int) {
-	delete(g.players, strconv.Itoa(player))
+func (g *Game) Stand(user ID, player int) error {
+	if err := g.checkOwner(user, player); err != nil {
+		return err
+	}
+
+	if g.Started() {
+		return refusal{CodeGameStarted, "cannot leave a started game"}
+	}
+
+	delete(g.seats, strconv.Itoa(player))
+	return nil
 }
 
-func (g *game) SetReady(player int, ready bool) {
-	status, _ := g.players[strconv.Itoa(player)]
-	status.Ready = ready
-	g.players[strconv.Itoa(player)] = status
-}
+// SetReady starts the game when both players are ready, and then started is true
+func (g *Game) SetReady(user ID, player int, ready bool) (started bool, err error) {
+	if err := g.checkOwner(user, player); err != nil {
+		return false, err
+	}
 
-func (g *game) ArePlayersReady() bool {
-	return g.players["1"].Ready && g.players["2"].Ready
-}
+	if g.Started() {
+		return false, refusal{CodeGameStarted, "the game has already started"}
+	}
 
-func (g *game) StartGame() {
-	g.state = TURN_1
+	seat := g.seats[strconv.Itoa(player)]
+	seat.Ready = ready
+	g.seats[strconv.Itoa(player)] = seat
+
+	if !g.seats["1"].Ready || !g.seats["2"].Ready {
+		return false, nil
+	}
+
+	g.state = Turn1
 	g.turn = 1
-	g.player = 1
 	g.board = cirya.NewBoard(g.config.Size)
+	return true, nil
 }
 
-func (g *game) CurrentPlayer() int {
-	return g.player
-}
+// Play makes the move of the player for the given turn. A move that breaks
+// the rules is a plain error and leaves the game as it was
+func (g *Game) Play(user ID, player, turn int, move string) (cirya.Result, error) {
+	switch {
+	case !g.Started():
+		return cirya.Result{}, refusal{CodeGameNotStarted, "the game has not started yet"}
+	case g.Finished():
+		return cirya.Result{}, refusal{CodeGameFinished, "the game is over"}
+	}
 
-func (g *game) CurrentTurn() int {
-	return g.turn
-}
+	if err := g.checkOwner(user, player); err != nil {
+		return cirya.Result{}, err
+	}
 
-func (g *game) Turn(move string) (TurnResult, error) {
-	var result TurnResult
+	switch {
+	case player != g.Player():
+		return cirya.Result{}, refusal{CodeNotYourTurn, "it is not your turn"}
+	case turn != g.turn:
+		return cirya.Result{}, refusal{CodeStaleTurn, fmt.Sprintf("expected turn %d", g.turn)}
+	}
+
 	var err error
 
-	// The first move of each player places a cirya of the opponent
+	// The first turn of each player places a cirya of the opponent
 	if g.turn <= 2 {
-		err = g.board.PlayOpening(g.player, move)
+		err = g.board.PlayOpening(player, move)
 	} else {
-		err = g.board.Play(g.player, move)
+		err = g.board.Play(player, move)
 	}
 
 	if err != nil {
-		return result, err
+		return cirya.Result{}, err
 	}
 
 	g.moves = append(g.moves, move)
-	end := g.board.Result(g.player)
+	result := g.board.Result(player)
 
-	if end.Over {
-		switch end.Winner {
-		case 1:
-			result.State = WIN_1
-		case 2:
-			result.State = WIN_2
-		default:
-			result.State = DRAW
-		}
-
-		result.EndGame = true
-		result.WinCondition = WinCondition(end.Condition)
-
-		g.state = result.State
-		g.player = 0
-
-		return result, nil
+	switch {
+	case result.Over && result.Winner == 1:
+		g.state = Win1
+	case result.Over && result.Winner == 2:
+		g.state = Win2
+	case result.Over:
+		g.state = Draw
+	case g.state == Turn1:
+		g.state, g.turn = Turn2, g.turn+1
+	default:
+		g.state, g.turn = Turn1, g.turn+1
 	}
-
-	if g.state == TURN_1 {
-		result.State = TURN_2
-		result.NextPlayer = 2
-	} else {
-		result.State = TURN_1
-		result.NextPlayer = 1
-	}
-
-	result.NextTurn = g.turn + 1
-	result.EndGame = false
-	result.WinCondition = NONE
-
-	g.state = result.State
-	g.turn = result.NextTurn
-	g.player = result.NextPlayer
 
 	return result, nil
+}
+
+func checkSeat(player int) error {
+	if player != 1 && player != 2 {
+		return refusal{CodeBadMessage, "player has to be 1 or 2"}
+	}
+
+	return nil
+}
+
+func (g *Game) checkOwner(user ID, player int) error {
+	if err := checkSeat(player); err != nil {
+		return err
+	}
+
+	if seat, ok := g.seats[strconv.Itoa(player)]; !ok || seat.UserID != user {
+		return refusal{CodeNotYourSeat, "this seat belongs to another user"}
+	}
+
+	return nil
 }

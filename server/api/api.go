@@ -8,6 +8,8 @@ import (
 	"time"
 )
 
+var store = app.NewStore()
+
 type Api struct {
 	router http.Handler
 }
@@ -18,7 +20,7 @@ type Server interface {
 
 // Creates a new user and returns its id
 func WriteUserCookie(w http.ResponseWriter) string {
-	userId := app.NewUserId()
+	userId := app.NewUserID()
 	cookie := http.Cookie{
 		Name:    "cirya-user",
 		Value:   string(userId),
@@ -90,7 +92,7 @@ func (a *Api) GetCheck(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(fmt.Sprintf("OK: %s", app.RandomCode(6))))
+	w.Write([]byte("OK"))
 }
 
 func (a *Api) SetUser(w http.ResponseWriter, r *http.Request) {
@@ -118,6 +120,6 @@ func (a *Api) CreateRoom(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 
-	room := app.GetStore().CreateRoom()
-	w.Write([]byte(fmt.Sprintf(`{ "id": "%s"}`, room.Id())))
+	room := store.CreateRoom()
+	w.Write([]byte(fmt.Sprintf(`{ "id": "%s"}`, room.Code())))
 }
