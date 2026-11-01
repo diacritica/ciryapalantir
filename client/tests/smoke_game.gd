@@ -130,6 +130,9 @@ func _online():
     check("and written down", game.get_node("UI/Moves/Scroll/MovesText").text.find("10. e5") != -1)
     var dialog = game_over_dialog()
     check("the result is shown", dialog != null and dialog.visible and dialog.dialog_text.begins_with("Ganan las negras por recuento de ciryar\nHas perdido"))
+    var screen = game.get_viewport().get_visible_rect()
+    check("in the middle of the screen", dialog.get_global_rect().get_center().distance_to(screen.get_center()) < 2)
+    check("with room for its text", dialog.rect_size.x >= dialog.get_label().get_combined_minimum_size().x)
 
 # The client missed where a piece went: the status of the next turn says it
 func _out_of_step():
@@ -165,6 +168,24 @@ func _long_game():
     check("down to the last one", scroll.scroll_vertical + bar.page >= bar.max_value - 1)
     check("inside the frame", scroll.get_global_rect().end.y <= ui.get_node("Moves").get_global_rect().end.y)
 
+    # The wheel goes back up to the first moves, and it stays there
+    var bottom = scroll.scroll_vertical
+    for i in range(5):
+        _wheel(scroll, BUTTON_WHEEL_UP)
+        yield(self, "idle_frame")
+    yield(self, "idle_frame")
+    check("the wheel scrolls up", scroll.scroll_vertical < bottom)
+    var up = scroll.scroll_vertical
+    yield(self, "idle_frame")
+    yield(self, "idle_frame")
+    check("and the list stays there", scroll.scroll_vertical == up)
+
+    # Until a new move comes
+    ui._on_turn_played(61, "b1")
+    yield(self, "idle_frame")
+    yield(self, "idle_frame")
+    check("a new move shows at the bottom", scroll.scroll_vertical + bar.page >= bar.max_value - 1)
+
     var player = state.player
     state.player = 0
     ui._on_game_over("WIN_2", "LONDI")
@@ -172,6 +193,16 @@ func _long_game():
     check("a spectator just enjoyed the game", dialog.dialog_text == "Ganan las negras por Londë\n¡Esperamos que hayas disfrutado de la partida!")
     dialog.free()
     state.player = player
+
+# Turns the mouse wheel over the control
+func _wheel(control, button):
+    for pressed in [true, false]:
+        var event = InputEventMouseButton.new()
+        event.button_index = button
+        event.pressed = pressed
+        event.position = control.get_global_rect().get_center()
+        event.global_position = event.position
+        get_root().input(event)
 
 # A game scene opened in a game already started takes the board of the status
 func _reopen():

@@ -30,8 +30,6 @@ func _ready():
     Match.connect("phase_changed", self, "_on_phase_changed")
     Match.connect("turn_played", self, "_on_turn_played")
     Match.connect("history", self, "_on_history")
-    # The list of moves keeps the last one in sight as it grows
-    $Moves/Scroll.get_v_scrollbar().connect("changed", self, "_show_last_move")
     Match.connect("move_changed", self, "_on_move_changed")
     Match.connect("turn_refused", self, "_on_turn_refused")
     Match.connect("game_over", self, "_on_game_over")
@@ -130,12 +128,14 @@ func _on_game_over(result, condition):
     dialog.window_title = "Fin de la partida"
     dialog.dialog_text = text
     dialog.get_ok().text = "Volver al menú"
-    # The button is the only way out: no close button, no click outside
+    # The button is the only way out, and it is not modal: the moves can
+    # still be scrolled to see how the game went
     dialog.get_close_button().hide()
-    dialog.popup_exclusive = true
     dialog.connect("confirmed", self, "_back_to_menu")
     add_child(dialog)
-    dialog.popup_centered()
+    dialog.show()
+    dialog.rect_size = dialog.get_combined_minimum_size()
+    dialog.rect_position = (get_viewport_rect().size - dialog.rect_size) / 2
 
 func _back_to_menu():
     Match.leave()
@@ -148,10 +148,14 @@ func _on_confirm_pressed():
 func _on_undo_pressed():
     emit_signal("turn_confirmation", false)
 
+# A new move shows at the bottom of the list, which the wheel can scroll back
 func _on_turn_played(turn, notation):
     $Moves/Scroll/MovesText.text += "\n%d. %s" % [turn, notation]
+    call_deferred("_show_last_move")
 
+# Deferred, once the list has grown
 func _show_last_move():
+    yield(get_tree(), "idle_frame")
     $Moves/Scroll.scroll_vertical = int($Moves/Scroll.get_v_scrollbar().max_value)
 
 func _on_history(moves):
