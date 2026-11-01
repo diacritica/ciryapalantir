@@ -29,7 +29,6 @@ Match="*res://Match.gd"
 
 window/size/width=1920
 window/size/height=1080
-window/vsync/use_vsync=false
 mouse_cursor/custom_image="res://assets/cursors/cursor-select.png"
 
 [physics]
@@ -40,5 +39,5 @@ common/physics_fps=110
 
 [rendering]
 
-threads/thread_model=2
+gles3/shaders/shader_compilation_mode=2
 environment/default_environment="res://default_env.tres"
