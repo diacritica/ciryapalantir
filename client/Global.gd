@@ -6,6 +6,8 @@ extends Node
 # Board: 3 | 1,2,3
 
 var dragging_nosse = null
+# Where the dragged pieces were, to put them back when the drop is not valid
+var drag_origins = {}
 var board_state = []
 var cirya_height = 0.102
 var board = null
@@ -129,9 +131,27 @@ func remove_piece_from_state(piece_id):
         for column in row:
             column.erase(piece_id)
     
+# A new move starts: no direction and no squares visited yet
+func reset_movement():
+    player_movement = {
+        "last_tile": null,
+        "direction": null,
+        "dropped_pieces": []
+    }
+
+# True when the piece is one of those that can keep being spread in the current
+# move: the ones just dropped except the bottom one, which has to stay
+func continues_movement(piece_id):
+    var dropped = player_movement.dropped_pieces
+    return dropped.size() > 1 and dropped.slice(1, dropped.size() - 1).has(piece_id)
+
 func init_drag_drop(pieces): 
     dragging_nosse = Spatial.new()
     dragging_nosse.set_translation(pieces[0].get_translation())
+
+    drag_origins = {}
+    for piece in pieces:
+        drag_origins[piece.get_instance_id()] = piece.global_transform
 
     for piece_index in range(pieces.size()):
         var piece = pieces[piece_index]
@@ -189,7 +209,38 @@ func stop_drag_drop(tile):
         self.player_movement.dropped_pieces = piece_ids   
         
     game.remove_child(dragging_nosse)
+    dragging_nosse.queue_free()
     dragging_nosse = null
+
+# The drop is not valid: the dragged pieces go back to where they were, the
+# board state does not change and the rest of the turn is kept
+func cancel_drag_drop():
+    var tween = Tween.new()
+    var pieces = dragging_nosse.get_children()
+    game.add_child(tween)
+
+    # The pieces fly back so the player sees where they came from
+    for piece in pieces:
+        var current = piece.global_transform
+        piece.hide_selected()
+        self.move_to(piece, game)
+        piece.global_transform = current
+        tween.interpolate_property(piece, "global_transform", current, drag_origins[piece.get_instance_id()], 0.35, Tween.TRANS_QUAD, Tween.EASE_OUT)
+
+    tween.connect("tween_all_completed", self, "_on_cancel_finished", [tween, pieces], CONNECT_ONESHOT)
+    tween.start()
+
+    game.remove_child(dragging_nosse)
+    dragging_nosse.queue_free()
+    dragging_nosse = null
+    game.get_node("undo").play()
+
+func _on_cancel_finished(tween, pieces):
+    for piece in pieces:
+        piece.mode = RigidBody.MODE_RIGID
+        piece.get_node("CollisionShape").disabled = false
+
+    tween.queue_free()
     
 # TODO    
 func restore_piece_position(piece_id):
@@ -244,11 +295,7 @@ func data_received(data):
     if "type" in data and data.type == 'StartGame' || data.type == 'Turn':
         if data.params.nextPlayer == self.player:
             self.disable_move = false
-            self.player_movement = {
-                "last_tile": null,
-                "direction": null,
-                "dropped_pieces": []
-            }            
+            reset_movement()
         else: 
             self.disable_move = true
         

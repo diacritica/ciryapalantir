@@ -82,8 +82,10 @@ func _input(event):
             piece_cast_tile.collider.hideHighlight()
 
         if global.dragging_nosse:
+            # The tile right below the dragged pieces
             var space_state = get_world().direct_space_state
-            piece_cast_tile = space_state.intersect_ray(global.dragging_nosse.global_transform.origin, Vector3(0, -ray_length, 0), [], 2147483647, false, true)
+            var origin = global.dragging_nosse.global_transform.origin
+            piece_cast_tile = space_state.intersect_ray(origin, origin + Vector3(0, -ray_length, 0), [], 2147483647, false, true)
             if piece_cast_tile and Validation.can_drop(piece_cast_tile.collider.row, piece_cast_tile.collider.column):
                 piece_cast_tile.collider.showHighlight()
 
@@ -94,8 +96,14 @@ func _input(event):
                 
                 # init drag
                 if event.is_pressed() and Validation.can_move(cast.collider.get_instance_id()):
+                    # In the sandbox there are no turns: taking a piece that does not
+                    # continue the last move starts a new one
+                    if global.sandbox and !global.continues_movement(cast.collider.get_instance_id()):
+                        movements = []
+
                     if !movements.size():
                         global.save_pieces_translation()
+                        global.reset_movement()
                     
                     get_node("select").play()
                     var piece = cast.collider
@@ -133,8 +141,9 @@ func _input(event):
                     if piece_source_tile:
                         piece_source_tile.hideHighlight()
                         piece_source_tile = null
-                else: #apparently useful only for sandbox mode
-                    global.stop_drag_drop(null)
+                # Released where the pieces cannot go
+                elif global.dragging_nosse and not event.is_pressed():
+                    cancel_drag()
             # drag movement
             elif global.dragging_nosse and event is InputEventMouseMotion:
                 if not piece_source_tile and piece_cast_tile and Validation.can_drop(piece_cast_tile.collider.row, piece_cast_tile.collider.column):
@@ -152,14 +161,23 @@ func _input(event):
 
                 global.dragging_nosse.set_translation(new_position)
                 
-        elif global.dragging_nosse:
-            global.restore_initial_position()
-            global.stop_drag_drop(null)
+        elif global.dragging_nosse and event is InputEventMouseButton and not event.is_pressed():
+            cancel_drag()
     elif global.dragging_nosse and global.dragging_nosse.get_children().size() == 1 and Input.is_key_pressed(KEY_R):
         get_node("piecerotation").play()
         var tile = global.get_piece_tile(global.dragging_nosse.get_children()[0].get_instance_id())
         if !tile:
             global.dragging_nosse.get_children()[0].toggle_block()
+
+func cancel_drag():
+    if piece_cast_tile:
+        piece_cast_tile.collider.hideHighlight()
+
+    if piece_source_tile:
+        piece_source_tile.hideHighlight()
+        piece_source_tile = null
+
+    global.cancel_drag_drop()
 
 func _on_turn_confirmation(value):
     if value:

@@ -71,10 +71,12 @@ func can_drop(row, column):
     if last_tile:
         if tile.column != last_tile.column and tile.row != last_tile.row:
             return false
-                
+
+        # One square at a time, also when the direction is already set
+        if abs(tile.column - last_tile.column) + abs(tile.row - last_tile.row) > 1:
+            return false
+
         if direction:
-            print('row ', tile.row, ' | ',  last_tile.row)
-            print('column ', tile.column, ' | ',  last_tile.column)
             if tile.column > last_tile.column and direction != '>':
                 return false
             elif tile.column < last_tile.column and direction != '<':
