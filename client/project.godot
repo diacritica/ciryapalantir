@@ -25,6 +25,7 @@ config/icon="res://assets/sat.png"
 Global="*res://Global.gd"
 Server="*res://Server.tscn"
 Settings="*res://Settings.gd"
+Validation="*res://Validation.gd"
 
 [display]
 

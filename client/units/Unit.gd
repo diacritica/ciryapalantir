@@ -1,6 +1,7 @@
 extends Node
 
 onready var global = get_node("/root/Global")
+onready var Validation = get_node("/root/Validation")
 
 export(bool) var block = false
 
@@ -22,7 +23,7 @@ func _ready():
     # global.dragging_nosse
     
 func _on_mouse_entered():
-    if global.get_dragging_nosse_pieces_ids().find(self.get_instance_id()) == -1:
+    if global.get_dragging_nosse_pieces_ids().find(self.get_instance_id()) == -1 and Validation.can_move(self.get_instance_id()):
         self.show_hover()
 
 func _on_mouse_exited():
@@ -50,7 +51,7 @@ func get_height():
     return $CollisionShape.scale.z * 2
 
 func show_hover():
-    if global.is_valid_drag(self):
+    if Validation.can_move(self.get_instance_id()):
         var m = $Mesh.mesh.surface_get_material(0)
         var m2 = m.duplicate(true)
         m2.emission_enabled = true
@@ -64,7 +65,7 @@ func show_hover():
    
     
 func hide_hover():
-    if global.is_valid_drag(self):
+    if Validation.can_move(self.get_instance_id()):
         var m = $Mesh.mesh.surface_get_material(0)
         var m2 = m.duplicate(true)
         m2.emission_enabled = false
