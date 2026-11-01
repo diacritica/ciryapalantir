@@ -42,6 +42,8 @@ func _on_SandboxButton_pressed():
 
 func _enter_room(code):
     Match.sandbox = false
+    # The seat taken here before, to play it again when the game has started
+    Match.player = Server.seat_in(code)
     $CreateGame/Panel/Code/CodeLabel.text = code
     _leave_welcome()
     $CreateGame.visible = true
@@ -61,6 +63,8 @@ func _on_notification_received(message):
             if int(params.player) == Match.player:
                 Server.send_set_ready(true)
 
+        # A game already started opens at once: for a player coming back or
+        # for someone who comes to watch
         "StatusResponse":
             var players = message.status.get("players", {})
 
@@ -68,6 +72,9 @@ func _on_notification_received(message):
                 _show_player(WhiteButton, players["1"].name)
             if players.has("2"):
                 _show_player(BlackButton, players["2"].name)
+
+            if message.status.state != "NOT_STARTED":
+                get_tree().change_scene("res://Game.tscn")
 
         "StartGame":
             get_tree().change_scene("res://Game.tscn")

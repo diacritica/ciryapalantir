@@ -146,7 +146,7 @@ func test_game_over():
 func test_follow_a_started_game():
     var statuses = []
     var histories = []
-    game.connect("status_received", self, "_keep", [statuses])
+    game.connect("status_received", self, "_keep_status", [statuses])
     game.connect("history", self, "_keep", [histories])
     game.player = 2
 
@@ -159,7 +159,7 @@ func test_follow_a_started_game():
     check_equal("turn 4", 4, game.turn)
     check_equal("player 2 moves", game.Phase.MY_TURN, game.phase)
     check_equal("the moves so far", [["a5", "e5", "b2"]], histories)
-    check_equal("the board to follow", 1, statuses.size())
+    check_equal("the board to follow, catching up", [[status, true]], statuses)
     check_equal("kept for a scene opened later", status, game.status)
 
     game._on_notification({"type": "StatusResponse", "status": {"state": "WIN_1", "moves": []}})
@@ -167,3 +167,6 @@ func test_follow_a_started_game():
 
 func _keep(value, into):
     into.append(value)
+
+func _keep_status(status, catching_up, into):
+    into.append([status, catching_up])

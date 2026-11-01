@@ -22,8 +22,10 @@ signal turn_played(turn, notation)
 signal opponent_played(player, notation, opening)
 # The server refused the turn sent: the board goes back to how it was
 signal turn_refused(reason)
-# The whole game as the server has it, after every turn and on reconnection
-signal status_received(status)
+# The whole game as the server has it, after every turn and on connecting.
+# catching_up is true for the status sent on connecting, which can differ
+# from the board: turns may have been played meanwhile
+signal status_received(status, catching_up)
 # All the moves of the game, when joining one already started
 signal history(moves)
 # The move of this turn changed: its notation, "" when there is nothing to send
@@ -168,7 +170,7 @@ func _on_notification(message):
 
     if received.get("state", "NOT_STARTED") != "NOT_STARTED":
         status = received
-        emit_signal("status_received", status)
+        emit_signal("status_received", status, message.type == "StatusResponse")
 
 # Takes the turn and the phase of a status
 func _follow(game):

@@ -25,6 +25,8 @@ func _ready():
 
     Server.connect("connection_success", self, "_show_room")
     Server.connect("notification_received", self, "_on_notification")
+    Server.connect("connection_lost", self, "_on_connection_lost")
+    Server.connect("connection_success", self, "_show_help")
     Match.connect("phase_changed", self, "_on_phase_changed")
     Match.connect("turn_played", self, "_on_turn_played")
     Match.connect("history", self, "_on_history")
@@ -36,6 +38,10 @@ func _ready():
 
     _show_room()
     _on_phase_changed(Match.phase)
+
+    # Opened in a game already started: the status came while in the menu
+    if Match.status:
+        _on_history(Match.status.get("moves", []))
 
 func _show_room():
     $CodePanel/CodeText/Code.text = Server.get_code()
@@ -84,6 +90,12 @@ func _say(text):
 
     if mine == messages:
         _show_help()
+
+# It stays until the connection is back
+func _on_connection_lost():
+    messages += 1
+    $HelpPanel/AdviceLavel.text = "Reconectando…"
+    $HelpPanel.visible = true
 
 func _on_move_changed(notation):
     $TurnPanel/Confirm.disabled = notation == ""

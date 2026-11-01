@@ -143,6 +143,7 @@ func _out_of_step():
     state._on_notification({"type": "Turn", "params": {"player": 2.0, "turn": 11.0, "move": "d1", "nextPlayer": 1.0, "nextTurn": 12.0}, "status": status})
     check("d1 is empty, as the server says", stack("d1").empty())
     check("the cirya is on d2", stack("d2").size() == 1 and instance_from_id(stack("d2")[0]).player == 2)
+    check("counted as out of step", game.rebuilds == 1)
     check("and it is there on the table", _over(instance_from_id(stack("d2")[0]), "d2"))
 
 # A game scene opened in a game already started takes the board of the status
@@ -158,6 +159,7 @@ func _reopen():
     check("b4 has its two pieces", stack("b4").size() == 2)
     check("on the table", _over(instance_from_id(stack("b4")[1]), "b4"))
     check("the tampa of b4 lies under the hallacirya", !instance_from_id(stack("b4")[0]).block)
+    check("catching up is not out of step", game.rebuilds == 0)
 
 # The board of the client as a status of the server
 func _status_of_board():

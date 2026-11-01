@@ -43,6 +43,8 @@ var hover_tile = null
 var turn_start = {}
 # Where every piece sits in its fleet, to put it back there
 var home = {}
+# Times the board was out of step with the server and had to be rebuilt
+var rebuilds = 0
 
 func _ready():
     Settings.medium()
@@ -76,7 +78,7 @@ func _ready():
 
     # Opened in a game already started
     if Match.status:
-        _on_status_received(Match.status)
+        _on_status_received(Match.status, true)
 
 func _input(event):
     if event is InputEventMouseButton and event.button_index == BUTTON_LEFT:
@@ -286,8 +288,9 @@ func _on_opponent_played(player, notation, opening):
         _place(piece, step.square)
 
 # The server is the reference: when the board differs from its status, the
-# board is rebuilt from it and every piece goes to its place
-func _on_status_received(status):
+# board is rebuilt from it and every piece goes to its place. After a turn it
+# should never differ, so then it is a mistake worth a warning
+func _on_status_received(status, catching_up):
     var board_data = status.get("board", {})
 
     if !Status.matches(board_data, Match.board):
@@ -297,8 +300,8 @@ func _on_status_received(status):
             push_error("the board of the server needs more pieces than this client has")
             return
 
-        # An empty board is a game opened late, not a mistake
-        if !Match.board.equals(Match.BoardState.new(Match.board.size())):
+        if !catching_up:
+            rebuilds += 1
             push_warning("the board was out of step with the server and is rebuilt from it")
 
         Match.set_board(rebuilt.board)
