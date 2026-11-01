@@ -14,6 +14,7 @@ type GameStatus struct {
 	Board cirya.BoardData `json:"board,omitempty"`
 	Turn *int `json:"turn,omitempty"`
 	Player *int `json:"currentPlayer,omitempty"`
+	Fleets map[int]*cirya.Fleet `json:"fleets,omitempty"`
 }
 
 type game struct {
@@ -117,6 +118,7 @@ func (g *game) Status() GameStatus {
 		status.Board = g.board.Data
 		status.Turn = &g.turn
 		status.Player = &g.player
+		status.Fleets = g.board.Fleets
 	}
 	
 	return status
@@ -173,27 +175,42 @@ func (g *game) CurrentTurn() int {
 
 func (g *game) Turn(move string) (TurnResult, error) {
 	var result TurnResult
+	var err error
 
-	
-	if (move == "fin") {
-		result.State = WIN_1
-		result.EndGame = true
-		result.WinCondition = LONDI
-
-		g.state = result.State
-		g.turn = 0
-		g.player = 0
-		
-		return result, nil
+	// The first move of each player places a cirya of the opponent
+	if g.turn <= 2 {
+		err = g.board.ProcessOpening(g.player, move)
+	} else {
+		err = g.board.ProcessMove(g.player, move)
 	}
-
-	err := g.board.ProcessMove(g.player, move)
 
 	if err != nil {
 		return result, err
 	}
 
 	fmt.Println(g.board.String())
+
+	g.moves = append(g.moves, move)
+	end := g.board.Result(g.player)
+
+	if end.Over {
+		switch end.Winner {
+		case 1:
+			result.State = WIN_1
+		case 2:
+			result.State = WIN_2
+		default:
+			result.State = DRAW
+		}
+
+		result.EndGame = true
+		result.WinCondition = WinCondition(end.Condition)
+
+		g.state = result.State
+		g.player = 0
+
+		return result, nil
+	}
 
 	if g.state == TURN_1 {
 		result.State = TURN_2
@@ -210,7 +227,6 @@ func (g *game) Turn(move string) (TurnResult, error) {
 	g.state = result.State
 	g.turn = result.NextTurn
 	g.player = result.NextPlayer
-	g.moves = append(g.moves, move)
-	
+
 	return result, nil
 }

@@ -87,3 +87,19 @@ func (b *Board) ProcessMove(player int, move string) error {
 
 	return fmt.Errorf("No valid movement %s", move)
 }
+
+// First move of each player: a flat cirya of the opponent is placed instead
+// of an own piece, as in Tak
+func (b *Board) ProcessOpening(player int, move string) error {
+	groups := placeRe.FindStringSubmatch(move)
+
+	if groups == nil || groups[1] != "" {
+		return fmt.Errorf("The first move places a flat cirya of the opponent, %s is not valid", move)
+	}
+
+	return b.PlaceStone(Opponent(player), "C", groups[2])
+}
+
+func Opponent(player int) int {
+	return 3 - player
+}

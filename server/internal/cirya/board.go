@@ -11,6 +11,8 @@ type BoardData map[string]map[string][]string
 type Board struct{
 	Data BoardData
 	Size int
+	// Pieces each player has left to place. Without fleets there is no limit
+	Fleets map[int]*Fleet
 }
 
 type MoveDirection int
@@ -29,6 +31,10 @@ func MakeBoard(size int) *Board {
 	return &Board {
 		Data: make(BoardData),
 		Size: size,
+		Fleets: map[int]*Fleet {
+			1: NewFleet(size),
+			2: NewFleet(size),
+		},
 	}
 }
 
@@ -43,6 +49,10 @@ func (b *Board) PlaceStone(player int, stone string, position string) error {
 
 	if !checkRank(rank, b.Size) || !checkFile(file, b.Size) {
 		err := fmt.Errorf("Invalid position %s", position)
+		return err
+	}
+
+	if err := b.takeFromFleet(player, stone); err != nil {
 		return err
 	}
 

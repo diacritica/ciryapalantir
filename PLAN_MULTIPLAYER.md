@@ -74,17 +74,18 @@ Reestructurar `internal/app` siguiendo el patrón del ejemplo de chat de gorilla
   - Cada valor de `drops` ≥ 1 y `sum(drops) == count`.
   - Comprobar el error de `next()` **antes** de leer la casilla.
   - No modificar el tablero si algo falla (eso ya se hace: primero se valida y luego se aplica).
-- **Flota:** contar las piezas de cada jugador. Valores tomados del cliente ([Fleet.gd](client/Fleet.gd) `trays`):
+- **Flota:** contar las piezas de cada jugador. Valores oficiales:
   - 5×5: 21 Cirya y 1 Hallacirya.
-  - 6×6: 30 y 1.
-  - 7×7: 40 y 1.
+  - 6×6: 30 y 2.
+  - 7×7: 40 y 2.
   - Las Tampa salen del mismo montón que las Cirya.
   - Colocar una pieza cuando no quedan se rechaza con `InvalidTurn`.
 - **Londë:** pasar `utils/londe.py` a Go.
   - Un BFS sobre las casillas cuya pieza de arriba es `C` o `H` del jugador (la `T` no cuenta), con adyacencia ortogonal.
   - Hay Londë si se unen la fila 1 y la última, o la columna a y la última.
-  - Se comprueba después de cada movimiento. Si los dos jugadores completan una a la vez, gana quien mueve (pendiente de confirmar, ver preguntas).
-- **Fin por tablero lleno o flota agotada** (`FLAT`): gana quien controla más casillas con `C` arriba; si empatan, `DRAW` (pendiente de confirmar).
+  - Se comprueba después de cada movimiento. Si los dos jugadores completan una a la vez, gana quien mueve.
+- **Fin por tablero lleno o flota agotada** (`FLAT`): gana quien controla más casillas con `C` arriba (las `T`, las `H` y las casillas vacías no cuentan); si empatan, `DRAW`.
+- **Apertura como en Tak:** en los turnos 1 y 2 cada jugador coloca una Cirya plana del rival, sacada de la flota del rival.
 - Quitar el atajo `move == "fin"`. Si da tiempo, añadir `Resign`.
 - Al terminar: estado `WIN_1`, `WIN_2` o `DRAW`, mensaje `GameFinished` con el `status`, y no se aceptan más turnos.
 
@@ -113,6 +114,15 @@ Reestructurar `internal/app` siguiendo el patrón del ejemplo de chat de gorilla
 - `Global.sandbox` deja de estar fijado en el código: el menú lo pone a `true` solo con un botón "Sandbox" explícito y a `false` al entrar online.
 - Quitar `global.player = 1` de `Game.gd`. El jugador sale de `Server.context.player`, que se asigna al sentarse o desde el `Status` al reconectar.
 - La cámara inicial y las partículas dependen del jugador real (provisional hasta que exista el raíl del hackathon).
+
+### 2.1b Reglas nuevas en el cliente
+
+- **Apertura:** en los turnos 1 y 2 el jugador arrastra una Cirya de la flota **del rival** (hoy `is_valid_drag` solo deja coger las propias),
+  y `notation_movement` coloca la pieza del rival al reproducir esas jugadas (`unassigned_piece(opponent, "")`).
+  Solo se permite colocar en esos turnos: nada de Tampa, Hallacirya ni movimientos.
+- **Flota:** [Fleet.gd](client/Fleet.gd) monta 1 Hallacirya en 6×6 y 7×7, pero son 2. Para 5×5 está bien.
+- La flota que queda viene en `status.fleets` y sirve para comprobar que la bandeja del cliente coincide.
+- El campo del código de sala tiene que pasar el texto a mayúsculas.
 
 ### 2.2 El servidor manda (arregla C2)
 
@@ -173,11 +183,28 @@ Con el servidor lanzado con `go run -race ./cmd/cirya-server`:
 Cámara en raíl, revancha, chat, persistencia en base de datos (si se reinicia el servidor se pierden las partidas),
 emparejamiento, Godot 4.
 
-## Preguntas abiertas (de reglas: las decides tú)
+## Decisiones de reglas (respondidas por Pablo)
 
 1. ¿Las cantidades de flota de `Fleet.gd` (21/30/40 Cirya + 1 Hallacirya) son las oficiales de Cirya?
-2. Victoria por Londë simultánea (un movimiento completa la del rival y la propia): ¿gana quien mueve?
-3. Fin por flota o tablero lleno: ¿se cuentan solo las Cirya planas de arriba? ¿Qué pasa si hay empate?
-4. ¿Hay alguna regla para el primer turno (como en Tak, donde se coloca una pieza del rival)?
-5. ¿La Hallacirya cuenta para la Londë? (`londe.py` dice que sí.)
-6. ¿Cómo se despliega hoy play.cirya.me (máquina, proxy, TLS)? Hace falta para E10.
+
+Respuesta: No. Son 21 ciryar + 1 hallacirya, 30 ciryar y 2 hallaciryar y 40 ciryar y 2 hallaciryar
+
+3. Victoria por Londë simultánea (un movimiento completa la del rival y la propia): ¿gana quien mueve?
+
+Respuesta: sí, gana quien mueve.
+
+5. Fin por flota o tablero lleno: ¿se cuentan solo las Cirya planas de arriba? ¿Qué pasa si hay empate?
+
+Respuesta: sí, se cuentan solo los nossi (bloques) que coronan en cirya (no tampar ni hallaciryar ni sati vacíos). Si hay empate, la partida termina en empate.
+
+6. ¿Hay alguna regla para el primer turno (como en Tak, donde se coloca una pieza del rival)?
+
+Respuesta: sí, igual que Tak, se coloca primero una pieza del rival.
+
+7. ¿La Hallacirya cuenta para la Londë? (`londe.py` dice que sí.)
+
+Respuesta: por supuesto que sí.
+
+8. ¿Cómo se despliega hoy play.cirya.me (máquina, proxy, TLS)? Hace falta para E10.
+
+Respuesta: lo montaré en un servidor linux privado que tengo, de momento iremos a base de localhost.

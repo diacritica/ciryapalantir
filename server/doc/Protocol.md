@@ -197,7 +197,7 @@ The move does not follow the rules. The turn does not change and the player can 
         },
         "state": "TURN_1",
         "turn: 20,
-        "moves": [ "a6 f6", ... ],
+        "moves": [ "a5", "e5", "3a2>12", ... ],
         "board": {
             "1": {
                 "a": ["C1", "C2", "T1"]
@@ -306,13 +306,28 @@ TODO
 {
     "type": "GameFinished",
     "params": {
-        "result": "WIN_1"
+        "result": "WIN_1",
         "winCondition": "LONDI",
         "turn": 10
     },
     "status": { ... }
 }
 ```
+
+* `result`: `WIN_1`, `WIN_2` or `DRAW`.
+* `winCondition`:
+  * `LONDI`: a player joined two opposite sides of the board with orthogonally adjacent squares topped by
+    their ciryar or hallaciryar (tampar do not count). If a move completes both londi, the player who moved wins.
+  * `FLAT`: the board is full or a player has placed the whole fleet. Wins the player with more squares
+    topped by a flat cirya (tampar, hallaciryar and empty squares do not count). Same count: `DRAW`.
+
+## Rules checked by the server
+
+* **Opening:** in turns 1 and 2 each player places a flat cirya **of the opponent** (taken from the opponent's fleet).
+  Only a plain placement is allowed, like `a5`.
+* **Fleets:** 5x5: 21 ciryar + 1 hallacirya; 6x6: 30 + 2; 7x7: 40 + 2. Tampar come from the ciryar.
+  What is left is sent in `status.fleets`: `{ "1": { "ciryar": 15, "hallaciryar": 1 }, "2": { ... } }`.
+* **Moves:** at most as many stones as the board size, and the drops have to add up to the stones taken.
 
 ## Normal game flow
 

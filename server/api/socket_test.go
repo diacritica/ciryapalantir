@@ -406,7 +406,8 @@ func TestReconnectRestoresBoard(t *testing.T) {
 	status := msg["status"].(map[string]interface{})
 	board := status["board"].(map[string]interface{})
 
-	assert.Equal(t, []interface{}{"C1"}, board["1"].(map[string]interface{})["a"])
+	// The first move places a cirya of the opponent
+	assert.Equal(t, []interface{}{"C2"}, board["1"].(map[string]interface{})["a"])
 }
 
 // S5: two users logging in during the same second get different ids
@@ -535,4 +536,52 @@ func TestRoomCodeFormat(t *testing.T) {
 	require.NoError(t, json.NewDecoder(res.Body).Decode(&body))
 
 	assert.Regexp(t, `^[ABCDEFGHJKMNPQRSTUVWXYZ2-9]{6}$`, body["id"])
+}
+
+// A whole game until white completes a londë along rank 2
+func TestFullGameToLonde(t *testing.T) {
+	s := newServer(t)
+	room := roomCode(t)
+	white, black := startGame(t, s)
+	spectator := connect(t, s, room, "spectator")
+	spectator.expect("StatusResponse")
+
+	moves := []string{
+		"a5", "e5", // openings: a cirya of the opponent
+		"a2", "a4",
+		"b2", "b4",
+		"c2", "c4",
+		"d2", "d4",
+	}
+
+	clients := []*testClient{white, black}
+
+	for i, move := range moves {
+		player := i%2 + 1
+		submit(clients[i%2], player, i+1, move)
+
+		// Every client gets every turn in order, also its own ones
+		msg := spectator.expect("Turn")
+		assert.Equal(t, float64(i+2), msg["params"].(map[string]interface{})["nextTurn"])
+	}
+
+	submit(white, 1, 11, "e2")
+
+	var finished map[string]interface{}
+
+	for _, c := range []*testClient{white, black, spectator} {
+		finished = c.expect("GameFinished")
+		params := finished["params"].(map[string]interface{})
+
+		assert.Equal(t, "WIN_1", params["result"])
+		assert.Equal(t, "LONDI", params["winCondition"])
+	}
+
+	// White placed 5 ciryar and black one of white's in the opening; black 4 and white one
+	fleets := finished["status"].(map[string]interface{})["fleets"].(map[string]interface{})
+	assert.Equal(t, float64(21-6), fleets["1"].(map[string]interface{})["ciryar"])
+	assert.Equal(t, float64(21-5), fleets["2"].(map[string]interface{})["ciryar"])
+
+	submit(black, 2, 12, "e4")
+	expectError(t, black, "GAME_FINISHED")
 }
