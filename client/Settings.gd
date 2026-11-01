@@ -92,6 +92,12 @@ func apply_settings(node):
     environment.glow_enabled = bloom_quality != BloomQuality.DISABLED
     environment.glow_bicubic_upscale = bloom_quality == BloomQuality.HIGH
 
+    # In the browser, the near depth of field leaves the scene black in Chrome:
+    # it reads the image it draws on, and Chrome's WebGL refuses that. It only
+    # blurs what is very close to the camera
+    if OS.has_feature("JavaScript"):
+        environment.dof_blur_near_enabled = false
+
     if resolution != Resolution.NATIVE:
         var height = [540.0, 720.0, 1080.0][resolution]
         var size = OS.window_size
