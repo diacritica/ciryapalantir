@@ -16,6 +16,7 @@ import (
 	"log"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/gorilla/websocket"
 )
@@ -26,6 +27,7 @@ var (
 	seat   = flag.Int("seat", 2, "seat to take, 1 (white) or 2 (black)")
 	name   = flag.String("name", "Bot", "name shown to the other player")
 	moves  = flag.String("moves", "", "turns to play first, separated by commas")
+	delay  = flag.Duration("delay", 0, "time to think before every turn")
 )
 
 type message struct {
@@ -79,6 +81,7 @@ func main() {
 				if len(script) > 0 {
 					move, script = script[0], script[1:]
 				}
+				time.Sleep(*delay)
 				log.Printf("turn %v: %s", m.Params["nextTurn"], move)
 				send(conn, message{Type: "SubmitTurn", Params: map[string]any{"player": *seat, "turn": m.Params["nextTurn"], "move": move}})
 			}
