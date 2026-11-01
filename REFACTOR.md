@@ -56,7 +56,7 @@ Ficheros finales del servidor:
 
 ## Cliente
 
-**Hecho** (commits `86b5f66` a este). Las escenas se quedan donde estaban y solo se añade `core/`, para no reescribir rutas dentro de los `.tscn`.
+**Hecho** (commits `86b5f66` a `e12908a`). Las escenas se quedan donde estaban y solo se añade `core/`, para no reescribir rutas dentro de los `.tscn`.
 - `Match` (autoload) guarda el estado de la partida, con fases explícitas y señales.
 - `core/` contiene las reglas puras.
 - `Game.gd` lleva el ratón, el arrastre con estados `IDLE`/`DRAGGING`/`RETURNING`, la reproducción de jugadas del rival y deshacer.
