@@ -14,6 +14,10 @@ func userLeft(user ID) *Message {
 	return &Message{Type: UserLeft, Params: Params{"username": user}}
 }
 
+func configChanged(config GameConfig) *Message {
+	return &Message{Type: ConfigChanged, Params: Params{"config": config}}
+}
+
 func playerJoined(name string, player int, color string) *Message {
 	return &Message{Type: PlayerJoined, Params: Params{"name": name, "player": player, "color": color}}
 }

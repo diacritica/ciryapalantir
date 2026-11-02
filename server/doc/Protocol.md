@@ -15,7 +15,7 @@ When the request has no `cirya-user` cookie a new user is created and the respon
 
 ### PUT /rooms
 
-Creates a room with a new code. The configuration is not sent yet: every game is a 5x5 board.
+Creates a room with a new code. Every game is a 5x5 board; the clock and the rules are chosen in the room with **ChangeConfig**.
 
 **Response**
 
@@ -84,7 +84,27 @@ Players keep their seat: they can connect again with the same cookie and keep pl
 
 ### ChangeConfig
 
-Reserved: the server accepts it and does nothing yet.
+```json
+{
+    "type": "ChangeConfig",
+    "params": {
+        "clock": 300,
+        "hennethAnnun": true
+    }
+}
+```
+=> Will send a **ConfigChanged** to every user
+
+Either param can be left out, and then it does not change; at least one has to come (**Error** `BAD_MESSAGE`).
+* `clock`: seconds for each player, one of 0 (no clock), 180, 300 (the default), 600 or 900 (**Error** `BAD_MESSAGE`).
+* `hennethAnnun`: true or false. Each hallacirya only goes into play in one turn, the 16th of black and the 17th of white;
+  only on the 5x5 board (**Error** `BAD_MESSAGE`).
+
+The configuration is chosen before the game, so the second player always sees the game it is going to play: anyone can
+change it while nobody sits, then only the one player sitting, and nobody once both sit (**Error** `CONFIG_LOCKED`) or the
+game has started (**Error** `GAME_STARTED`). A refused change leaves all of it as it was.
+
+For now the server only keeps and sends them: the clock does not run yet and the Henneth Annûn rule is not checked yet.
 
 ### JoinGame
 
@@ -178,7 +198,7 @@ Only sent to the user whose request could not be done. Nothing changes in the ro
 ```
 
 Codes: `BAD_MESSAGE`, `SEAT_TAKEN`, `NOT_YOUR_SEAT`, `NOT_YOUR_TURN`, `STALE_TURN`,
-`GAME_NOT_STARTED`, `GAME_STARTED`, `GAME_FINISHED`.
+`GAME_NOT_STARTED`, `GAME_STARTED`, `GAME_FINISHED`, `CONFIG_LOCKED`.
 
 ### InvalidTurn
 
@@ -199,7 +219,7 @@ The move does not follow the rules. The turn does not change and the player can 
 {
     "type": "StatusResponse",
     "status": {
-        "config": { "ambient": "TAVERN", "pieces": "WOOD", "size": 5 },
+        "config": { "ambient": "TAVERN", "pieces": "WOOD", "size": 5, "clock": 300, "hennethAnnun": false },
         "players": {
             "1": { "name": "Name1", "color": "white", "ready": true },
             "2": { "name": "Name2", "color": "black", "ready": true }
@@ -227,6 +247,19 @@ The move does not follow the rules. The turn does not change and the player can 
 `players` only has the seats taken and is left out when there are none.
 `turn`, `currentPlayer`, `moves`, `board` and `fleets` only come once the game has started; empty squares are left out of `board`.
 When the game is over `currentPlayer` is 0.
+
+### ConfigChanged
+
+The whole configuration, after a **ChangeConfig**.
+
+```json
+{
+    "type": "ConfigChanged",
+    "params": {
+        "config": { "ambient": "TAVERN", "pieces": "WOOD", "size": 5, "clock": 600, "hennethAnnun": true }
+    }
+}
+```
 
 ### UserJoined
 
@@ -347,11 +380,13 @@ When the game is over `currentPlayer` is 0.
 
 1. A user creates a room (`PUT /rooms`) and shares its code. Everybody connects to the websocket of the room:
    each one gets a **StatusResponse** and the others a **UserJoined**.
-2. Two users take the seats with **JoinGame** (players 1 and 2) and everybody gets **PlayerJoined**.
-3. Both send **SetReady**. When the second one is ready everybody gets **StartGame**, and it is the turn of player 1.
-4. The player whose turn it is sends **SubmitTurn**. Everybody gets **Turn** with the move and who plays next.
+2. Before sitting, or while alone in a seat, a user can choose the clock and the rules with **ChangeConfig**, and
+   everybody gets **ConfigChanged**.
+3. Two users take the seats with **JoinGame** (players 1 and 2) and everybody gets **PlayerJoined**.
+4. Both send **SetReady**. When the second one is ready everybody gets **StartGame**, and it is the turn of player 1.
+5. The player whose turn it is sends **SubmitTurn**. Everybody gets **Turn** with the move and who plays next.
    A move against the rules gets **InvalidTurn** and the same player tries again.
-5. When a move ends the game everybody gets **GameFinished** instead of **Turn**.
+6. When a move ends the game everybody gets **GameFinished** instead of **Turn**.
 
 ## Board representation
 

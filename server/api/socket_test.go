@@ -560,6 +560,36 @@ func TestStatusShape(t *testing.T) {
 	assert.Equal(t, float64(5), status["config"].(map[string]any)["size"])
 }
 
+// The clock and the rule chosen before sitting reach everyone in the room,
+// and the one who comes later finds them in the status
+func TestConfigReachesTheRoom(t *testing.T) {
+	s := newServer(t)
+	room := newRoom(t, s)
+	white := connect(t, s, room, "white")
+	black := connect(t, s, room, "black")
+
+	assert.Equal(t, float64(300), white.status["config"].(map[string]any)["clock"])
+
+	white.send("ChangeConfig", map[string]any{"clock": 600, "hennethAnnun": true})
+	config := black.expect("ConfigChanged")["params"].(map[string]any)["config"].(map[string]any)
+	assert.Equal(t, float64(600), config["clock"])
+	assert.Equal(t, true, config["hennethAnnun"])
+	assert.Equal(t, float64(5), config["size"], "the whole configuration")
+
+	join(white, 1, "white")
+	black.expect("PlayerJoined")
+	black.send("ChangeConfig", map[string]any{"clock": 180})
+	expectError(t, black, "CONFIG_LOCKED")
+	black.send("ChangeConfig", map[string]any{"clock": "fast"})
+	expectError(t, black, "BAD_MESSAGE")
+	black.send("ChangeConfig", map[string]any{})
+	expectError(t, black, "BAD_MESSAGE")
+
+	late := connect(t, s, room, "late")
+	assert.Equal(t, float64(600), late.status["config"].(map[string]any)["clock"])
+	assert.Equal(t, true, late.status["config"].(map[string]any)["hennethAnnun"])
+}
+
 // A whole game until white completes a londë along rank 2
 func TestFullGameToLonde(t *testing.T) {
 	s := newServer(t)

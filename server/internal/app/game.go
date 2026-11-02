@@ -2,6 +2,7 @@ package app
 
 import (
 	"fmt"
+	"slices"
 
 	"cirya.me/server/internal/cirya"
 )
@@ -35,6 +36,7 @@ const (
 	CodeGameNotStarted ErrorCode = "GAME_NOT_STARTED"
 	CodeGameStarted    ErrorCode = "GAME_STARTED"
 	CodeGameFinished   ErrorCode = "GAME_FINISHED"
+	CodeConfigLocked   ErrorCode = "CONFIG_LOCKED"
 )
 
 type refusal struct {
@@ -62,7 +64,17 @@ type GameConfig struct {
 	Ambient string `json:"ambient"`
 	Pieces  string `json:"pieces"`
 	Size    int    `json:"size"`
+	// Seconds on the clock of each player, 0 for no clock
+	Clock int `json:"clock"`
+	// Each hallacirya only goes into play in one turn: the 16th of black and
+	// the 17th of white. Only on the 5×5 board
+	HennethAnnun bool `json:"hennethAnnun"`
 }
+
+// The times a game can be played with, in seconds; 0 is no clock
+var Clocks = []int{0, 180, 300, 600, 900}
+
+const DefaultClock = 300
 
 // Seat is one of the two places at the table
 type Seat struct {
@@ -89,7 +101,7 @@ type GameStatus struct {
 // NewGame makes a game waiting for its players. The board comes when it starts
 func NewGame() *Game {
 	return &Game{
-		config: GameConfig{Ambient: "TAVERN", Pieces: "WOOD", Size: 5},
+		config: GameConfig{Ambient: "TAVERN", Pieces: "WOOD", Size: 5, Clock: DefaultClock},
 		seats:  make(map[int]Seat),
 		state:  NotStarted,
 	}
@@ -136,6 +148,47 @@ func (g *Game) Status() GameStatus {
 	}
 
 	return status
+}
+
+// ChangeConfig sets the clock, the Henneth Annûn rule, or both, which are
+// nil when they do not change. It is chosen before the game: by anyone while
+// nobody sits, then only by the one player sitting, and by nobody once both
+// sit, so the second player always sees the game it is going to play
+func (g *Game) ChangeConfig(user ID, clock *int, hennethAnnun *bool) (GameConfig, error) {
+	if g.Started() {
+		return g.config, refusal{CodeGameStarted, "the game has already started"}
+	}
+
+	if len(g.seats) == 2 {
+		return g.config, refusal{CodeConfigLocked, "both players sit: the configuration cannot change"}
+	}
+
+	for _, seat := range g.seats {
+		if seat.UserID != user {
+			return g.config, refusal{CodeConfigLocked, "only the player sitting can change the configuration"}
+		}
+	}
+
+	config := g.config
+
+	if clock != nil {
+		if !slices.Contains(Clocks, *clock) {
+			return g.config, refusal{CodeBadMessage, fmt.Sprintf("clock has to be one of %v seconds", Clocks)}
+		}
+
+		config.Clock = *clock
+	}
+
+	if hennethAnnun != nil {
+		if *hennethAnnun && config.Size != 5 {
+			return g.config, refusal{CodeBadMessage, "the Henneth Annûn rule is only for the 5×5 board"}
+		}
+
+		config.HennethAnnun = *hennethAnnun
+	}
+
+	g.config = config
+	return config, nil
 }
 
 // Sit gives the seat to the user. Once the game has started only its owner

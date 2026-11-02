@@ -14,7 +14,7 @@ func (r *Room) dispatch(m *Message, c *Client) {
 	case GetStatus:
 		r.reply(c, statusResponse(r.game.Status()))
 	case ChangeConfig:
-		// Reserved: the configuration cannot be changed yet
+		r.onChangeConfig(m, c)
 	case JoinGame:
 		r.onJoinGame(m, c)
 	case LeaveGame:
@@ -35,6 +35,47 @@ func (r *Room) onConnect(c *Client) {
 
 func (r *Room) onDisconnect(c *Client) {
 	r.broadcast(userLeft(c.user))
+}
+
+func (r *Room) onChangeConfig(m *Message, c *Client) {
+	var clock *int
+	var hennethAnnun *bool
+
+	if _, present := m.Params["clock"]; present {
+		value, ok := m.intParam("clock")
+
+		if !ok {
+			r.reply(c, errorMessage(CodeBadMessage, "clock has to be a number of seconds"))
+			return
+		}
+
+		clock = &value
+	}
+
+	if _, present := m.Params["hennethAnnun"]; present {
+		value, ok := m.boolParam("hennethAnnun")
+
+		if !ok {
+			r.reply(c, errorMessage(CodeBadMessage, "hennethAnnun has to be true or false"))
+			return
+		}
+
+		hennethAnnun = &value
+	}
+
+	if clock == nil && hennethAnnun == nil {
+		r.reply(c, errorMessage(CodeBadMessage, "nothing to change: send clock or hennethAnnun"))
+		return
+	}
+
+	config, err := r.game.ChangeConfig(c.user, clock, hennethAnnun)
+
+	if err != nil {
+		r.refuse(c, err)
+		return
+	}
+
+	r.broadcast(configChanged(config))
 }
 
 func (r *Room) onJoinGame(m *Message, c *Client) {

@@ -34,6 +34,7 @@ const (
 	StatusResponse MessageType = "StatusResponse"
 	UserJoined     MessageType = "UserJoined"
 	UserLeft       MessageType = "UserLeft"
+	ConfigChanged  MessageType = "ConfigChanged"
 	PlayerJoined   MessageType = "PlayerJoined"
 	PlayerLeft     MessageType = "PlayerLeft"
 	ReadyChanged   MessageType = "ReadyChanged"

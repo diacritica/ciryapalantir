@@ -35,6 +35,71 @@ func assertRefused(t *testing.T, code ErrorCode, err error) {
 	}
 }
 
+func intRef(value int) *int    { return &value }
+func boolRef(value bool) *bool { return &value }
+
+func TestConfigDefaults(t *testing.T) {
+	config := NewGame().Status().Config
+
+	assert.Equal(t, 300, config.Clock, "five minutes each")
+	assert.False(t, config.HennethAnnun)
+}
+
+// Anyone while nobody sits, then only the one sitting, then nobody
+func TestWhoChangesTheConfig(t *testing.T) {
+	g := NewGame()
+
+	config, err := g.ChangeConfig("bob", intRef(600), nil)
+	require.NoError(t, err)
+	assert.Equal(t, 600, config.Clock)
+
+	_, err = g.Sit("alice", 1, "Alice", "white")
+	require.NoError(t, err)
+	_, err = g.ChangeConfig("bob", intRef(180), nil)
+	assertRefused(t, CodeConfigLocked, err)
+
+	config, err = g.ChangeConfig("alice", nil, boolRef(true))
+	require.NoError(t, err)
+	assert.Equal(t, 600, config.Clock, "what is not sent stays")
+	assert.True(t, config.HennethAnnun)
+
+	_, err = g.Sit("bob", 2, "Bob", "black")
+	require.NoError(t, err)
+	_, err = g.ChangeConfig("alice", intRef(0), nil)
+	assertRefused(t, CodeConfigLocked, err)
+
+	require.NoError(t, g.Stand("bob", 2))
+	_, err = g.ChangeConfig("alice", intRef(0), nil)
+	assert.NoError(t, err, "alone again")
+	assert.Equal(t, 0, g.Status().Config.Clock)
+}
+
+func TestConfigValues(t *testing.T) {
+	g := NewGame()
+
+	_, err := g.ChangeConfig("alice", intRef(301), nil)
+	assertRefused(t, CodeBadMessage, err)
+	assert.Equal(t, 300, g.Status().Config.Clock, "a refused change leaves it as it was")
+
+	for _, clock := range Clocks {
+		_, err = g.ChangeConfig("alice", intRef(clock), nil)
+		assert.NoError(t, err, "%d seconds", clock)
+	}
+
+	g.config.Size = 6
+	_, err = g.ChangeConfig("alice", intRef(300), boolRef(true))
+	assertRefused(t, CodeBadMessage, err)
+	assert.False(t, g.Status().Config.HennethAnnun, "Henneth Annûn is only for 5×5")
+	assert.Equal(t, 900, g.Status().Config.Clock, "and nothing else of the change is taken")
+}
+
+func TestNoConfigChangesOnceStarted(t *testing.T) {
+	g := startedGame(t)
+
+	_, err := g.ChangeConfig("alice", intRef(600), nil)
+	assertRefused(t, CodeGameStarted, err)
+}
+
 func TestSeats(t *testing.T) {
 	g := NewGame()
 
