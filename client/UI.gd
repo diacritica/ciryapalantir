@@ -149,10 +149,13 @@ func _on_game_over(result, condition):
     dialog.rect_size = dialog.get_combined_minimum_size()
     dialog.rect_position = (get_viewport_rect().size - dialog.rect_size) / 2
 
-# Escape asks too
+# Escape asks too, and a click on the table leaves the moves, so their
+# selection does not keep the keys
 func _unhandled_input(event):
     if event.is_action_pressed("ui_cancel"):
         _ask_to_leave()
+    elif event is InputEventMouseButton and event.pressed:
+        $Moves/MovesText.release_focus()
 
 func _ask_to_leave():
     if has_node("Leave"):
@@ -186,18 +189,24 @@ func _on_confirm_pressed():
 func _on_undo_pressed():
     emit_signal("turn_confirmation", false)
 
-# A new move shows at the bottom of the list, which the wheel can scroll back
+# A new move shows at the bottom of the list, which the wheel can scroll
+# back; the mouse selects the moves and Ctrl+A and Ctrl+C copy them
 func _on_turn_played(turn, notation):
-    $Moves/Scroll/MovesText.text += "\n%d. %s" % [turn, notation]
+    var moves = $Moves/MovesText
+
+    if moves.text != "":
+        moves.text += "\n"
+
+    moves.text += "%d. %s" % [turn, notation]
     call_deferred("_show_last_move")
 
 # Deferred, once the list has grown
 func _show_last_move():
     yield(get_tree(), "idle_frame")
-    $Moves/Scroll.scroll_vertical = int($Moves/Scroll.get_v_scrollbar().max_value)
+    $Moves/MovesText.scroll_vertical = $Moves/MovesText.get_line_count()
 
 func _on_history(moves):
-    $Moves/Scroll/MovesText.text = ""
+    $Moves/MovesText.text = ""
 
     for i in range(moves.size()):
         _on_turn_played(i + 1, moves[i])

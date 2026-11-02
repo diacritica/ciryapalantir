@@ -97,7 +97,7 @@ func _sandbox():
     check("turn 3 is d3<", state.move_notation() == "d3<")
     game._on_turn_confirmation(true)
     check("turn 4 for black", state.turn == 4 and state.player == 2)
-    check("the moves are written down", game.get_node("UI/Moves/Scroll/MovesText").text.find("3. d3<") != -1)
+    check("the moves are written down", game.get_node("UI/Moves/MovesText").text.find("3. d3<") != -1)
 
 # White online, against turns of black sent as the server sends them
 func _online():
@@ -132,7 +132,7 @@ func _online():
     state._next(10, 2)
     state._on_notification({"type": "GameFinished", "params": {"result": "WIN_2", "winCondition": "FLAT", "turn": 10.0}, "status": {"moves": ["e5"]}})
     check("the winning move is shown", stack("e5").size() == 1)
-    check("and written down", game.get_node("UI/Moves/Scroll/MovesText").text.find("10. e5") != -1)
+    check("and written down", game.get_node("UI/Moves/MovesText").text.find("10. e5") != -1)
     var dialog = game_over_dialog()
     check("the result is shown", dialog != null and dialog.visible and dialog.dialog_text.begins_with("Ganan las negras por recuento de ciryar\nHas perdido"))
     var screen = game.get_viewport().get_visible_rect()
@@ -159,7 +159,7 @@ func _out_of_step():
 # spectator is not told it won or lost
 func _long_game():
     var ui = game.get_node("UI")
-    var scroll = ui.get_node("Moves/Scroll")
+    var scroll = ui.get_node("Moves/MovesText")
     var moves = []
 
     for i in range(60):
@@ -168,28 +168,45 @@ func _long_game():
     ui._on_history(moves)
     yield(self, "idle_frame")
     yield(self, "idle_frame")
-    var bar = scroll.get_v_scrollbar()
-    check("the moves scroll", bar.max_value > scroll.rect_size.y)
-    check("down to the last one", scroll.scroll_vertical + bar.page >= bar.max_value - 1)
+    var bar = _scrollbar(scroll)
+    check("the moves scroll", bar.visible and bar.max_value > bar.page)
+    check("down to the last one", bar.value + bar.page >= bar.max_value - 1)
     check("inside the frame", scroll.get_global_rect().end.y <= ui.get_node("Moves").get_global_rect().end.y)
 
     # The wheel goes back up to the first moves, and it stays there
-    var bottom = scroll.scroll_vertical
+    var bottom = bar.value
     for i in range(5):
         _wheel(scroll, BUTTON_WHEEL_UP)
         yield(self, "idle_frame")
     yield(self, "idle_frame")
-    check("the wheel scrolls up", scroll.scroll_vertical < bottom)
-    var up = scroll.scroll_vertical
+    check("the wheel scrolls up", bar.value < bottom)
+    var up = bar.value
     yield(self, "idle_frame")
     yield(self, "idle_frame")
-    check("and the list stays there", scroll.scroll_vertical == up)
+    check("and the list stays there", bar.value == up)
 
     # Until a new move comes
     ui._on_turn_played(61, "b1")
     yield(self, "idle_frame")
     yield(self, "idle_frame")
-    check("a new move shows at the bottom", scroll.scroll_vertical + bar.page >= bar.max_value - 1)
+    check("a new move shows at the bottom", bar.value + bar.page >= bar.max_value - 1)
+    check("one move a line, with nothing before", scroll.text.begins_with("1. a1\n2. a1") and scroll.get_line_count() == 61)
+
+    # The moves can be selected and copied, to take the game somewhere else
+
+    _click(scroll)
+    check("a click gives the moves the keys", scroll.has_focus())
+    _key(KEY_A, true)
+    check("Ctrl+A selects them all", scroll.get_selection_text() == scroll.text)
+    OS.clipboard = ""
+    _key(KEY_C, true)
+    check("Ctrl+C copies them", OS.clipboard == scroll.text)
+    scroll.deselect()
+    _key(KEY_ESCAPE, false)
+    check("Escape still asks to leave", ui.has_node("Leave"))
+    if ui.has_node("Leave"):
+        ui.get_node("Leave").free()
+    check("they cannot be changed", scroll.readonly)
 
     var player = state.player
     state.player = 0
@@ -200,14 +217,41 @@ func _long_game():
     state.player = player
 
 # Turns the mouse wheel over the control
+func _scrollbar(text):
+    for child in text.get_children():
+        if child is VScrollBar:
+            return child
+
+func _click(control):
+    for pressed in [true, false]:
+        var event = InputEventMouseButton.new()
+        event.button_index = BUTTON_LEFT
+        event.pressed = pressed
+        event.button_mask = BUTTON_MASK_LEFT if pressed else 0
+        event.position = control.get_global_rect().get_center()
+        event.global_position = event.position
+        Input.parse_input_event(event)
+        Input.flush_buffered_events()
+
+func _key(scancode, control):
+    for pressed in [true, false]:
+        var event = InputEventKey.new()
+        event.scancode = scancode
+        event.control = control
+        event.pressed = pressed
+        Input.parse_input_event(event)
+        Input.flush_buffered_events()
+
 func _wheel(control, button):
     for pressed in [true, false]:
         var event = InputEventMouseButton.new()
         event.button_index = button
         event.pressed = pressed
+        event.button_mask = (1 << (button - 1)) if pressed else 0
         event.position = control.get_global_rect().get_center()
         event.global_position = event.position
-        get_root().input(event)
+        Input.parse_input_event(event)
+        Input.flush_buffered_events()
 
 # A game scene opened in a game already started takes the board of the status
 func _reopen():

@@ -37,7 +37,7 @@ func _watch():
     check("the menu opens the game", current_scene.name == "Game")
     check("as a spectator", state.player == 0)
     check("with the board of the server", state.status != null and Status.matches(state.status.board, state.board))
-    check("and the moves", current_scene.get_node("UI/Moves/Scroll/MovesText").text.count("\n") == state.status.moves.size())
+    check("and the moves", current_scene.get_node("UI/Moves/MovesText").get_line_count() == state.status.moves.size())
     print("e2e spectator: %d failures" % failures)
     quit(1 if failures else 0)
 
