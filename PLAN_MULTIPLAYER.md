@@ -321,15 +321,19 @@ espacios. Sirve en partida y en el sandbox, no en la demo ni para quien mira. Pr
 - Tests: smoke escribiendo una colocación, una tampa y una rotura de nossë, y textos malos; e2e reutiliza el guion del nossë
   escrito en vez de arrastrado.
 
-**Siguiente: coordenadas sobre el tablero mientras el campo está abierto.** Con el cajón de la jugada escrita desplegado
-aparecen sobreimpresas las letras a, b, c, d, e (en minúscula) a lo largo de la base sur del tablero, pegadas abajo, y
-los números 1, 2, 3, 4, 5 a lo largo del lado oeste, a la izquierda. Cada una va centrada en el primer cuarto de la
-anchura de su casilla, a medio camino entre el borde de la casilla y el vértice del punto cardinal de la tercera
-casilla. Del mismo tamaño que las minúsculas de "Modo Demo". No van rectas en pantalla: tienen que parecer colocadas
-justo por encima del tablero, tumbadas en su plano, con la deformación de la perspectiva de la cámara (en 3D, por
-ejemplo `Label3D` no existe en 3.5, así que un `MeshInstance` con `QuadMesh` y una textura de `Viewport`, o texto como
-malla). Las negras ven el tablero desde el otro lado: se hace la transposición que toque, pero siempre en la base sur y
-el lado izquierdo tal como los ve cada jugador. Se ocultan al plegar el cajón.
+**Coordenadas sobre el tablero: hecho.** Con el cajón de la jugada escrita abierto, el tablero muestra un overlay
+"técnico": las letras a…e a lo largo del borde cercano y los números 1…5 a lo largo del derecho, fuera de la cuadrícula,
+en la franja del marco, para que ninguna pila las tape por llena que esté la partida. Cada una va en un círculo con el
+azul del escudo de Cirya, aro y letra en blanco (WorkSans, con cifras alineadas), sin sombreado para que contraste, y en
+el centro del primer tercio de su casilla (desde la izquierda las letras, desde el borde cercano los números), lejos de los
+rombos con tengwar del centro de cada lado. Son una sola imagen dibujada en un `Viewport` y tendida justo sobre el tablero,
+así que se deforman con la perspectiva. Las negras las ven desde el otro lado (e…a en su borde cercano, 1…5 desde cerca por
+su derecha, la columna a), cada nombre junto a su columna o fila. Siguen la cuadrícula dibujada, que es un 2,5 % mayor que
+la de las casillas desde la esquina de a1. Se ocultan al cerrar el cajón y cuando no es tu turno. La esquina cercana derecha
+queda bajo la franja de la ayuda. Probado en `tests/smoke_written.gd`.
+
+Pendiente: las piezas y el resaltado también siguen la cuadrícula de las casillas y no la dibujada, así que quedan algo
+desplazados hacia a1, más cuanto más cerca de e5. Se arreglaría ajustando `TILE_STEP` al dibujo.
 
 ### 3.3 Regla Henneth Annûn (interruptor ≈ 2 h, la regla ≈ medio día)
 

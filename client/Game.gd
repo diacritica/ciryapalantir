@@ -59,6 +59,7 @@ func _ready():
 
     $UI.connect("turn_confirmation", self, "_on_turn_confirmation")
     $UI.connect("move_written", self, "_on_move_written")
+    $UI.connect("entry_shown", self, "_on_entry_shown")
     Match.connect("opponent_played", self, "_on_opponent_played")
     Match.connect("turn_refused", self, "_on_turn_refused")
     Match.connect("status_received", self, "_on_status_received")
@@ -324,6 +325,11 @@ func _follow_mouse():
 
     position.y = max(position.y, HAND_MIN_HEIGHT)
     hand.translation = position
+
+# The coordinates help to write the move, as the board is seen: the camera
+# of player 2 is the one left only for that player
+func _on_entry_shown(shown):
+    $Board.show_coordinates(shown, 2 if has_node("CameraPlayer2") else 1)
 
 func _on_move_written(text):
     $UI.move_written_result(play_written(text))

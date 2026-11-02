@@ -47,6 +47,7 @@ func _the_field():
     var entry = ui.get_node("MoveEntry")
     var field = entry.get_node("Field")
     check("the field shows on my turn", entry.visible)
+    check("no coordinates on the board while it is closed", !coordinates_shown())
     check("closed: only the handle", entry.rect_size.y < field.rect_position.y)
     check("under the turn buttons", entry.get_global_rect().position.y >= ui.get_node("TurnPanel").get_global_rect().end.y)
     check("at the bottom edge", is_equal_approx(entry.get_global_rect().end.y, ui.get_viewport_rect().size.y))
@@ -56,11 +57,14 @@ func _the_field():
     check("open, the field shows whole", entry.rect_size.y >= field.rect_position.y + field.rect_size.y)
     check("and it has the keys", text().has_focus())
     check("the handle closes it now", entry.get_node("Handle/Label").text == "Cerrar")
+    check("the board shows its coordinates", coordinates_shown())
+    _coordinates_of_each_side()
 
     # Escape closes it instead of asking to leave
     _key(KEY_ESCAPE)
     yield(create_timer(ui.ENTRY_TIME + 0.1), "timeout")
     check("Escape closes the field", !ui.entry_open and !text().has_focus())
+    check("and hides the coordinates", !coordinates_shown())
     check("and does not ask to leave", !ui.has_node("Leave"))
     entry.get_node("Handle").emit_signal("pressed")
     yield(create_timer(ui.ENTRY_TIME + 0.1), "timeout")
@@ -149,9 +153,37 @@ func _not_my_turn():
     state.player = 2
     state._next(7, 1)
     check("no field when it is not my turn", !ui.get_node("MoveEntry").visible and !text().has_focus())
+    check("nor coordinates", !coordinates_shown())
     state.player = 0
     state._next(7, 1)
     check("nor for a spectator", !ui.get_node("MoveEntry").visible)
+
+# Out of the grid, the files go along the near edge and the ranks along the
+# right one, each name by its own file or rank: player 1 has a near and 1 on
+# its right, and player 2 has them the other way round
+func _coordinates_of_each_side():
+    for player in [1, 2]:
+        var board = load("res://Board.tscn").instance()
+        get_root().add_child(board)
+        board.show_coordinates(true, player)
+        var names = {}
+        var viewport = board.get_node("Coordinates").get_child(0)
+
+        for badge in viewport.get_children():
+            names[badge.name] = badge.rect_position + badge.rect_size / 2
+
+        var size = viewport.size
+        var near = names.a.x < size.x / 4 if player == 1 else names.a.x > size.x * 3 / 4
+        var right = names["1"].y > size.y * 3 / 4 if player == 1 else names["1"].y < size.y / 4
+        check("player %d: the files along its near edge" % player, near and is_equal_approx(names.a.x, names.e.x))
+        check("player %d: each file by its own column" % player, names.a.y < names.e.y)
+        check("player %d: the ranks along its right edge" % player, right and is_equal_approx(names["1"].y, names["5"].y))
+        check("player %d: each rank by its own row" % player, names["1"].x < names["5"].x)
+        board.queue_free()
+
+func coordinates_shown():
+    var board = game.get_node("Board")
+    return board.has_node("Coordinates") and board.get_node("Coordinates").visible
 
 func write(typed):
     text().text = typed

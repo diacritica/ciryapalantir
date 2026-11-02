@@ -6,6 +6,8 @@ extends Control
 signal turn_confirmation(confirmed)
 # A turn typed in the field, for the game to make it on the board
 signal move_written(text)
+# The field opened or closed: the board shows its coordinates while it is open
+signal entry_shown(shown)
 
 # Seconds a passing message stays before the help comes back
 const MESSAGE_TIME = 4.0
@@ -330,6 +332,7 @@ func _back_to_menu():
 # field confirms it, so a whole turn can be played with the keyboard
 func _show_entry(shown):
     $MoveEntry.visible = shown
+    emit_signal("entry_shown", shown and entry_open)
 
     if shown and entry_open:
         $MoveEntry/Field/Text.grab_focus()
@@ -339,6 +342,7 @@ func _show_entry(shown):
 func _toggle_entry():
     entry_open = !entry_open
     _shape_entry(true)
+    emit_signal("entry_shown", entry_open)
 
     if entry_open:
         $MoveEntry/Field/Text.grab_focus()
