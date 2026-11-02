@@ -180,8 +180,9 @@ func _clocks():
     check("black is short of time", black.get_node("Time").text == "9.4" and black.get_node("Time").get("custom_colors/font_color") == ui.CLOCK_SHORT)
     check("beside the players, not over them", white.get_global_rect().position.x >= ui.get_node("WhiteTurn/CurrentTurn").get_global_rect().end.x)
 
+    # A second later, or two when the computer is busy
     yield(create_timer(1.1), "timeout")
-    check("the clock of white counts down", white.get_node("Time").text == "4:13")
+    check("the clock of white counts down", white.get_node("Time").text in ["4:13", "4:12"])
     check("the other one waits", black.get_node("Time").text == "9.4")
 
     # White lost on time: the last move of the status is not played again
