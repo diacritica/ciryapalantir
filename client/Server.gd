@@ -186,5 +186,9 @@ func send_join_player(player, color, name):
     config.save(_config_path())
     ws_send_message({"type": "JoinGame", "params": {"player": player, "color": color, "name": name}})
 
+# Only what changes: {"clock": seconds} or {"hennethAnnun": true}
+func send_change_config(changes):
+    ws_send_message({"type": "ChangeConfig", "params": changes})
+
 func send_set_ready(is_ready):
     ws_send_message({"type": "SetReady", "params": {"player": context.player, "ready": is_ready}})

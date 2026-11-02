@@ -248,6 +248,13 @@ reloj → jugada escrita → Henneth Annûn → Esquemático.
 
 ### 3.0 Configuración de sala (base del reloj y de Henneth Annûn, ≈ medio día)
 
+**Hecho.** `ChangeConfig` cambia `clock` (0, 180, 300, 600 o 900 s; 300 por defecto) y `hennethAnnun` (solo en 5×5), y todos
+reciben `ConfigChanged`. La elige cualquiera mientras nadie se sienta, luego solo el que está sentado, y nadie cuando se
+sientan los dos (`CONFIG_LOCKED`). En crear juego, bajo las tarjetas (el panel crece hacia abajo), "Tiempo por jugador ‹ 5 min ›"
+y el interruptor "Regla Henneth Annûn" con su tooltip; se apagan cuando ya no se pueden cambiar. Probado en Go y en
+`tests/e2e_config.gd`. Todavía no se aplican: el reloj no corre (3.1) y la regla no se comprueba (3.3).
+Lo que sigue es el plan tal como se escribió; el "quitar el listo" no hizo falta, porque solo puede cambiarla el que está sentado.
+
 - `GameConfig` gana `clock` (segundos por jugador, 0 = sin reloj, por defecto 300) y `hennethAnnun` (bool, por defecto false).
   Viaja ya en `status.config`, así que el cliente que entra lo ve sin mensajes nuevos.
 - `ChangeConfig` se implementa: solo antes de empezar, valida los valores (lista cerrada de tiempos) y difunde

@@ -2,7 +2,7 @@
 # Whole online games on this computer: the Go server, the bot playing black,
 # a headless client playing white through the game scene and a spectator
 # coming in through the menu. A second, scripted game breaks a nossë and ends
-# by Londë. Set GODOT to the Godot 3.5 binary.
+# by Londë, and a third one is configured in the menu first. Set GODOT to the Godot 3.5 binary.
 
 cd "$(dirname "$0")/../.." || exit 1
 GODOT=${GODOT:-godot}
@@ -36,6 +36,12 @@ ROOM=$(new_room)
 MOVES=$(sed -n 's/^const BLACK = "\(.*\)"$/\1/p' client/tests/e2e_nosse.gd)
 "$BIN/bot" -server "127.0.0.1:$PORT" -room "$ROOM" -moves "$MOVES" > "$BIN/bot-nosse.log" 2>&1 &
 output=$("$GODOT" --no-window --path client -s tests/e2e_nosse.gd -- --server="127.0.0.1:$PORT" --profile=e2e_nosse --room="$ROOM" 2>&1) || status=1
+echo "$output" | grep -E "FAIL|SCRIPT ERROR|e2e"
+echo "$output" | grep -q "SCRIPT ERROR" && status=1
+
+# The clock and the rule chosen in the menu, locked once the bot sits
+ROOM=$(new_room)
+output=$("$GODOT" --no-window --path client -s tests/e2e_config.gd -- --server="127.0.0.1:$PORT" --profile=e2e_config --room="$ROOM" --bot="$BIN/bot" 2>&1) || status=1
 echo "$output" | grep -E "FAIL|SCRIPT ERROR|e2e"
 echo "$output" | grep -q "SCRIPT ERROR" && status=1
 
