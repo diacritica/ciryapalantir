@@ -451,6 +451,90 @@ y `status.rematch`), con el temporizador de la sala para lo primero que venza, e
 revancha con `-rematch`. Probado en `rematch_test.go` y en `tests/e2e_rematch.gd`, contra el servidor real, aceptándola
 (nueva partida como negras) y rechazándola (la partida terminada se queda).
 
+### 3.7 Bot local (plan)
+
+Jugar contra un bot en vez de esperar a otro jugador. El bot vive en el cliente: el servidor no cambia y no sabe que el
+rival es un bot. La partida es una partida online normal, con su sala, su reloj, sus reglas y su revancha.
+
+**Interfaz (crear juego).**
+- Tras elegir su color y poner su nombre, la tarjeta del otro color pasa a ser un interruptor: un clic la marca como
+  **Bot local** (una etiqueta bajo la pastilla, en el estilo de la interfaz, por ejemplo "◆ Bot local ◆"), otro clic la deja
+  como estaba, esperando a un jugador (que podría ser también un bot externo, pero eso es otra dinámica).
+- Con el Bot local marcado aparece encima de las opciones de partida un botón **Comenzar**: hasta ahora la partida empieza
+  sola cuando el segundo jugador se sienta y está listo, y aquí no hay segundo jugador que llegue. Al pulsarlo, el bot se
+  sienta y la partida empieza. Hasta entonces se pueden cambiar el reloj, Henneth Annûn y T4K, como ahora.
+- Si entra otro jugador en la sala y se sienta antes de pulsar Comenzar, el interruptor se quita (el asiento ya no está libre).
+- En la partida, el panel del rival dice el nombre del bot (por ejemplo "Bot de Morqua" o un nombre élfico fijo).
+
+**Conexión: un segundo cliente sin cabeza dentro del mismo proceso.**
+- Un nodo nuevo, `BotPlayer` (creado por el menú al pulsar Comenzar, que sobrevive al cambio de escena como hijo de `Server`
+  o como autoload propio), abre **su propio `WebSocketClient`** a la misma sala, con el **mismo usuario** que el jugador: el
+  servidor ya deja que un usuario tenga varias conexiones y que ocupe los dos asientos (`Game.Sit` solo rechaza el asiento de
+  otro usuario). Así funciona igual en la web, donde el navegador manda la misma cookie a las dos conexiones y no se podría
+  dar al bot un usuario propio sin tocar el servidor.
+- Hace `JoinGame` con el otro asiento y `SetReady`; luego escucha `StartGame`/`Turn`/`StatusResponse` y, cuando le toca,
+  calcula su jugada y manda `SubmitTurn` con su `player`. No toca `Match`, `Server.context` ni los asientos guardados del
+  jugador (`seat_in`): lleva su propio estado, sacado del `status` de cada mensaje (tablero en el formato del servidor).
+- Revancha: acepta siempre ("Adelante") y cambia de asiento como el jugador. Si el jugador vuelve al menú o deja la sala,
+  el bot cierra su conexión. Si la conexión cae, se reconecta como la del jugador.
+- El cliente del jugador no cambia: ve las jugadas del bot como las de cualquier rival.
+
+**Motor del bot: GDScript puro en `core/`, sin escena, probado con tests unitarios.**
+- `core/BotBoard.gd`: un tablero ligero en el formato del servidor (pilas de cadenas "C1", "T2", "H1" por sat, y las
+  bandejas), con la misma lógica que `internal/cirya`: generar todas las jugadas legales (colocaciones de cirya, tampa y
+  hallacirya; roturas de nossë con todas sus sueltas, carga hasta el tamaño del tablero), aplicar una jugada y deshacerla, y
+  ver si la partida acaba (Londë de quien mueve primero, tablero lleno o bandeja vacía con recuento de ciryar). Con las reglas
+  de Cirya: la apertura pone una cirya del rival; nada sobre la hallacirya; sobre la tampa solo la hallacirya sola, que la
+  aplana; **altura máxima del nossë: el tamaño del tablero y la hallacirya encima** (salvo con T4K); Henneth Annûn (la
+  hallacirya solo en la jugada 32 de las negras y la 33 de las blancas). Se contrasta con el servidor: las mismas posiciones,
+  las mismas jugadas legales.
+- `core/Bot.gd`: elige la jugada. Lo que hacen los bots de Tak, en pequeño:
+  - **Búsqueda minimax con poda alfa-beta** (como Taktician; los fuertes, como Tiltak, usan MCTS con redes, que queda lejos),
+    a 2 capas para empezar (su jugada y la respuesta del rival), con profundidad iterativa mientras quede tiempo, ordenando
+    primero las jugadas que ganan, las que bloquean y las colocaciones cerca de su camino.
+  - Atajos antes de buscar: si tiene una jugada que hace Londë, la juega; si el rival amenaza Londë en la siguiente, la
+    bloquea (con una tampa si puede, o cubriendo/rompiendo el camino).
+  - **Evaluación** de una posición, de lo más importante a lo menos: lo que le falta a cada uno para completar un Londë (la
+    distancia más corta entre lados opuestos con un BFS 0-1: sus sats coronados por cirya o hallacirya cuestan 0, los vacíos 1,
+    los del rival y las tampas no se pueden cruzar), el recuento de ciryar planas arriba (para el final por recuento), las
+    pilas que controla y sus piezas atrapadas, el centro, y que los nossi llenos de 5 son muros: un nossë propio lleno al
+    lado del camino del rival le corta el paso como una tampa, y uno del rival en su camino obliga a rodearlo.
+  - Apertura: la cirya del rival en una esquina, como en Tak.
+  - Henneth Annûn: en su turno juega la hallacirya donde más le sirva, salvo que eso pierda la partida.
+- Un solo nivel al principio ("aprendiz"); más adelante, niveles por profundidad y tiempo de búsqueda.
+
+**Rendimiento.** GDScript es lento y la exportación web de Godot 3.5 no tiene hilos, así que la búsqueda no puede bloquear el
+juego: se reparte entre fotogramas (una corrutina que hace N nodos por fotograma) con un tope de tiempo, por ejemplo 1–2 s,
+menos si el reloj aprieta, y se juega lo mejor encontrado. Una espera mínima de medio segundo para que no parezca
+instantáneo. En 5×5 con 2 capas y buen orden de jugadas debería bastar; se mide en la web antes de subir la profundidad.
+
+**Pruebas.**
+- Unitarias: número de jugadas legales en posiciones conocidas (como el *perft* del ajedrez), las sueltas de un nossë, la
+  altura máxima, el aplanado de la tampa, Henneth Annûn, detección de Londë y de recuento; la evaluación prefiere el camino
+  más corto; el bot gana en una jugada cuando puede y bloquea un Londë del rival a una jugada.
+- Que todas sus jugadas las acepte el servidor: un test que hace jugar al bot contra sí mismo partidas enteras con el Go del
+  servidor como árbitro (o contra el `cirya-bot`), sin un solo `InvalidTurn`, también con T4K y con Henneth Annûn.
+- Humo: el menú con el interruptor y Comenzar. E2E: una partida contra el bot local de principio a fin contra el servidor
+  real, con revancha.
+
+**Orden propuesto y estimación.**
+1. `BotBoard` con generación de jugadas y tests contra los casos del servidor (≈ un día).
+   ✅ Hecho: `core/BotBoard.gd` lista todas las jugadas legales en notación (colocaciones, aperturas y roturas del nossë
+   con todas sus sueltas), las juega y las deshace, y dice cuándo y cómo acaba la partida; con la altura máxima, T4K y
+   Henneth Annûn. Probado en `tests/test_botboard.gd` (con 20 partidas aleatorias que vigilan que no se pierde ni se crea
+   ninguna pieza y que ningún sat pasa del límite) y contrastado con el servidor: `tests/dump_bot_games.gd` escribe 40
+   partidas aleatorias (la mitad con T4K) en `server/internal/cirya/testdata/bot_games.json`, y `TestTheGamesOfTheBot` las
+   rejuega con las reglas del servidor, que acepta todas las jugadas y llega al mismo tablero y al mismo resultado.
+2. `Bot` con los atajos y la evaluación a 1 capa, y luego alfa-beta a 2 (≈ un día).
+3. `BotPlayer` (la segunda conexión sin cabeza) y el autojuego contra el servidor (≈ medio día).
+4. La interfaz del menú: el interruptor, la etiqueta y Comenzar; el nombre del bot en la partida (≈ medio día).
+5. Medir en la web, ajustar el tiempo de búsqueda y los pesos de la evaluación jugando contra él (≈ medio día).
+
+**Por decidir.**
+- El nombre que muestra el bot y si tiene niveles desde el principio.
+- Si el bot acepta siempre la revancha o lo decide el jugador al empezar.
+- Si el Bot local también se ofrece en el sandbox (sin servidor), que con este diseño necesitaría otro camino.
+
 ## Fuera de alcance (para el hackathon o más adelante)
 
 Cámara en raíl, revancha, chat, persistencia en base de datos (si se reinicia el servidor se pierden las partidas),
