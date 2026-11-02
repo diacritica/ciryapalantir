@@ -321,6 +321,16 @@ espacios. Sirve en partida y en el sandbox, no en la demo ni para quien mira. Pr
 - Tests: smoke escribiendo una colocación, una tampa y una rotura de nossë, y textos malos; e2e reutiliza el guion del nossë
   escrito en vez de arrastrado.
 
+**Siguiente: coordenadas sobre el tablero mientras el campo está abierto.** Con el cajón de la jugada escrita desplegado
+aparecen sobreimpresas las letras a, b, c, d, e (en minúscula) a lo largo de la base sur del tablero, pegadas abajo, y
+los números 1, 2, 3, 4, 5 a lo largo del lado oeste, a la izquierda. Cada una va centrada en el primer cuarto de la
+anchura de su casilla, a medio camino entre el borde de la casilla y el vértice del punto cardinal de la tercera
+casilla. Del mismo tamaño que las minúsculas de "Modo Demo". No van rectas en pantalla: tienen que parecer colocadas
+justo por encima del tablero, tumbadas en su plano, con la deformación de la perspectiva de la cámara (en 3D, por
+ejemplo `Label3D` no existe en 3.5, así que un `MeshInstance` con `QuadMesh` y una textura de `Viewport`, o texto como
+malla). Las negras ven el tablero desde el otro lado: se hace la transposición que toque, pero siempre en la base sur y
+el lado izquierdo tal como los ve cada jugador. Se ocultan al plegar el cajón.
+
 ### 3.3 Regla Henneth Annûn (interruptor ≈ 2 h, la regla ≈ medio día)
 
 **Hecho.** El servidor rechaza con un InvalidTurn la hallacirya puesta fuera de las jugadas 32 (negras) y 33 (blancas)
