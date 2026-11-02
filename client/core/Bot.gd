@@ -12,6 +12,12 @@ extends Reference
 # a wall in the way of the opponent. With Henneth Annûn a hallacirya not
 # placed in its turn is lost.
 #
+# And it plays as the courtly Cirya, Aracirya, asks: bringing out the
+# hallacirya first is a sign of weakness, so it holds it back while the
+# opponent holds its own, and only brings it out first to win or not to lose.
+# Once the opponent has brought out its hallacirya, it is free to bring out
+# its own. With Henneth Annûn the rule says when each one comes out
+#
 # choose() returns the turn. With yield_every set and a tree to wait on, it
 # waits a frame every so many positions, so the game does not freeze while it
 # thinks, and then it returns a GDScriptFunctionState to wait for
@@ -29,6 +35,9 @@ const PRISONER = 4
 const CENTRE = 2
 const HALLACIRYA_ON_BOARD = 30
 const HALLACIRYA_LOST = 150
+# Bringing out the hallacirya first: more than any better position is worth,
+# far less than a lost game
+const HALLACIRYA_FIRST = 500
 
 # Turns ahead at most, and the time for them
 var depth = 2
@@ -249,6 +258,12 @@ func evaluate(board, player):
         if stack.back()[0] == "H":
             value += side * HALLACIRYA_ON_BOARD
 
+    # The courtly way: whoever brought out the hallacirya first pays for it
+    if brought_out_first(board, player):
+        value -= HALLACIRYA_FIRST
+    elif brought_out_first(board, other):
+        value += HALLACIRYA_FIRST
+
     # With Henneth Annûn, a hallacirya still in the fleet after its turn is lost
     if board.henneth_annun:
         for each in [player, other]:
@@ -258,6 +273,15 @@ func evaluate(board, player):
                 value -= HALLACIRYA_LOST if each == player else -HALLACIRYA_LOST
 
     return value
+
+# The player has brought out a hallacirya while the opponent keeps all its
+# own. With Henneth Annûn the rule says when each one comes out
+func brought_out_first(board, player):
+    if board.henneth_annun:
+        return false
+
+    var full = BotBoard.FLEETS.get(board.size, [0, 2])[1]
+    return board.fleets[player].hallaciryar < full and board.fleets[3 - player].hallaciryar == full
 
 # The empty squares where a cirya of the player would close a Londë
 func threats(board, player):

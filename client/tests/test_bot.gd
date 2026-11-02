@@ -77,6 +77,58 @@ func test_hallacirya_in_its_turn():
     var move = bot.choose(board)
     check_equal("%s is the hallacirya" % move, "H", move[0])
 
+# The courtly way: the hallacirya stays in the fleet while the opponent keeps
+# its own, as in the game where it came out in the second turn of black
+func test_does_not_bring_out_the_hallacirya_first():
+    board = BotBoard.new(5)
+
+    for move in ["a5", "e5", "e4"]:
+        board.play(move)
+
+    var move = bot.choose(board)
+    check("%s is not the hallacirya" % move, move[0] != "H")
+
+    # Whoever brings it out first pays for it; once both are out, nobody does
+    board.play("He3")
+    check_equal("black brought it out first", true, bot.brought_out_first(board, 2))
+    check_equal("not white", false, bot.brought_out_first(board, 1))
+    board.play("Hc3")
+    check_equal("both out, nobody pays", false, bot.brought_out_first(board, 2) or bot.brought_out_first(board, 1))
+    board.henneth_annun = true
+    board.undo()
+    check_equal("with Henneth Annûn the rule decides", false, bot.brought_out_first(board, 2))
+
+# Once white has brought out its hallacirya, black is free to bring out its
+# own: the evaluation no longer holds it back
+func test_free_once_the_opponent_brought_it_out():
+    board = BotBoard.new(5)
+
+    for move in ["a5", "e5", "He4"]:
+        board.play(move)
+
+    board.play("Hc3")
+    check_equal("black does not pay for it", false, bot.brought_out_first(board, 2))
+    check_equal("white still would, had black not answered", true, _first_without_answer())
+
+func _first_without_answer():
+    var other = BotBoard.new(5)
+
+    for move in ["a5", "e5", "He4"]:
+        other.play(move)
+
+    return bot.brought_out_first(other, 1)
+
+# But it brings it out first when that wins
+func test_brings_it_out_first_to_win():
+    position({"a3": ["C1"], "b3": ["C1"], "c3": ["C1"], "d3": ["C1"], "a1": ["C2"], "b1": ["C2"]})
+    board.fleets[1].ciryar = 0
+    board.fleets[2].ciryar = 0
+    # Only the hallacirya is left: on e3 it closes the Londë, and anywhere it
+    # empties the fleet of white, which wins the count
+    var move = bot.choose(board)
+    board.play(move)
+    check("%s brings out the hallacirya and wins" % move, move[0] == "H" and board.result(1).over and board.result(1).winner == 1)
+
 # Against random turns it wins, and every turn it plays is legal
 func test_beats_random_turns():
     seed(3)

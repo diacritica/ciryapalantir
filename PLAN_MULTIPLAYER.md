@@ -552,6 +552,11 @@ instantáneo. En 5×5 con 2 capas y buen orden de jugadas debería bastar; se mi
    se sienta como "Bot local" y la partida empieza como siempre. Si se sienta otra persona antes, el interruptor se va.
    Al volver al menú, el bot se para. Probado en `tests/e2e_local_bot.gd`, por el menú real y contra el servidor real.
    Para el paso 5: el bot pone su hallacirya muy pronto (jugada 4 en la prueba); los bots de Tak guardan la suya.
+   ✅ Corregido tras la primera partida de Pablo contra él (ganó el bot por Londë, pero sacó la hallacirya en su segunda
+   jugada): juega como pide la Cirya cortesana, Aracirya, donde sacar la hallacirya el primero es signo de debilidad. Ser
+   el primero en sacarla le cuesta 500 en la evaluación (más que cualquier mejora de posición, mucho menos que perder),
+   así que solo la saca el primero para ganar o para no perder; en cuanto el rival saca la suya, queda libre. Con Henneth
+   Annûn no se aplica: la regla dice cuándo sale cada una. (`Bot.brought_out_first`, probado en `tests/test_bot.gd`.)
 5. Medir en la web, ajustar el tiempo de búsqueda y los pesos de la evaluación jugando contra él (≈ medio día).
 
 **Por decidir.**
