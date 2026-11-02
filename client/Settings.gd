@@ -2,10 +2,17 @@ extends Node
 
 # Graphics quality: the presets high, medium and low, applied to the game scene.
 # The screen refresh paces the frames (vsync), and a window without the focus
-# draws fewer, so several clients on one computer do not fight for the GPU
+# draws fewer, so several clients on one computer do not fight for the GPU.
+#
+# The view of the game: the story, the tavern as it is, or the schematic one,
+# the same game in high contrast. The game always opens in the story, and
+# the schematic view lasts while the player stays in the game
 
 # Frames per second of a window without the focus, still smooth to watch
 const BACKGROUND_FPS = 30
+
+const STORY = "story"
+const SCHEMATIC = "schematic"
 
 enum GIQuality {
     DISABLED = 0,
@@ -44,6 +51,10 @@ var aa_quality = AAQuality.AA_2X
 var ssao_quality = SSAOQuality.DISABLED
 var bloom_quality = BloomQuality.HIGH
 var resolution = Resolution.NATIVE
+var view = STORY
+
+func schematic():
+    return view == SCHEMATIC
 
 func _notification(what):
     match what:

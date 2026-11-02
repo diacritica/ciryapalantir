@@ -8,6 +8,8 @@ signal turn_confirmation(confirmed)
 signal move_written(text)
 # The field opened or closed: the board shows its coordinates while it is open
 signal entry_shown(shown)
+# Settings.STORY or Settings.SCHEMATIC, chosen by its buttons
+signal view_chosen(view)
 
 # Seconds a passing message stays before the help comes back
 const MESSAGE_TIME = 4.0
@@ -34,12 +36,17 @@ const CLOCK_SHORT = Color(0.95, 0.33, 0.27)
 const SHORT_TIME = 30000
 const TENTHS_TIME = 10000
 
+# The button of the view in use, and the other one
+const VIEW_CHOSEN = Color(1, 0.690196, 0.258824)
+const VIEW_OTHER = Color(0.631373, 0.631373, 0.631373, 0.7)
+
 # How much the field of the written move rises when it opens, and how fast
 const ENTRY_HEIGHT = 72
 const ENTRY_TIME = 0.15
 
 onready var Match = get_node("/root/Match")
 onready var Server = get_node("/root/Server")
+onready var Settings = get_node("/root/Settings")
 onready var inactive_style = load("res://assets/interface/background_inactive.tres")
 onready var active_style = load("res://assets/interface/background_active.tres")
 
@@ -74,6 +81,9 @@ func _ready():
     $MoveEntry/Field/Text.connect("text_entered", self, "_on_move_text_entered")
     $MoveEntry/Field/Text.connect("gui_input", self, "_on_move_text_input")
     $MoveEntry/Field/Send.connect("pressed", self, "_send_written")
+    $View/Story.connect("pressed", self, "_choose_view", [Settings.STORY])
+    $View/Schematic.connect("pressed", self, "_choose_view", [Settings.SCHEMATIC])
+    show_view()
     _shape_entry(false)
 
     _show_room()
@@ -123,6 +133,14 @@ func _show_room():
     $CodePanel/CodeText/Code.text = Server.get_code()
     $WhiteTurn/User.text = Server.get_player_name("white")
     $BlackTurn/User.text = Server.get_player_name("black")
+
+func _choose_view(view):
+    emit_signal("view_chosen", view)
+    show_view()
+
+func show_view():
+    $View/Story.modulate = VIEW_OTHER if Settings.schematic() else VIEW_CHOSEN
+    $View/Schematic.modulate = VIEW_CHOSEN if Settings.schematic() else VIEW_OTHER
 
 # The seal of the Henneth Annûn rule, under the code, when the game has it
 func _show_rules(_status = null, _catching_up = false):
@@ -324,6 +342,7 @@ func _ask_to_leave():
 
 func _back_to_menu():
     Match.leave()
+    Settings.view = Settings.STORY
     Server.leave_room()
     get_tree().change_scene("res://menus/MainMenu.tscn")
 

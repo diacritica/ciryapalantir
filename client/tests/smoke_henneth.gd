@@ -116,7 +116,8 @@ func _gone():
     check("and nobody is asked", !state.hallacirya_due())
 
 func faded(piece):
-    return piece.get_node("Mesh").get_surface_material(0) != null
+    var material = piece.get_node("Mesh").get_surface_material(0)
+    return material != null and material.flags_transparent
 
 func fleet_hallacirya(player):
     return _fleet_piece(player, "H")

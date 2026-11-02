@@ -377,6 +377,23 @@ ciryar (FLAT). Sin la regla, la hallacirya se juega cuando se quiera, como hoy.
 
 ### 3.4 Modos Historia y Esquemático (≈ un día)
 
+**Hecho.** Bajo las pastillas de los jugadores, dos botones con iconos propios (un libro, `view-story.svg`, y una
+cuadrícula, `view-schematic.svg`) con tooltip; el elegido se ve en ámbar. El cambio es en caliente y no toca el tablero.
+Va en `Settings.view` y no viaja al servidor. El juego abre siempre en Historia (decisión de Pablo): Esquemático dura
+mientras se sigue en la partida y al volver al menú se vuelve a Historia. Esquemático: fuera la mesa de la
+taberna, las velas, las jarras, el polvo, sus luces y el lightmap; un entorno sin efectos (ni glow, DOF, SSAO ni niebla), luz
+ambiente blanca y una luz direccional desde arriba con sombras suaves, sobre una mesa gris lisa y con las bandejas grises.
+El tablero de madera se oculta (su colisión sigue sosteniendo las piezas) y en su lugar va uno claro y liso, con líneas
+negras gruesas alineadas con las casillas y las coordenadas impresas fuera de la cuadrícula (letras abajo, números a la
+derecha, como las ve cada jugador); por eso las del cajón de la jugada escrita no salen en este modo. Piezas en blanco puro
+con contorno negro y en negro puro con contorno blanco (el shader `outline.tres` que ya estaba); la pieza cogida lleva un
+contorno naranja grueso y las casillas se iluminan en naranja liso. La hallacirya apagada de Henneth Annûn también se ve
+translúcida aquí. Probado en `tests/smoke_view.gd`.
+
+Pendiente: revisar la legibilidad de los textos sobreimpresos abajo (la ayuda y los botones de turno) sobre el gris claro
+del modo Esquemático.
+
+
 - **Historia** es la partida tal como está: la taberna, la luz de las velas, la profundidad de campo, las partículas.
   **Esquemático** es la misma partida en alto contraste, pensada para ser muy accesible. Cada jugador elige el suyo;
   se guarda en su configuración local (`Settings`, en `user://`) y no viaja al servidor.

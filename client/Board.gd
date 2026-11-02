@@ -44,6 +44,20 @@ const COORDINATES_MARGIN = 0.28
 const COORDINATES_ALONG = 1.0 / 6
 const COORDINATES_REACH = 0.5
 
+# The schematic board: as big as the wooden one, light and plain, with thick
+# black lines on the tiles and the names of the files and ranks outside the
+# grid, as the player sees it. Lengths in units of the board
+const BOARD_SIZE = 17.64
+const BOARD_TOP = 0.355
+const SCHEMATIC_BOARD_COLOR = Color(0.96, 0.95, 0.91)
+const SCHEMATIC_LINE_COLOR = Color(0.03, 0.03, 0.03)
+const SCHEMATIC_LINE = 0.06
+const SCHEMATIC_FRAME = 0.14
+const SCHEMATIC_NAMES_OUT = 0.6
+const SCHEMATIC_FONT_SIZE = 110
+# Seconds the pictures of the board are drawn on every frame
+const RENDER_TIME = 0.5
+
 var tile_scene = preload("res://Tile.tscn")
 # tiles[row][column]
 var tiles = []
@@ -72,13 +86,138 @@ func tile(square):
     return tiles[square.x][square.y]
 
 # The coordinates as the player sees the board: player 2 looks from the side
-# of the last rank, so its near edge and its left are the other ones
+# of the last rank, so its near edge and its left are the other ones. The
+# schematic board has them printed
 func show_coordinates(shown, player):
+    shown = shown and !has_node("Schematic")
+
     if shown and !has_node("Coordinates"):
         _draw_coordinates(player)
 
     if has_node("Coordinates"):
         $Coordinates.visible = shown
+
+# The schematic board takes the place of the wooden one, which stays as what
+# the pieces rest on
+func set_schematic(on, player):
+    $"tabletop-5x5-wood/5x5-wood".visible = !on
+
+    if on and !has_node("Schematic"):
+        add_child(_schematic_board(player))
+    elif !on and has_node("Schematic"):
+        var board = $Schematic
+        remove_child(board)
+        board.queue_free()
+
+    if has_node("Coordinates"):
+        $Coordinates.visible = false
+
+    for row in tiles:
+        for tile in row:
+            tile.set_schematic(on)
+
+func _schematic_board(player):
+    var board = Spatial.new()
+    board.name = "Schematic"
+
+    var plain = SpatialMaterial.new()
+    plain.albedo_color = SCHEMATIC_BOARD_COLOR
+    plain.roughness = 1.0
+
+    # The grid lies on the body with room enough for the depth of the far
+    # camera, or both would show through each other
+    var body_top = BOARD_TOP - 0.03
+    var box = CubeMesh.new()
+    box.size = Vector3(BOARD_SIZE, body_top, BOARD_SIZE)
+    var body = MeshInstance.new()
+    body.mesh = box
+    body.material_override = plain
+    body.translation.y = body_top / 2
+    board.add_child(body)
+
+    var resolution = COORDINATES_RESOLUTION
+    var viewport = Viewport.new()
+    viewport.size = Vector2(BOARD_SIZE, BOARD_SIZE) * resolution
+    viewport.usage = Viewport.USAGE_2D
+    viewport.render_target_v_flip = true
+    _render_for_a_while(viewport)
+
+    var background = ColorRect.new()
+    background.color = SCHEMATIC_BOARD_COLOR
+    background.rect_size = viewport.size
+    viewport.add_child(background)
+
+    # The lines between the tiles, and a thicker frame around them
+    var grid = Vector2(rows, columns) * TILE_STEP * resolution
+    var corner = (viewport.size - grid) / 2
+    var line = SCHEMATIC_LINE * resolution
+    var frame = SCHEMATIC_FRAME * resolution
+
+    for row in range(rows + 1):
+        var width = frame if row == 0 or row == rows else line
+        viewport.add_child(_bar(Vector2(corner.x + row * TILE_STEP * resolution - width / 2, corner.y - frame / 2), Vector2(width, grid.y + frame)))
+
+    for column in range(columns + 1):
+        var width = frame if column == 0 or column == columns else line
+        viewport.add_child(_bar(Vector2(corner.x - frame / 2, corner.y + column * TILE_STEP * resolution - width / 2), Vector2(grid.x + frame, width)))
+
+    # The files along the near edge and the ranks along the right one, in the
+    # middle of their squares
+    var font = DynamicFont.new()
+    font.font_data = load("res://assets/interface/WorkSans-Regular.ttf")
+    font.size = SCHEMATIC_FONT_SIZE
+    var out = SCHEMATIC_NAMES_OUT * resolution
+    var step = TILE_STEP * resolution
+    var near = corner.x - out if player != 2 else corner.x + grid.x + out
+    var right = corner.y + grid.y + out if player != 2 else corner.y - out
+
+    for column in range(columns):
+        viewport.add_child(_name(FILES[column], Vector2(near, corner.y + (column + 0.5) * step), font, player))
+
+    for row in range(rows):
+        viewport.add_child(_name(str(row + 1), Vector2(corner.x + (row + 0.5) * step, right), font, player))
+
+    var material = SpatialMaterial.new()
+    material.flags_albedo_tex_force_srgb = true
+    material.roughness = 1.0
+    material.albedo_texture = viewport.get_texture()
+
+    var quad = QuadMesh.new()
+    quad.size = Vector2(BOARD_SIZE, BOARD_SIZE)
+    var top = MeshInstance.new()
+    top.mesh = quad
+    top.material_override = material
+    top.rotation_degrees.x = -90
+    top.translation.y = BOARD_TOP
+    top.add_child(viewport)
+    board.add_child(top)
+    return board
+
+# A picture that does not change is drawn once, but a single frame can be
+# missed, as in a window that is not drawn just then: it is drawn on every
+# frame for a while, and then once more
+func _render_for_a_while(viewport):
+    viewport.render_target_update_mode = Viewport.UPDATE_ALWAYS
+    get_tree().create_timer(RENDER_TIME).connect("timeout", viewport, "set", ["render_target_update_mode", Viewport.UPDATE_ONCE])
+
+func _bar(position, size):
+    var bar = ColorRect.new()
+    bar.color = SCHEMATIC_LINE_COLOR
+    bar.rect_position = position
+    bar.rect_size = size
+    return bar
+
+# A black name centred on that point, upright for the player
+func _name(text, center, font, player):
+    var label = Label.new()
+    label.text = text
+    label.set("custom_fonts/font", font)
+    label.set("custom_colors/font_color", SCHEMATIC_LINE_COLOR)
+    label.rect_size = label.get_minimum_size()
+    label.rect_pivot_offset = label.rect_size / 2
+    label.rect_rotation = -90 if player == 2 else 90
+    label.rect_position = center - label.rect_size / 2
+    return label
 
 # A picture of the whole board, drawn once in a viewport and laid on it. Rows
 # are the ranks, along x, and columns the files, along z. Player 1 has the
@@ -93,7 +232,7 @@ func _draw_coordinates(player):
     viewport.transparent_bg = true
     viewport.usage = Viewport.USAGE_2D
     viewport.render_target_v_flip = true
-    viewport.render_target_update_mode = Viewport.UPDATE_ONCE
+    _render_for_a_while(viewport)
 
     var font = DynamicFont.new()
     font.font_data = load("res://assets/interface/WorkSans-Regular.ttf")

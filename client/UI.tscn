@@ -1,4 +1,4 @@
-[gd_scene load_steps=29 format=2]
+[gd_scene load_steps=31 format=2]
 
 [ext_resource path="res://UI.gd" type="Script" id=1]
 [ext_resource path="res://assets/interface/logo.png" type="Texture" id=2]
@@ -15,6 +15,8 @@
 [ext_resource path="res://assets/interface/ribbon-btn.svg" type="Texture" id=15]
 [ext_resource path="res://assets/interface/ribbon-small.svg" type="Texture" id=16]
 [ext_resource path="res://assets/interface/send-up.svg" type="Texture" id=17]
+[ext_resource path="res://assets/interface/view-story.svg" type="Texture" id=18]
+[ext_resource path="res://assets/interface/view-schematic.svg" type="Texture" id=19]
 
 [sub_resource type="DynamicFont" id=1]
 size = 18
@@ -254,6 +256,39 @@ custom_colors/font_color = Color( 0.631373, 0.631373, 0.631373, 1 )
 text = "5:00"
 align = 1
 valign = 1
+
+[node name="View" type="Panel" parent="."]
+margin_left = 39.0
+margin_top = 199.0
+margin_right = 135.0
+margin_bottom = 235.0
+custom_styles/panel = ExtResource( 4 )
+
+[node name="Story" type="Button" parent="View"]
+margin_left = 6.0
+margin_top = 2.0
+margin_right = 42.0
+margin_bottom = 34.0
+hint_tooltip = "Historia: la partida en la taberna, con su luz y sus piezas de madera"
+focus_mode = 0
+mouse_default_cursor_shape = 2
+enabled_focus_mode = 0
+icon = ExtResource( 18 )
+flat = true
+expand_icon = true
+
+[node name="Schematic" type="Button" parent="View"]
+margin_left = 54.0
+margin_top = 2.0
+margin_right = 90.0
+margin_bottom = 34.0
+hint_tooltip = "Esquemático: la misma partida en alto contraste, sin decorado"
+focus_mode = 0
+mouse_default_cursor_shape = 2
+enabled_focus_mode = 0
+icon = ExtResource( 19 )
+flat = true
+expand_icon = true
 
 [node name="Moves" type="Panel" parent="."]
 material = ExtResource( 11 )

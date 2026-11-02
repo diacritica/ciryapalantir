@@ -29,6 +29,15 @@ const BLACK_FILL_LAYER = 1 << 19
 const MAX_3D_LINES = 1440.0
 const RETURN_TIME = 0.35
 
+# The schematic view hides the tavern: its table and what is on it, the dust
+# in the air and its lights, and lights all evenly from above over a plain
+# grey table, with plain trays
+const TAVERN = ["table-tavern2", "candle-tavern3", "candle-tavern4", "wood-mug3", "wood-mug4", "Particles", "Particles2", "BakedLightmap", "SpotLight", "light2", "light4", "light5", "BlackFill"]
+const SCHEMATIC_BACKGROUND = Color(0.16, 0.16, 0.17)
+const SCHEMATIC_TABLE = Color(0.24, 0.24, 0.25)
+const SCHEMATIC_TRAY = Color(0.46, 0.46, 0.48)
+const SCHEMATIC_TABLE_HEIGHT = -0.42
+
 # IDLE: nothing in the hand. DRAGGING: the hand follows the mouse.
 # RETURNING: rejected pieces fly back and nothing can be taken
 enum Drag { IDLE, DRAGGING, RETURNING }
@@ -50,6 +59,10 @@ var turn_start = {}
 var home = {}
 # Times the board was out of step with the server and had to be rebuilt
 var rebuilds = 0
+# What the story view shows, to come back to it: the environment of the
+# tavern and which of its nodes were visible
+var story_environment = null
+var tavern_shown = {}
 
 func _ready():
     _render_3d_apart()
@@ -95,6 +108,14 @@ func _ready():
     $sandboxlogo.visible = Match.sandbox
     _follow_camera()
     _fade_hallaciryar()
+
+    story_environment = $WorldEnvironment.environment
+    for name in TAVERN:
+        if has_node(name):
+            tavern_shown[name] = get_node(name).visible
+
+    $UI.connect("view_chosen", self, "_on_view_chosen")
+    _show_view()
 
     # Opened in a game already started
     if Match.status:
@@ -326,10 +347,92 @@ func _follow_mouse():
     position.y = max(position.y, HAND_MIN_HEIGHT)
     hand.translation = position
 
+func _on_view_chosen(view):
+    Settings.view = view
+    _show_view()
+
+# Changes the view at once, without loading the scene again
+func _show_view():
+    var schematic = Settings.schematic()
+
+    for name in tavern_shown:
+        get_node(name).visible = tavern_shown[name] and !schematic
+
+    $WorldEnvironment.environment = _schematic_environment() if schematic else story_environment
+
+    if schematic and !has_node("SchematicTable"):
+        _set_the_schematic_table()
+    elif !schematic and has_node("SchematicTable"):
+        for name in ["SchematicTable", "SchematicLight"]:
+            var node = get_node(name)
+            remove_child(node)
+            node.queue_free()
+
+    var tray = null
+
+    if schematic:
+        tray = SpatialMaterial.new()
+        tray.albedo_color = SCHEMATIC_TRAY
+        tray.roughness = 1.0
+
+    for fleet in [$Fleet, $Fleet2]:
+        _paint_meshes(fleet, tray)
+
+    for piece in _pieces():
+        piece.set_schematic(schematic)
+
+    $Board.set_schematic(schematic, _view_player())
+    _on_entry_shown($UI.entry_open and $UI.get_node("MoveEntry").visible)
+
+# Even light and no effects: no glow, depth of field, ambient occlusion or fog
+func _schematic_environment():
+    var environment = Environment.new()
+    environment.background_mode = Environment.BG_COLOR
+    environment.background_color = SCHEMATIC_BACKGROUND
+    environment.ambient_light_color = Color(1, 1, 1)
+    environment.ambient_light_energy = 0.6
+    environment.tonemap_mode = Environment.TONE_MAPPER_LINEAR
+    return environment
+
+func _set_the_schematic_table():
+    var plain = SpatialMaterial.new()
+    plain.albedo_color = SCHEMATIC_TABLE
+    plain.roughness = 1.0
+
+    var plane = PlaneMesh.new()
+    plane.size = Vector2(400, 400)
+    var table = MeshInstance.new()
+    table.name = "SchematicTable"
+    table.mesh = plane
+    table.material_override = plain
+    table.translation.y = SCHEMATIC_TABLE_HEIGHT
+    add_child(table)
+
+    # From above and a little from the side of player 1, with soft shadows
+    var light = DirectionalLight.new()
+    light.name = "SchematicLight"
+    light.light_energy = 0.7
+    light.shadow_enabled = true
+    light.shadow_color = Color(0.45, 0.45, 0.45)
+    light.directional_shadow_mode = DirectionalLight.SHADOW_ORTHOGONAL
+    light.rotation_degrees = Vector3(-70, 30, 0)
+    add_child(light)
+
+func _paint_meshes(node, material):
+    for child in node.get_children():
+        if child is MeshInstance:
+            child.material_override = material
+
+        if !child.is_in_group("pieces"):
+            _paint_meshes(child, material)
+
+func _view_player():
+    return 2 if has_node("CameraPlayer2") else 1
+
 # The coordinates help to write the move, as the board is seen: the camera
 # of player 2 is the one left only for that player
 func _on_entry_shown(shown):
-    $Board.show_coordinates(shown, 2 if has_node("CameraPlayer2") else 1)
+    $Board.show_coordinates(shown, _view_player())
 
 func _on_move_written(text):
     $UI.move_written_result(play_written(text))
