@@ -3,6 +3,8 @@ package app
 import (
 	"errors"
 	"log"
+
+	"cirya.me/server/internal/cirya"
 )
 
 // The handlers run in the room goroutine. They read the params, ask the game
@@ -142,6 +144,13 @@ func (r *Room) onSubmitTurn(m *Message, c *Client) {
 		r.broadcast(gameFinished(g.State(), result.Condition, turn, g.Status()))
 	default:
 		r.broadcast(turnPlayed(player, turn, move, g.Player(), g.Turn(), g.Status()))
+	}
+}
+
+// The clock of the player whose turn it is ran out: the other one wins
+func (r *Room) onTimeout() {
+	if turn, over := r.game.Timeout(); over {
+		r.broadcast(gameFinished(r.game.State(), cirya.Time, turn, r.game.Status()))
 	}
 }
 

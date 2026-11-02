@@ -104,7 +104,7 @@ The configuration is chosen before the game, so the second player always sees th
 change it while nobody sits, then only the one player sitting, and nobody once both sit (**Error** `CONFIG_LOCKED`) or the
 game has started (**Error** `GAME_STARTED`). A refused change leaves all of it as it was.
 
-For now the server only keeps and sends them: the clock does not run yet and the Henneth Annûn rule is not checked yet.
+The Henneth Annûn rule is not checked yet. The clock is described with **GameFinished** and the status.
 
 ### JoinGame
 
@@ -239,7 +239,9 @@ The move does not follow the rules. The turn does not change and the player can 
         "fleets": {
             "1": { "ciryar": 12, "hallaciryar": 0 },
             "2": { "ciryar": 13, "hallaciryar": 1 }
-        }
+        },
+        "clocks": { "1": 254300, "2": 187020 },
+        "clockRunning": 1
     }
 }
 ```
@@ -247,6 +249,11 @@ The move does not follow the rules. The turn does not change and the player can 
 `players` only has the seats taken and is left out when there are none.
 `turn`, `currentPlayer`, `moves`, `board` and `fleets` only come once the game has started; empty squares are left out of `board`.
 When the game is over `currentPlayer` is 0.
+`clocks` (milliseconds left to each player, at the moment the message is sent) and `clockRunning` (the player whose clock
+runs, 0 when none does) only come once a game with clock has started. No clock runs during the openings: the clock of
+player 1 starts when player 2 has played turn 2, and from then on each clock runs from the end of the turn of the other
+player until the server takes the move of its own player. A refused move does not stop it, nor does a lost connection,
+and no time is added after a turn. The clients count down on their own and correct it with every message.
 
 ### ConfigChanged
 
@@ -367,6 +374,9 @@ The whole configuration, after a **ChangeConfig**.
     their ciryar or hallaciryar (tampar do not count). If a move completes both londi, the player who moved wins.
   * `FLAT`: the board is full or a player has placed the whole fleet. Wins the player with more squares
     topped by a flat cirya (tampar, hallaciryar and empty squares do not count). Same count: `DRAW`.
+  * `TIME`: the clock of the loser reached 0, however the board was. The server sends it on its own when the clock runs
+    out, or instead of the **Turn** of a move that came too late, which is not played. `turn` is then the turn that was
+    not played, and the last of `moves` is not a move that ended the game.
 
 ## Rules checked by the server
 

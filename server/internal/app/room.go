@@ -123,6 +123,10 @@ func (r *Room) EndIfEmptySince(since time.Time) bool {
 }
 
 func (r *Room) run() {
+	// Fires when the running clock of the game reaches 0
+	var clock *time.Timer
+	var timeout <-chan time.Time
+
 	for {
 		select {
 		case c := <-r.register:
@@ -156,6 +160,22 @@ func (r *Room) run() {
 
 		case e := <-r.inbox:
 			r.safely(string(e.message.Type), func() { r.dispatch(e.message, e.client) })
+
+		case <-timeout:
+			r.safely("clock", r.onTimeout)
+		}
+
+		// Only a message or the clock change the game, but setting the timer
+		// again after anything is simpler and cheap
+		if clock != nil {
+			clock.Stop()
+		}
+
+		clock, timeout = nil, nil
+
+		if left, running := r.game.TimeLeft(); running {
+			clock = time.NewTimer(left)
+			timeout = clock.C
 		}
 	}
 }

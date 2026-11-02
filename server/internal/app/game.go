@@ -3,6 +3,7 @@ package app
 import (
 	"fmt"
 	"slices"
+	"time"
 
 	"cirya.me/server/internal/cirya"
 )
@@ -58,7 +59,18 @@ type Game struct {
 	turn  int
 	moves []string
 	board *cirya.Board
+
+	// The time left to each player, nil for a game without clock
+	clocks map[int]time.Duration
+	// The player whose clock runs, 0 when none does, and since when
+	running int
+	since   time.Time
+	// The time now, which the tests set
+	now func() time.Time
 }
+
+// A second of the clock. The tests make it shorter
+var clockUnit = time.Second
 
 type GameConfig struct {
 	Ambient string `json:"ambient"`
@@ -96,6 +108,9 @@ type GameStatus struct {
 	Turn    *int                 `json:"turn,omitempty"`
 	Player  *int                 `json:"currentPlayer,omitempty"`
 	Fleets  map[int]*cirya.Fleet `json:"fleets,omitempty"`
+	// Milliseconds left to each player, and the player whose clock runs
+	Clocks       map[int]int64 `json:"clocks,omitempty"`
+	ClockRunning *int          `json:"clockRunning,omitempty"`
 }
 
 // NewGame makes a game waiting for its players. The board comes when it starts
@@ -104,6 +119,7 @@ func NewGame() *Game {
 		config: GameConfig{Ambient: "TAVERN", Pieces: "WOOD", Size: 5, Clock: DefaultClock},
 		seats:  make(map[int]Seat),
 		state:  NotStarted,
+		now:    time.Now,
 	}
 }
 
@@ -145,6 +161,12 @@ func (g *Game) Status() GameStatus {
 		status.Turn = &turn
 		status.Player = &player
 		status.Fleets = g.board.Fleets
+	}
+
+	if g.clocks != nil {
+		running := g.running
+		status.Clocks = map[int]int64{1: g.left(1).Milliseconds(), 2: g.left(2).Milliseconds()}
+		status.ClockRunning = &running
 	}
 
 	return status
@@ -249,7 +271,58 @@ func (g *Game) SetReady(user ID, player int, ready bool) (started bool, err erro
 	g.turn = 1
 	g.moves = make([]string, 0)
 	g.board = cirya.NewBoard(g.config.Size)
+
+	if g.config.Clock > 0 {
+		full := time.Duration(g.config.Clock) * clockUnit
+		g.clocks = map[int]time.Duration{1: full, 2: full}
+	}
+
 	return true, nil
+}
+
+// The time left to the player now, never below 0
+func (g *Game) left(player int) time.Duration {
+	left := g.clocks[player]
+
+	if player == g.running {
+		left -= g.now().Sub(g.since)
+	}
+
+	return max(left, 0)
+}
+
+// TimeLeft is the time until the running clock ends, and false when no clock runs
+func (g *Game) TimeLeft() (time.Duration, bool) {
+	if g.running == 0 {
+		return 0, false
+	}
+
+	return g.left(g.running), true
+}
+
+// Timeout ends the game when the running clock has reached 0: the other
+// player wins. over tells if it did, and turn is the turn that was not played
+func (g *Game) Timeout() (turn int, over bool) {
+	if g.running == 0 || g.left(g.running) > 0 {
+		return g.turn, false
+	}
+
+	g.timeUp(g.running)
+	return g.turn, true
+}
+
+// The clock of the player has run out
+func (g *Game) timeUp(player int) cirya.Result {
+	g.clocks[player] = 0
+	g.running = 0
+
+	if player == 1 {
+		g.state = Win2
+	} else {
+		g.state = Win1
+	}
+
+	return cirya.Result{Over: true, Winner: 3 - player, Condition: cirya.Time}
 }
 
 // Play makes the move of the player for the given turn. A move that breaks
@@ -273,6 +346,11 @@ func (g *Game) Play(user ID, player, turn int, move string) (cirya.Result, error
 		return cirya.Result{}, refusal{CodeStaleTurn, fmt.Sprintf("expected turn %d", g.turn)}
 	}
 
+	// A move that comes when the time is over does not count
+	if g.clocks != nil && g.running == player && g.left(player) == 0 {
+		return g.timeUp(player), nil
+	}
+
 	var err error
 
 	// The first turn of each player places a cirya of the opponent
@@ -288,6 +366,20 @@ func (g *Game) Play(user ID, player, turn int, move string) (cirya.Result, error
 
 	g.moves = append(g.moves, move)
 	result := g.board.Result(player)
+
+	// The clocks start once black has played its opening, and then each
+	// one runs until its player has played
+	if g.clocks != nil {
+		if g.running == player {
+			g.clocks[player] = g.left(player)
+		}
+
+		g.running = 0
+
+		if !result.Over && g.turn >= 2 {
+			g.running, g.since = 3-player, g.now()
+		}
+	}
 
 	switch {
 	case result.Over && result.Winner == 1:

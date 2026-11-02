@@ -6,6 +6,8 @@ const (
 	NoWin WinCondition = "NONE"
 	Londi WinCondition = "LONDI"
 	Flat  WinCondition = "FLAT"
+	// The clock of the loser ran out, however the board was
+	Time WinCondition = "TIME"
 )
 
 // Result tells if a game is over, who won and how
