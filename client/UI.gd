@@ -20,7 +20,15 @@ const DEMO_HELP = "Demo: mueve cualquier pieza a cualquier sat. Fuera del tabler
 const HELP_GAP = 8
 
 const RESULTS = {"WIN_1": "Ganan las blancas", "WIN_2": "Ganan las negras", "DRAW": "Empate"}
-const CONDITIONS = {"LONDI": "por Londë", "FLAT": "por recuento de ciryar"}
+const CONDITIONS = {"LONDI": "por Londë", "FLAT": "por recuento de ciryar", "TIME": "por tiempo"}
+
+# The clock that runs, the one that waits, and one with little time left
+const CLOCK_RUNNING = Color(1, 0.690196, 0.258824)
+const CLOCK_WAITING = Color(0.631373, 0.631373, 0.631373)
+const CLOCK_SHORT = Color(0.95, 0.33, 0.27)
+# Milliseconds under which the clock turns red, and shows tenths
+const SHORT_TIME = 30000
+const TENTHS_TIME = 10000
 
 onready var Match = get_node("/root/Match")
 onready var Server = get_node("/root/Server")
@@ -58,6 +66,41 @@ func _ready():
     # Opened in a game already started: the status came while in the menu
     if Match.status:
         _on_history(Match.status.get("moves", []))
+
+# The clocks count down every frame between the messages of the server
+func _process(_delta):
+    var shown = Match.has_clock() and !Match.sandbox and !Match.demo
+
+    for seat in [1, 2]:
+        var clock = (_turn_panel(seat)).get_node("Clock")
+        clock.visible = shown
+
+        if shown:
+            _show_clock(clock, seat)
+
+func _turn_panel(seat):
+    return $WhiteTurn if seat == 1 else $BlackTurn
+
+func _show_clock(clock, seat):
+    var left = Match.time_left(seat)
+    var running = Match.clock_running == seat
+    var label = clock.get_node("Time")
+
+    label.text = clock_text(left)
+    clock.set("custom_styles/panel", active_style if running else inactive_style)
+
+    if left < SHORT_TIME:
+        label.set("custom_colors/font_color", CLOCK_SHORT)
+    else:
+        label.set("custom_colors/font_color", CLOCK_RUNNING if running else CLOCK_WAITING)
+
+# 4:59 with whole seconds, and 9.4 with tenths at the end
+static func clock_text(milliseconds):
+    if milliseconds < TENTHS_TIME:
+        return "%d.%d" % [milliseconds / 1000, (milliseconds % 1000) / 100]
+
+    var seconds = milliseconds / 1000
+    return "%d:%02d" % [seconds / 60, seconds % 60]
 
 func _show_room():
     $CodePanel/CodeText/Code.text = Server.get_code()
@@ -219,11 +262,15 @@ func _on_game_over(result, condition):
     dialog.rect_size = dialog.get_combined_minimum_size()
     dialog.rect_position = (get_viewport_rect().size - dialog.rect_size) / 2
 
-# Escape asks too, and a click on the table leaves the moves, so their
-# selection does not keep the keys
+# Escape asks too, Enter confirms the turn like its button, and a click on
+# the table leaves the moves, so their selection does not keep the keys
 func _unhandled_input(event):
     if event.is_action_pressed("ui_cancel"):
         _ask_to_leave()
+    elif event is InputEventKey and event.pressed and !event.echo and event.scancode in [KEY_ENTER, KEY_KP_ENTER]:
+        if $TurnPanel.visible and !$TurnPanel/Confirm.disabled and !has_node("Leave"):
+            get_tree().set_input_as_handled()
+            _on_confirm_pressed()
     elif event is InputEventMouseButton and event.pressed:
         $Moves/MovesText.release_focus()
 

@@ -49,6 +49,11 @@ var board = BoardState.new()
 var move = null
 # The last status of a started game, for a game scene that opens later
 var status = null
+# Milliseconds left to each player when the last status came, and when it
+# came; empty for a game without clock
+var clocks = {}
+var clock_running = 0
+var clock_at = 0
 
 onready var Server = get_node("/root/Server")
 
@@ -59,6 +64,8 @@ func start_sandbox():
     sandbox = true
     player = 1
     status = null
+    clocks = {}
+    clock_running = 0
     _next(1, 1)
 
 func start_demo():
@@ -148,12 +155,36 @@ func undo():
     emit_signal("move_changed", "")
     return true
 
+# Milliseconds left to the player now, counted from the last status
+func time_left(seat):
+    var left = clocks.get(seat, 0)
+
+    if seat == clock_running:
+        left -= OS.get_ticks_msec() - clock_at
+
+    return max(left, 0)
+
+func has_clock():
+    return !clocks.empty()
+
+# The server sends the clocks with every status, as they are when it sends it
+func _take_clocks(received):
+    clocks = {}
+
+    for seat in received.get("clocks", {}):
+        clocks[int(seat)] = int(received.clocks[seat])
+
+    clock_running = int(received.get("clockRunning", 0))
+    clock_at = OS.get_ticks_msec()
+
 # Back to the menu: no game, no seat
 func leave():
     sandbox = false
     demo = false
     player = 0
     status = null
+    clocks = {}
+    clock_running = 0
     move = null
     turn = 1
     current = 1
@@ -175,11 +206,11 @@ func _on_notification(message):
             _next(params.nextTurn, params.nextPlayer)
 
         # It comes instead of the Turn that ends the game, without the move:
-        # the move is the last one of the status
+        # the move is the last one of the status. Lost on time, no move ended it
         "GameFinished":
             var moves = message.get("status", {}).get("moves", [])
 
-            if moves:
+            if moves and params.winCondition != "TIME":
                 _played(int(params.turn), current, moves.back())
 
             move = null
@@ -196,7 +227,10 @@ func _on_notification(message):
 
     if received.get("state", "NOT_STARTED") != "NOT_STARTED":
         status = received
-        emit_signal("status_received", status, message.type == "StatusResponse")
+        _take_clocks(received)
+        # A move sent too late is not played: the board goes back without a warning
+        var late = message.type == "GameFinished" and params.get("winCondition") == "TIME"
+        emit_signal("status_received", status, message.type == "StatusResponse" or late)
 
 # Takes the turn and the phase of a status
 func _follow(game):

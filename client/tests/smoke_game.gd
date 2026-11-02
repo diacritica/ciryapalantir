@@ -34,6 +34,7 @@ func _play():
     yield(_sandbox(), "completed")
     _online()
     _out_of_step()
+    yield(_clocks(), "completed")
     yield(_long_game(), "completed")
     yield(_reopen(), "completed")
     yield(_leave_from_the_corner(), "completed")
@@ -69,10 +70,11 @@ func _sandbox():
     check("turn 1 is c3", state.move_notation() == "c3")
     game._on_turn_confirmation(true)
 
-    # Turn 2: black places a white cirya on d3
+    # Turn 2: black places a white cirya on d3, and Enter confirms it
     take(fleet_piece(1))
     release("d3")
-    game._on_turn_confirmation(true)
+    _key(KEY_ENTER, false)
+    check("Enter confirms the turn", state.turn == 3)
 
     # Turn 3: white places a tampa on a1, changes its mind and undoes it
     var tampa = fleet_piece(1)
@@ -154,6 +156,51 @@ func _out_of_step():
     check("the cirya is on d2", stack("d2").size() == 1 and instance_from_id(stack("d2")[0]).player == 2)
     check("counted as out of step", game.rebuilds == 1)
     check("and it is there on the table", _over(instance_from_id(stack("d2")[0]), "d2"))
+
+# The clocks of the server count down beside the players, and a clock that
+# runs out ends the game without playing any move
+func _clocks():
+    var ui = game.get_node("UI")
+    var white = ui.get_node("WhiteTurn/Clock")
+    var black = ui.get_node("BlackTurn/Clock")
+    check("no clocks in a game without clock", !white.visible and !black.visible)
+
+    check("whole seconds", ui.clock_text(600000) == "10:00" and ui.clock_text(59999) == "0:59" and ui.clock_text(10000) == "0:10")
+    check("tenths at the end", ui.clock_text(9999) == "9.9" and ui.clock_text(0) == "0.0")
+
+    var status = _status_of_board()
+    status["clocks"] = {"1": 254300.0, "2": 9400.0}
+    status["clockRunning"] = 1.0
+    state._on_notification({"type": "StatusResponse", "status": status})
+    yield(self, "idle_frame")
+    yield(self, "idle_frame")
+    check("the clocks show", white.visible and black.visible)
+    check("white runs", white.get_node("Time").text == "4:14" and white.get_node("Time").get("custom_colors/font_color") == ui.CLOCK_RUNNING)
+    check("in a lit frame", white.get("custom_styles/panel") == ui.active_style and black.get("custom_styles/panel") == ui.inactive_style)
+    check("black is short of time", black.get_node("Time").text == "9.4" and black.get_node("Time").get("custom_colors/font_color") == ui.CLOCK_SHORT)
+    check("beside the players, not over them", white.get_global_rect().position.x >= ui.get_node("WhiteTurn/CurrentTurn").get_global_rect().end.x)
+
+    yield(create_timer(1.1), "timeout")
+    check("the clock of white counts down", white.get_node("Time").text == "4:13")
+    check("the other one waits", black.get_node("Time").text == "9.4")
+
+    # White lost on time: the last move of the status is not played again
+    var moves = ui.get_node("Moves/MovesText").get_line_count()
+    var rebuilds = game.rebuilds
+    status = _status_of_board()
+    status["moves"] = ["e5"]
+    status["clocks"] = {"1": 0.0, "2": 9400.0}
+    status["clockRunning"] = 0.0
+    state._on_notification({"type": "GameFinished", "params": {"result": "WIN_2", "winCondition": "TIME", "turn": 13.0}, "status": status})
+    yield(self, "idle_frame")
+    yield(self, "idle_frame")
+    check("no move is played", ui.get_node("Moves/MovesText").get_line_count() == moves and game.rebuilds == rebuilds)
+    check("white is at 0", white.get_node("Time").text == "0.0" and white.get_node("Time").get("custom_colors/font_color") == ui.CLOCK_SHORT)
+    var dialog = ui.get_children().back()
+    check("lost on time", dialog is AcceptDialog and dialog.dialog_text.begins_with("Ganan las negras por tiempo\nHas perdido"))
+
+    if dialog is AcceptDialog:
+        dialog.free()
 
 # A long list of moves stays in its frame and shows the last one, and a
 # spectator is not told it won or lost

@@ -270,6 +270,13 @@ Lo que sigue es el plan tal como se escribió; el "quitar el listo" no hizo falt
 
 ### 3.1 Reloj de partida (≈ un día)
 
+**Hecho.** El servidor lleva el tiempo de cada uno (`clocks` en ms y `clockRunning` en cada status), lo arranca al aceptar
+la jugada 2 y termina la partida por su cuenta con un temporizador en la goroutine de la sala (`GameFinished` con `TIME`);
+una jugada que llega tarde pierde sin jugarse. El cliente cuenta hacia atrás junto a cada pastilla (ámbar el que corre,
+rojo por debajo de 30 s, décimas por debajo de 10 s), ENTER confirma la jugada, y el fin por tiempo no repite la última
+jugada. Probado en Go con un reloj falso y con la sala en milisegundos, en el smoke y contra el servidor real en
+`e2e_player`. No hay e2e que llegue a perder por tiempo: con los tiempos de la lista tardaría 3 minutos.
+
 **Reglas (de Pablo):** tiempo por jugador elegible, 5 minutos por defecto. El reloj empieza cuando las negras confirman
 su apertura (la jugada 2, con la pieza del rival); desde la jugada 3 corre el del jugador al que le toca hasta que el servidor
 acepta su jugada. Sin incremento. Si un reloj llega a 0, ese jugador pierde, vaya como vaya el tablero.

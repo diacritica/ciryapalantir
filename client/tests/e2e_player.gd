@@ -45,6 +45,9 @@ func _play():
 
     while state.phase != state.Phase.FINISHED and turns < 40:
         if state.phase == state.Phase.MY_TURN:
+            if turns == 6:
+                yield(_watch_the_clocks(), "completed")
+
             _place_on_first_empty()
             turns += 1
 
@@ -65,6 +68,19 @@ func _play():
     check("the result is shown", game.get_node("UI").get_children().back() is AcceptDialog)
     print("e2e player: %d turns, %d failures" % [turns, failures])
     quit(1 if failures else 0)
+
+# Five minutes each by default: the clock of white runs on its turn, and the
+# one of black waits
+func _watch_the_clocks():
+    var ui = game.get_node("UI")
+    var before = state.time_left(1)
+    var black = state.time_left(2)
+    yield(create_timer(1.2), "timeout")
+
+    check("the game has clocks", state.has_clock() and ui.get_node("WhiteTurn/Clock").visible and ui.get_node("BlackTurn/Clock").visible)
+    check("the clock of white runs", state.clock_running == 1 and before - state.time_left(1) >= 1000)
+    check("the one of black waits", state.time_left(2) == black and black < 300000)
+    check("and they show it", ui.get_node("WhiteTurn/Clock/Time").text == ui.clock_text(state.time_left(1)))
 
 # Like the bot: a flat cirya on the first empty square, from the fleet of the
 # opponent in the opening
