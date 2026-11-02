@@ -18,6 +18,13 @@ func test_moves():
     check_equal("three to the right", {"from": Vector2(2, 2), "count": 3, "step": Vector2(0, 1), "drops": [2, 1]}, Notation.parse("3c3>21"))
     check_equal("the stone at the end is ignored", [1, 1], Notation.parse("2c3<11H").drops)
 
+func test_typed():
+    check_equal("a tampa in lowercase", "Ta1", Notation.normalize("ta1"))
+    check_equal("a hallacirya with spaces", "Hc3", Notation.normalize(" h c3 "))
+    check_equal("a square in uppercase", "c3", Notation.normalize("C3"))
+    check_equal("a move", "3a1>12", Notation.normalize("3A1 > 12"))
+    check_equal("as typed when right", "Tb2", Notation.normalize("Tb2"))
+
 func test_not_turns():
     for turn in ["", "x1", "a0", "a1x", "10a1+", "j1"]:
         check_equal(turn, {}, Notation.parse(turn))

@@ -4,6 +4,8 @@ extends Control
 # code, a line of help and the buttons to confirm or undo a turn
 
 signal turn_confirmation(confirmed)
+# A turn typed in the field, for the game to make it on the board
+signal move_written(text)
 
 # Seconds a passing message stays before the help comes back
 const MESSAGE_TIME = 4.0
@@ -30,6 +32,10 @@ const CLOCK_SHORT = Color(0.95, 0.33, 0.27)
 const SHORT_TIME = 30000
 const TENTHS_TIME = 10000
 
+# How much the field of the written move rises when it opens, and how fast
+const ENTRY_HEIGHT = 72
+const ENTRY_TIME = 0.15
+
 onready var Match = get_node("/root/Match")
 onready var Server = get_node("/root/Server")
 onready var inactive_style = load("res://assets/interface/background_inactive.tres")
@@ -37,6 +43,8 @@ onready var active_style = load("res://assets/interface/background_active.tres")
 
 # Counts the passing messages, so an old one does not hide a newer one
 var messages = 0
+# The field of the written move is open, and stays so from turn to turn
+var entry_open = false
 
 func _ready():
     mouse_filter = MOUSE_FILTER_IGNORE
@@ -59,6 +67,11 @@ func _ready():
     $TurnPanel/Undo.connect("pressed", self, "_on_undo_pressed")
     # Invisible for now, in the bottom left corner
     $Exit.connect("pressed", self, "_ask_to_leave")
+    $MoveEntry/Handle.connect("pressed", self, "_toggle_entry")
+    $MoveEntry/Field/Text.connect("text_entered", self, "_on_move_text_entered")
+    $MoveEntry/Field/Text.connect("gui_input", self, "_on_move_text_input")
+    $MoveEntry/Field/Send.connect("pressed", self, "_send_written")
+    _shape_entry(false)
 
     _show_room()
     _on_phase_changed(Match.phase)
@@ -109,6 +122,7 @@ func _show_room():
 
 func _on_phase_changed(phase):
     $TurnPanel.visible = phase == Match.Phase.MY_TURN and !Match.demo
+    _show_entry(phase == Match.Phase.MY_TURN and !Match.demo and Match.player != 0)
 
     # No turns in the demo
     if Match.demo:
@@ -301,6 +315,84 @@ func _back_to_menu():
     Match.leave()
     Server.leave_room()
     get_tree().change_scene("res://menus/MainMenu.tscn")
+
+# The written move: a field that opens from the bottom edge by its handle.
+# Enter or the arrow put the move on the board, and Enter on the empty
+# field confirms it, so a whole turn can be played with the keyboard
+func _show_entry(shown):
+    $MoveEntry.visible = shown
+
+    if shown and entry_open:
+        $MoveEntry/Field/Text.grab_focus()
+    elif !shown:
+        $MoveEntry/Field/Text.release_focus()
+
+func _toggle_entry():
+    entry_open = !entry_open
+    _shape_entry(true)
+
+    if entry_open:
+        $MoveEntry/Field/Text.grab_focus()
+    else:
+        $MoveEntry/Field/Text.release_focus()
+
+func _shape_entry(animated):
+    var top = -36 - (ENTRY_HEIGHT if entry_open else 0)
+    $MoveEntry/Handle/Label.text = "Cerrar" if entry_open else "Escribir jugada"
+
+    if !animated:
+        $MoveEntry.margin_top = top
+        return
+
+    var tween = Tween.new()
+    add_child(tween)
+    tween.interpolate_property($MoveEntry, "margin_top", $MoveEntry.margin_top, top, ENTRY_TIME, Tween.TRANS_QUAD, Tween.EASE_OUT)
+    tween.connect("tween_all_completed", tween, "queue_free")
+    tween.start()
+
+func _on_move_text_entered(text):
+    if text.strip_edges() == "":
+        if $TurnPanel.visible and !$TurnPanel/Confirm.disabled:
+            _on_confirm_pressed()
+        return
+
+    emit_signal("move_written", text)
+
+# The arrow only sends: confirming is for Enter or the button
+func _send_written():
+    if $MoveEntry/Field/Text.text.strip_edges() != "":
+        _on_move_text_entered($MoveEntry/Field/Text.text)
+
+# Escape closes the field, and does not ask to leave
+func _on_move_text_input(event):
+    if event.is_action_pressed("ui_cancel"):
+        $MoveEntry/Field/Text.accept_event()
+        _toggle_entry()
+
+# Game answers with why the move could not be made, or "" when it is on the board
+func move_written_result(error):
+    var text = $MoveEntry/Field/Text
+
+    if error != "":
+        _say(error)
+        _shake($MoveEntry/Field)
+        return
+
+    text.text = ""
+    _say("%s en el tablero: ENTER o Confirmar para enviarla" % Match.move_notation())
+
+# A no with the head
+func _shake(control):
+    var x = control.rect_position.x
+    var steps = [x, x + 10, x - 10, x + 6, x]
+    var tween = Tween.new()
+    add_child(tween)
+
+    for i in range(steps.size() - 1):
+        tween.interpolate_property(control, "rect_position:x", steps[i], steps[i + 1], 0.05, Tween.TRANS_SINE, Tween.EASE_IN_OUT, i * 0.05)
+
+    tween.connect("tween_all_completed", tween, "queue_free")
+    tween.start()
 
 func _on_confirm_pressed():
     emit_signal("turn_confirmation", true)

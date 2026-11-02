@@ -300,6 +300,14 @@ acepta su jugada. Sin incremento. Si un reloj llega a 0, ese jugador pierde, vay
 
 ### 3.2 Jugada escrita (≈ medio día)
 
+**Hecho.** Un cajón plegado en el borde de abajo, bajo los botones de turno, se abre con su tirador ("Escribir jugada")
+y deja ver el campo y la flecha. ENTER o la flecha ponen la jugada en el tablero por el mismo camino que el ratón (coger y
+soltar con las mismas comprobaciones), así que lo que no se puede arrastrar tampoco se puede escribir; ENTER con el campo
+vacío confirma, así que un turno entero se juega con el teclado. Si no cabe, el campo tiembla, se queda con el texto, la
+ayuda dice por qué y vuelve la jugada que había. Escape cierra el cajón sin preguntar por salir. Se aceptan minúsculas y
+espacios. Sirve en partida y en el sandbox, no en la demo ni para quien mira. Probado en `tests/smoke_written.gd` y en
+`e2e_nosse.gd`, que escribe sus dos últimas jugadas contra el servidor. De momento no hay opción de enviar sin confirmar.
+
 - Un campo centrado abajo, algo por debajo de donde sale la ayuda de la demo, plegado por defecto. Se despliega con un tirador
   en el estilo de la interfaz (la cinta `ribbon-btn.svg` y los rombos de los botones, como "Movimientos"), y deja ver un
   `LineEdit` y a la derecha un botón con una flecha hacia arriba ("al tablero"), con el mismo estilo. ENTER o la flecha envían.

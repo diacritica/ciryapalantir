@@ -1,4 +1,4 @@
-[gd_scene load_steps=25 format=2]
+[gd_scene load_steps=29 format=2]
 
 [ext_resource path="res://UI.gd" type="Script" id=1]
 [ext_resource path="res://assets/interface/logo.png" type="Texture" id=2]
@@ -14,6 +14,7 @@
 [ext_resource path="res://assets/interface/button_style_hover.tres" type="StyleBox" id=14]
 [ext_resource path="res://assets/interface/ribbon-btn.svg" type="Texture" id=15]
 [ext_resource path="res://assets/interface/ribbon-small.svg" type="Texture" id=16]
+[ext_resource path="res://assets/interface/send-up.svg" type="Texture" id=17]
 
 [sub_resource type="DynamicFont" id=1]
 size = 18
@@ -53,6 +54,38 @@ font_data = ExtResource( 5 )
 [sub_resource type="DynamicFont" id=10]
 size = 44
 font_data = ExtResource( 5 )
+
+[sub_resource type="DynamicFont" id=11]
+size = 30
+font_data = ExtResource( 5 )
+
+[sub_resource type="StyleBoxFlat" id=12]
+content_margin_left = 14.0
+content_margin_right = 14.0
+bg_color = Color( 0.0588235, 0.0392157, 0.0196078, 0.92 )
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color( 0.6, 0.4, 0.15, 1 )
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
+[sub_resource type="StyleBoxFlat" id=13]
+content_margin_left = 14.0
+content_margin_right = 14.0
+bg_color = Color( 0.0588235, 0.0392157, 0.0196078, 0.92 )
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color( 1, 0.690196, 0.258824, 1 )
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
 
 [node name="UI" type="Control"]
 anchor_right = 1.0
@@ -376,6 +409,85 @@ flip_h = true
 __meta__ = {
 "_edit_use_anchors_": false
 }
+
+[node name="MoveEntry" type="Control" parent="."]
+visible = false
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+margin_left = -280.0
+margin_top = -36.0
+margin_right = 280.0
+rect_clip_content = true
+mouse_filter = 2
+
+[node name="Handle" type="Button" parent="MoveEntry"]
+anchor_left = 0.5
+anchor_right = 0.5
+margin_left = -140.0
+margin_top = 2.0
+margin_right = 140.0
+margin_bottom = 34.0
+hint_tooltip = "Escribe la jugada, como en la lista de movimientos"
+focus_mode = 0
+enabled_focus_mode = 0
+flat = true
+
+[node name="Ribbon" type="TextureRect" parent="MoveEntry/Handle"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+texture = ExtResource( 3 )
+expand = true
+stretch_mode = 1
+
+[node name="Label" type="Label" parent="MoveEntry/Handle"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+custom_fonts/font = SubResource( 2 )
+custom_colors/font_color = Color( 1, 0.690196, 0.258824, 1 )
+text = "Escribir jugada"
+align = 1
+valign = 1
+
+[node name="Field" type="Panel" parent="MoveEntry"]
+anchor_right = 1.0
+margin_top = 40.0
+margin_bottom = 108.0
+mouse_filter = 2
+custom_styles/panel = ExtResource( 4 )
+
+[node name="Text" type="LineEdit" parent="MoveEntry/Field"]
+margin_left = 14.0
+margin_top = 10.0
+margin_right = 486.0
+margin_bottom = 58.0
+custom_styles/focus = SubResource( 13 )
+custom_styles/normal = SubResource( 12 )
+custom_fonts/font = SubResource( 11 )
+custom_colors/cursor_color = Color( 1, 0.690196, 0.258824, 1 )
+custom_colors/font_color = Color( 1, 0.92, 0.78, 1 )
+custom_colors/font_color_uneditable = Color( 0.631373, 0.631373, 0.631373, 1 )
+max_length = 20
+context_menu_enabled = false
+placeholder_text = "c3, Tb2, 3a1>12…"
+placeholder_alpha = 0.4
+caret_blink = true
+
+[node name="Send" type="Button" parent="MoveEntry/Field"]
+margin_left = 496.0
+margin_top = 10.0
+margin_right = 546.0
+margin_bottom = 58.0
+hint_tooltip = "Al tablero"
+focus_mode = 0
+custom_styles/hover = ExtResource( 14 )
+custom_styles/pressed = ExtResource( 14 )
+custom_styles/normal = ExtResource( 13 )
+enabled_focus_mode = 0
+icon = ExtResource( 17 )
+icon_align = 1
 
 [node name="CodePanel" type="Panel" parent="."]
 material = ExtResource( 11 )

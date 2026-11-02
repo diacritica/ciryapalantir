@@ -18,6 +18,18 @@ static func square_name(square):
 static func parse_square(name):
     return Vector2(int(name[1]) - 1, FILES.find(name[0]))
 
+# A turn as someone types it, written the way parse reads it: no spaces,
+# squares in lowercase and the stone of a placement in uppercase
+static func normalize(typed):
+    var turn = typed.strip_edges().replace(" ", "").to_lower()
+    var regex = RegEx.new()
+    regex.compile("^[ht][a-i][1-9]$")
+
+    if regex.search(turn):
+        turn = turn[0].to_upper() + turn.substr(1)
+
+    return turn
+
 # {"stone", "square"} for a placement, {"from", "count", "step", "drops"} for
 # a move and {} for anything else
 static func parse(turn):

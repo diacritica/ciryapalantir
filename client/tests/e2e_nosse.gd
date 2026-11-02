@@ -4,7 +4,7 @@ extends SceneTree
 # builds a mixed nossë with its hallacirya on top, breaks it in several steps
 # over a tampa of black and wins by Londë down the file a. What the client
 # lets through has to be what the server takes, and what the client stops,
-# the server refuses too. tests/e2e.sh starts the server and the bot, which
+# the server refuses too. The last two turns are written instead of dragged. tests/e2e.sh starts the server and the bot, which
 # plays the turns of black in BLACK
 
 const Notation = preload("res://core/Notation.gd")
@@ -71,9 +71,10 @@ func _play():
     check("the nossë is spread", _stones("a2") == ["C2", "C1"] and _stones("a3") == ["C1"])
     check("the hallacirya flattened the tampa", _stones("a4") == ["C2", "H1"])
 
-    _place(1, "C", "a1")
+    # The last two turns are written, as with the keyboard
+    check("a1 written", game.play_written("a1") == "")
     yield(_confirm(), "completed")
-    _place(1, "C", "a5")
+    check("a5 written", game.play_written("A5") == "" and state.move_notation() == "a5")
     state.confirm()
 
     var waited = 0.0
