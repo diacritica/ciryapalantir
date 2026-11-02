@@ -229,13 +229,14 @@ func _help(text):
     panel.get_node("AdviceLavel").text = text
     panel.visible = text != ""
 
-# A message for a few seconds, then the help again
+# A message for a few seconds, then the help again. A signal and not a
+# yield, so leaving the game meanwhile does not resume it on a freed scene
 func _say(text):
     messages += 1
-    var mine = messages
     _help(text)
-    yield(get_tree().create_timer(MESSAGE_TIME), "timeout")
+    get_tree().create_timer(MESSAGE_TIME).connect("timeout", self, "_after_message", [messages])
 
+func _after_message(mine):
     if mine == messages:
         _show_help()
 

@@ -197,8 +197,8 @@ func take(piece):
         each.axis_lock_linear_x = true
         each.axis_lock_linear_z = true
         each.mode = RigidBody.MODE_STATIC
-        each.translation.x = 0
-        each.translation.z = 0
+        # In the hand, each piece keeps its height over the one taken
+        each.translation = Vector3(0, each.translation.y - hand.translation.y, 0)
         each.show_selected()
         each.add_to_group("hand")
         _reparent(each, hand)
@@ -229,6 +229,11 @@ func drop(tile):
 
     if Match.demo and stack and !_hand_ids().has(stack.back()) and instance_from_id(stack.back()).get_notation_name() == "T":
         instance_from_id(stack.back()).toggle_block()
+
+    # The pieces fall on the stack from over it. The mouse already holds the
+    # hand there, but a written move takes it from its square and the hand
+    # may be lower: dropped inside the stack, they would end under it
+    hand.translation.y = max(hand.translation.y, _stack_height(_square(tile), _hand_ids()) + HAND_GAP)
 
     Match.drop(_hand_ids(), _square(tile))
 

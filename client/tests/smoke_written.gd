@@ -35,6 +35,7 @@ func _play():
     _openings()
     _placements()
     _nosse()
+    yield(_onto_a_stack(), "completed")
     _wrong()
     _not_my_turn()
 
@@ -110,6 +111,21 @@ func _nosse():
     check("and one on a3", stack("a3").size() == 1 and stack("c3").empty())
     check("as written", state.move_notation() == "2c3<11")
     game._on_turn_confirmation(true)
+
+# A piece written onto a stack as high as its own square lands on top of it,
+# as the board says, and not inside it
+func _onto_a_stack():
+    # The pieces of the last turn land first, as they would while playing
+    yield(create_timer(1.0), "timeout")
+    write("b3<")
+    var white = stack("a3")[0]
+    var black = stack("a3")[1]
+    check("the black cirya on the white one", stack("a3").size() == 2 and state.move_notation() == "b3<")
+    yield(create_timer(1.0), "timeout")
+    var low = instance_from_id(white).global_transform.origin.y
+    var high = instance_from_id(black).global_transform.origin.y
+    check("is seen on top of it", high > low + 0.1)
+    game._undo()
 
 func _wrong():
     var before = state.board.copy()
