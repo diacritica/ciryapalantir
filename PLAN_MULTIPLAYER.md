@@ -453,6 +453,16 @@ Se juega siempre desde el lado de las blancas, sin botón de confirmar ni texto 
    Después se recorre con las flechas (→ o ↓ avanza, ← o ↑ retrocede).
    Cada jugada se anima: la pieza sale de su bandeja o del sat de origen, iluminada en morado como al cogerla, y en la rotura
    del nossë se ve cada suelta casilla a casilla.
+   ✅ Hecho: "Insertar movimientos" al pie del cuadro de la demo abre un cuadro para pegar la lista (`Notation.parse_list`
+   acepta la lista copiada, `1. c3` por línea, o las jugadas seguidas por espacios o comas) y dice la primera que no entiende.
+   Luego pregunta: "Limpiar el tablero" o "Respetar el tablero"; al respetarlo, una primera jugada que mueve un nossë dice de
+   quién es, y si es una colocación se pregunta quién la hace. Toda la lista se comprueba antes con `Rules.apply_turn`, que la
+   juega sobre una copia del tablero, y se para en la primera que no cabe, que queda marcada en la lista ("← no cabe") y
+   explicada en la ayuda. Se recorre con → o ↓ (avanza, animada: cada pieza vuela iluminada a su sat, y en un nossë suelta a
+   suelta) y ← o ↑ (retrocede: las piezas de la jugada se deslizan a donde estaban). Durante la reproducción las piezas están
+   fuera de la física, cada una en su altura de reposo medida, y solo se mueven las de la jugada: nada cae. Mientras, la lista
+   se ve en el cuadro de Movimientos, a su anchura normal, con la jugada actual marcada; las piezas no se cogen a mano y "Terminar la reproducción" deja el tablero como esté para seguir
+   moviendo a mano. `Replay.gd`; probado en `tests/test_apply.gd`, `test_notation.gd` y `smoke_demo.gd`.
 - Base que ya existe: `Notation.parse`, y `Rules.replay`, que ya traduce una jugada (también la apertura y la rotura del nossë)
   en pasos pieza → sat para mostrar las jugadas del rival. Retroceder es volver a una copia de `BoardState` y recolocar las piezas
   como `_lay_out` al reconstruir desde el servidor.

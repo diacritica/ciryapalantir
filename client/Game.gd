@@ -115,6 +115,8 @@ func _ready():
             tavern_shown[name] = get_node(name).visible
 
     $UI.connect("view_chosen", self, "_on_view_chosen")
+    $UI.connect("replay_requested", self, "start_replay")
+    $UI.connect("replay_stopped", self, "stop_replay")
     _show_view()
 
     # Opened in a game already started
@@ -122,6 +124,10 @@ func _ready():
         _on_status_received(Match.status, true)
 
 func _input(event):
+    # The pieces of a list replayed move by the arrows
+    if has_node("Replay"):
+        return
+
     if event is InputEventMouseButton and event.button_index == BUTTON_LEFT:
         if event.pressed and drag == Drag.IDLE:
             var cast = _mouse_cast()
@@ -346,6 +352,23 @@ func _follow_mouse():
 
     position.y = max(position.y, HAND_MIN_HEIGHT)
     hand.translation = position
+
+# A list of turns on the board of the demo, from the start or on the board
+# as it is, replacing the one there was
+func start_replay(turns, clean, first_player):
+    stop_replay()
+    var replay = load("res://Replay.gd").new()
+    replay.name = "Replay"
+    add_child(replay)
+    replay.connect("position_changed", $UI, "show_replay", [replay])
+    replay.start(self, turns, clean, first_player)
+
+# The board stays as the replay left it, to move the pieces by hand again
+func stop_replay():
+    if has_node("Replay"):
+        var replay = $Replay
+        remove_child(replay)
+        replay.queue_free()
 
 func _on_view_chosen(view):
     Settings.view = view

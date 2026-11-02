@@ -58,6 +58,29 @@ static func parse(turn):
 
     return {"from": parse_square(found.get_string(2)), "count": count, "step": STEPS[found.get_string(3)], "drops": drops}
 
+# A list of turns as the moves show it, "1. c3" on each line, or the turns
+# one after another, by spaces, commas or lines: {"turns"} written the way
+# parse reads them, and {"error"} with the first one it does not understand
+static func parse_list(text):
+    var number = RegEx.new()
+    number.compile("^[0-9]+\\.")
+    var turns = []
+
+    for token in text.replace(",", " ").replace("\n", " ").replace("\t", " ").split(" ", false):
+        var typed = number.sub(token, "")
+
+        if typed == "":
+            continue
+
+        var turn = normalize(typed)
+
+        if parse(turn).empty():
+            return {"turns": turns, "error": "No entiendo «%s»" % token}
+
+        turns.append(turn)
+
+    return {"turns": turns, "error": "" if turns else "No hay ninguna jugada"}
+
 # Writes a move as Rules.move_state describes it
 static func write(state):
     if state.has("stone"):

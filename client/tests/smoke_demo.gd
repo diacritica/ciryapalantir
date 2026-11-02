@@ -31,6 +31,8 @@ func _play():
     _not_a_game()
     yield(_anything_anywhere(), "completed")
     yield(_back_to_the_fleet(), "completed")
+    yield(_replay(), "completed")
+    yield(_replay_on_the_board(), "completed")
     yield(_from_the_menu(), "completed")
 
     print("smoke demo: %d failures" % failures)
@@ -121,6 +123,156 @@ func _back_to_the_fleet():
     var there = tampa.global_transform.origin
     check("it flies to its place in the fleet", Vector2(there.x, there.z).distance_to(Vector2(home.x, home.z)) < 0.05)
     check("and the hand is free again", game.drag == game.Drag.IDLE)
+
+# A game pasted in the moves, played from the start: the arrows go through
+# it until the turn that cannot be played, and back
+func _replay():
+    var ui = game.get_node("UI")
+    var insert = ui.get_node("Moves/Insert")
+    check("the door to insert moves", insert.visible and insert.text == ui.INSERT_TEXT)
+    insert.emit_signal("pressed")
+    yield(self, "idle_frame")
+    var dialog = ui.get_node("InsertMoves")
+    var list = dialog.find_node("List", true, false)
+
+    list.text = "1. c3\n2. zz"
+    dialog.get_ok().emit_signal("pressed")
+    check("a list not understood is said", dialog.visible and dialog.find_node("Error", true, false).text == "No entiendo «zz»")
+
+    # White places a cirya of black on c3 and black one of white on a1; white
+    # places on b2, black moves its cirya to c2, and white cannot move c3
+    list.text = "1. c3\n2. a1\n3. b2\n4. c3-\n5. c3+"
+    dialog.get_ok().emit_signal("pressed")
+    yield(self, "idle_frame")
+    var how = ui.get_node("HowToPlay")
+    check("then it asks how", how.visible)
+    how.get_ok().emit_signal("pressed")
+    yield(self, "idle_frame")
+
+    var replay = game.get_node("Replay")
+    check("the board is cleaned", _all_off())
+    check("four turns can be played", replay.playable() == 4 and replay.wrong == 4)
+    check("the list shows in the moves", ui.get_node("Moves/MovesText").visible and ui.get_node("Moves/MovesText").get_line_count() == 5)
+    check("with the way to go through it", ui.get_node("HelpPanel/AdviceLavel").text.find(ui.REPLAY_KEYS) != -1)
+    check("and the end of it", insert.text == ui.STOP_TEXT)
+
+    for i in range(3):
+        yield(_key(KEY_RIGHT), "completed")
+
+    # Only the pieces of the turn move: the rest stay just where they were,
+    # without falling, and so they do going back
+    var still = _positions()
+    yield(_key(KEY_RIGHT), "completed")
+    var moved = _moved_since(still)
+    check("only the cirya of the turn moves", moved.size() == 1 and moved[0] == stack("c2")[0])
+    still = _positions()
+    yield(_key(KEY_LEFT), "completed")
+    check("going back, only it moves back", _moved_since(still) == moved)
+    yield(_key(KEY_RIGHT), "completed")
+
+    check("the four turns are on the board", replay.index == 4)
+    check("a cirya of black went to c2", _owners("c2") == [2] and stack("c3").empty())
+    check("the white ones on a1 and b2", _owners("a1") == [1] and _owners("b2") == [1])
+    check("it stops at the turn that cannot be played", ui.get_node("HelpPanel/AdviceLavel").text.find("La jugada 5, c3+, no cabe") != -1)
+    yield(_key(KEY_RIGHT), "completed")
+    check("and goes no further", replay.index == 4)
+    check("the pieces lie on their squares", _lies_on("c2"))
+
+    yield(_key(KEY_LEFT), "completed")
+    yield(_key(KEY_UP), "completed")
+    check("back two turns", replay.index == 2 and stack("b2").empty() and _owners("c3") == [2])
+    check("no piece is taken by hand meanwhile", game.drag == game.Drag.IDLE)
+
+    insert.emit_signal("pressed")
+    check("the replay ends", !game.has_node("Replay") and ui.get_node("Moves/DemoText").visible and insert.text == ui.INSERT_TEXT)
+    check("and the board stays", _owners("c3") == [2] and _owners("a1") == [1])
+
+# On the board as it is: a nossë says whose the first turn is, and a
+# placement does not, so it is asked
+func _replay_on_the_board():
+    var ui = game.get_node("UI")
+    yield(_insert("a1>"), "completed")
+    _keep_the_board(ui)
+    yield(self, "idle_frame")
+    var replay = game.get_node("Replay")
+    check("the nossë of a1 is of white", replay.first_player == 1 and replay.playable() == 1)
+    yield(_key(KEY_RIGHT), "completed")
+    check("it moves to b1", _owners("b1") == [1] and stack("a1").empty())
+    ui.get_node("Moves/Insert").emit_signal("pressed")
+
+    yield(_insert("d4\nd5"), "completed")
+    _keep_the_board(ui)
+    yield(self, "idle_frame")
+    var who = ui.get_node("WhoStarts")
+    check("a placement asks who plays first", who.visible)
+    who.emit_signal("custom_action", "black")
+    yield(self, "idle_frame")
+    replay = game.get_node("Replay")
+    check("black first, then white", replay.first_player == 2 and replay.player_of(1) == 1)
+    yield(_key(KEY_RIGHT), "completed")
+    yield(_key(KEY_RIGHT), "completed")
+    check("not from the opening: their own ciryar", _owners("d4") == [2] and _owners("d5") == [1])
+    ui.get_node("Moves/Insert").emit_signal("pressed")
+
+func _insert(text):
+    var ui = game.get_node("UI")
+    ui.get_node("Moves/Insert").emit_signal("pressed")
+    yield(self, "idle_frame")
+    var dialog = ui.get_node("InsertMoves")
+    dialog.find_node("List", true, false).text = text
+    dialog.get_ok().emit_signal("pressed")
+    yield(self, "idle_frame")
+
+func _keep_the_board(ui):
+    ui.get_node("HowToPlay").emit_signal("custom_action", "keep")
+
+func _key(scancode):
+    var event = InputEventKey.new()
+    event.scancode = scancode
+    event.pressed = true
+    Input.parse_input_event(event)
+    Input.flush_buffered_events()
+    yield(create_timer(0.9), "timeout")
+
+func _positions():
+    var res = {}
+
+    for piece in game._pieces():
+        res[piece.get_instance_id()] = piece.global_transform.origin
+
+    return res
+
+func _moved_since(positions):
+    var res = []
+
+    for piece in game._pieces():
+        if piece.global_transform.origin.distance_to(positions[piece.get_instance_id()]) > 0.001:
+            res.append(piece.get_instance_id())
+
+    return res
+
+func _all_off():
+    for row in range(state.board.size()):
+        for column in range(state.board.size()):
+            if !state.board.stack(Vector2(row, column)).empty():
+                return false
+
+    return true
+
+func _owners(square):
+    var res = []
+
+    for piece_id in stack(square):
+        res.append(instance_from_id(piece_id).player)
+
+    return res
+
+# Laid out on the tile, not left in the air where the animation took it
+func _lies_on(square):
+    var piece = instance_from_id(stack(square)[0])
+    var there = piece.global_transform.origin
+    var tile_position = tile(square).global_transform.origin
+    return Vector2(there.x, there.z).distance_to(Vector2(tile_position.x, tile_position.z)) < 0.1 and there.y < 1.0
 
 # Leaving says the position is lost, and the menu opens the demo again
 func _from_the_menu():

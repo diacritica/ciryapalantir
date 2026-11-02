@@ -25,6 +25,15 @@ func test_typed():
     check_equal("a move", "3a1>12", Notation.normalize("3A1 > 12"))
     check_equal("as typed when right", "Tb2", Notation.normalize("Tb2"))
 
+# The list of the moves, as it is copied, or turns one after another
+func test_lists():
+    check_equal("the moves as they are copied", ["c3", "a1", "Tb2", "2c3<11"], Notation.parse_list("1. c3\n2. a1\n3. Tb2\n4. 2c3<11\n").turns)
+    check_equal("by commas and spaces, as typed", ["c3", "a1", "Hb2"], Notation.parse_list("c3, A1  hb2").turns)
+    check_equal("numbers stuck to the turns", ["c3", "a1"], Notation.parse_list("1.c3 2.a1").turns)
+    check_equal("no error", "", Notation.parse_list("1. c3").error)
+    check_equal("the first that is not understood", "No entiendo «z9»", Notation.parse_list("1. c3\n2. z9\n3. a1").error)
+    check_equal("nothing", "No hay ninguna jugada", Notation.parse_list(" \n ").error)
+
 func test_not_turns():
     for turn in ["", "x1", "a0", "a1x", "10a1+", "j1"]:
         check_equal(turn, {}, Notation.parse(turn))

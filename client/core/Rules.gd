@@ -188,6 +188,109 @@ static func replay(turn, player, opening, board, fleet):
 
     return []
 
+# A turn written in a list, played on a copy of the board and checked with
+# the rules, as nobody dragged it: {"error"} says why it cannot be played,
+# and otherwise there are the "steps" as replay gives them, and the "board"
+# and the tampar standing ("blocks", their ids) after it. Pieces are all of
+# them: the ones off the board are in their fleets
+static func apply_turn(turn, player, opening, board, blocks, pieces):
+    var parsed = Notation.parse(turn)
+    var after = board.copy()
+    var standing = blocks.duplicate()
+
+    if parsed.empty():
+        return {"error": "No entiendo «%s»" % turn}
+
+    if parsed.has("stone"):
+        var square = parsed.square
+
+        if !_on(square, board):
+            return {"error": "No hay ningún sat %s" % Notation.square_name(square)}
+
+        if !board.stack(square).empty():
+            return {"error": "%s no está libre" % Notation.square_name(square)}
+
+        if opening and parsed.stone != "C":
+            return {"error": "La apertura pone una cirya plana del rival"}
+
+        var owner = 3 - player if opening else player
+        var hallacirya = parsed.stone == "H"
+        var piece = null
+
+        for piece_id in pieces:
+            var each = instance_from_id(piece_id)
+
+            if each.player == owner and (each.type == "HALLACIRYA") == hallacirya and board.square_of(piece_id) == null:
+                piece = piece_id
+                break
+
+        if piece == null:
+            return {"error": "No queda ninguna %s en la bandeja" % ("hallacirya" if hallacirya else "cirya")}
+
+        after.put([piece], square)
+
+        if parsed.stone == "T":
+            standing[piece] = true
+
+        return {"error": "", "steps": [{"piece": piece, "square": square, "stand": parsed.stone == "T"}], "board": after, "blocks": standing}
+
+    if opening:
+        return {"error": "La apertura pone una cirya plana del rival"}
+
+    var origin = parsed.from
+    var name = Notation.square_name(origin) if _on(origin, board) else ""
+    var stack = board.stack(origin) if name else []
+    var total = 0
+
+    for drop in parsed.drops:
+        total += drop
+
+    if stack.empty() or instance_from_id(stack.back()).player != player:
+        return {"error": "%s no es de quien juega" % name if name else "No hay ningún sat así"}
+
+    if parsed.count > stack.size() or parsed.count > board.size():
+        return {"error": "En %s no hay %d piezas que mover" % [name, parsed.count]}
+
+    if total != parsed.count:
+        return {"error": "Las piezas que se sueltan tienen que sumar %d" % parsed.count}
+
+    var carried = _tail(stack, stack.size() - parsed.count)
+    var square = origin
+    var steps = []
+
+    for count in parsed.drops:
+        square += parsed.step
+
+        if !_on(square, board):
+            return {"error": "La jugada se sale del tablero"}
+
+        var dropped = _head(carried, count)
+        var under = after.stack(square)
+
+        if under:
+            var top = under.back()
+
+            if instance_from_id(top).type == "HALLACIRYA":
+                return {"error": "Nada cabe sobre la hallacirya de %s" % Notation.square_name(square)}
+
+            if standing.has(top):
+                if count != 1 or instance_from_id(dropped[0]).type != "HALLACIRYA":
+                    return {"error": "Sobre la tampa de %s solo cabe la hallacirya sola" % Notation.square_name(square)}
+
+                standing.erase(top)
+
+        after.put(dropped, square)
+
+        for piece_id in dropped:
+            steps.append({"piece": piece_id, "square": square, "stand": false})
+
+        carried = _tail(carried, count)
+
+    return {"error": "", "steps": steps, "board": after, "blocks": standing}
+
+static func _on(square, board):
+    return square.x >= 0 and square.y >= 0 and square.x < board.size() and square.y < board.size()
+
 static func _head(list, count):
     var res = []
 
