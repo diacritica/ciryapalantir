@@ -7,6 +7,15 @@ signal turn_confirmation(confirmed)
 
 # Seconds a passing message stays before the help comes back
 const MESSAGE_TIME = 4.0
+# Seconds the help of the demo stays, so it does not get in the way after
+const DEMO_HELP_TIME = 10.0
+# Width of the panels on the left in the demo, with no names of players
+const DEMO_WIDTH = 230
+# Room in the moves for one line under the title, and in the panel of the
+# logo for the link to play
+const DEMO_MOVES_HEIGHT = 70
+const DEMO_CODE_HEIGHT = 150
+const DEMO_HELP = "Demo: mueve cualquier pieza a cualquier sat. Fuera del tablero vuelve a su bandeja. Con R se levanta una tampa"
 # Space between the help and the turn buttons under it
 const HELP_GAP = 8
 
@@ -24,6 +33,9 @@ var messages = 0
 func _ready():
     mouse_filter = MOUSE_FILTER_IGNORE
     $CodePanel.visible = !Match.sandbox
+
+    if Match.demo:
+        _dress_for_demo()
 
     Server.connect("connection_success", self, "_show_room")
     Server.connect("notification_received", self, "_on_notification")
@@ -53,7 +65,13 @@ func _show_room():
     $BlackTurn/User.text = Server.get_player_name("black")
 
 func _on_phase_changed(phase):
-    $TurnPanel.visible = phase == Match.Phase.MY_TURN
+    $TurnPanel.visible = phase == Match.Phase.MY_TURN and !Match.demo
+
+    # No turns in the demo
+    if Match.demo:
+        _show_help()
+        return
+
     $TurnPanel/Confirm.disabled = Match.move_notation() == ""
 
     var active = $WhiteTurn if Match.current == 1 else $BlackTurn
@@ -70,6 +88,10 @@ func _on_phase_changed(phase):
 func _show_help():
     var text = ""
 
+    if Match.demo:
+        _demo_help()
+        return
+
     match Match.phase:
         Match.Phase.WAITING:
             text = "Esperando a que empiece la partida"
@@ -82,6 +104,54 @@ func _show_help():
             text = "Turno de las blancas" if Match.current == 1 else "Turno de las negras"
 
     _help(text)
+
+# The demo is not a game, but it is shown to others, as on a stream: the
+# panels of the players stay, narrow, with no names and no turn; the moves
+# say it is the demo, and the logo and the link to play stay, with no code
+func _dress_for_demo():
+    for panel in [$WhiteTurn, $BlackTurn]:
+        panel.margin_right = panel.margin_left + DEMO_WIDTH
+        panel.set("custom_styles/panel", inactive_style)
+        panel.get_node("User").hide()
+        panel.get_node("CurrentTurn").hide()
+        var label = panel.get_node("Label")
+        var width = label.margin_right - label.margin_left
+        label.margin_left = panel.get_node("User").margin_left
+        label.margin_right = label.margin_left + width
+
+    var moves = $Moves
+    var title = moves.get_node("Title")
+    var text = moves.get_node("MovesText")
+    moves.margin_right = moves.margin_left + DEMO_WIDTH
+    moves.margin_bottom = moves.margin_top + title.margin_bottom + DEMO_MOVES_HEIGHT
+    title.margin_right = DEMO_WIDTH - title.margin_left
+    text.hide()
+
+    var demo = Label.new()
+    demo.name = "DemoText"
+    demo.text = "Modo Demo"
+    demo.align = Label.ALIGN_CENTER
+    demo.valign = Label.VALIGN_CENTER
+    demo.set("custom_fonts/font", text.get("custom_fonts/font"))
+    demo.set("custom_colors/font_color", text.get("custom_colors/font_color_readonly"))
+    moves.add_child(demo)
+    demo.set_anchors_and_margins_preset(PRESET_WIDE)
+    demo.margin_top = title.margin_bottom
+
+    var code = $CodePanel
+    code.get_node("CodeText").hide()
+    code.get_node("ShareText/Label").text = "Juega en"
+    code.margin_bottom = code.margin_top + DEMO_CODE_HEIGHT
+
+# Once, when the demo opens
+func _demo_help():
+    if messages > 0:
+        return
+
+    messages += 1
+    _help(DEMO_HELP)
+    yield(get_tree().create_timer(DEMO_HELP_TIME), "timeout")
+    _help("")
 
 # The help sits where the turn buttons are, or just above them when they show
 func _help(text):
@@ -168,6 +238,8 @@ func _ask_to_leave():
 
     if Match.sandbox:
         dialog.dialog_text += "\nLa partida de sandbox se pierde."
+    elif Match.demo:
+        dialog.dialog_text += "\nLa posición de la demo se pierde."
     elif Match.player != 0 and Match.phase != Match.Phase.FINISHED:
         dialog.dialog_text += "\nTu asiento te espera: entra con el código %s para seguir." % Server.get_code()
 

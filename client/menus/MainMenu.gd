@@ -1,6 +1,7 @@
 extends Control
 
-# The first screen: create a room, join one with its code or open the sandbox.
+# The first screen: create a room, join one with its code, or open the sandbox
+# or the demo.
 # In a room each player picks a colour and a name, and the game starts when
 # both are ready
 
@@ -40,8 +41,13 @@ func _on_SandboxButton_pressed():
     Match.start_sandbox()
     get_tree().change_scene("res://Game.tscn")
 
+func _on_DemoButton_pressed():
+    Match.start_demo()
+    get_tree().change_scene("res://Game.tscn")
+
 func _enter_room(code):
     Match.sandbox = false
+    Match.demo = false
     # The seat taken here before, to play it again when the game has started
     Match.player = Server.seat_in(code)
     $CreateGame/Panel/Code/CodeLabel.text = code

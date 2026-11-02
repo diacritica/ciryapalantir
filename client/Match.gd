@@ -1,7 +1,8 @@
 extends Node
 
 # The game being played: whose turn it is and the move of this turn. Online it
-# follows the server; in the sandbox it plays both sides on one computer
+# follows the server; in the sandbox it plays both sides on one computer, and
+# in the demo there are no rules nor turns, to set up a board and explain it
 
 const BoardState = preload("res://core/BoardState.gd")
 const Move = preload("res://core/Move.gd")
@@ -35,6 +36,8 @@ signal game_over(result, condition)
 
 # The same rules and turns, without the server
 var sandbox = false
+# Any piece goes anywhere, always from the side of player 1
+var demo = false
 # The seat of this client, 0 for a spectator. In the sandbox it changes every turn
 var player = 0
 var turn = 1
@@ -58,6 +61,11 @@ func start_sandbox():
     status = null
     _next(1, 1)
 
+func start_demo():
+    start_sandbox()
+    sandbox = false
+    demo = true
+
 # A new board for the game scene, which knows its size
 func new_board(size):
     set_board(BoardState.new(size))
@@ -69,25 +77,42 @@ func set_board(value):
 
 # Turns 1 and 2: each player places a flat cirya of the opponent, as in Tak
 func opening():
-    return turn <= 2
+    return turn <= 2 and !demo
 
 func can_take(piece_id):
+    if demo:
+        return true
+
     return phase == Phase.MY_TURN and Rules.can_take(piece_id, board, move, player, opening())
 
+# Not even the demo puts anything on a hallacirya
 func can_drop(hand, square):
+    if demo:
+        var stack = board.stack(square)
+        return stack.empty() or hand.has(stack.back()) or instance_from_id(stack.back()).get_notation_name() != "H"
+
     return Rules.can_drop(hand, square, board, move, player, opening())
 
 func move_started():
     return move != null and move.started(board)
 
+# The demo has no turns, so no move to keep
 func start_move(piece_id, pieces):
-    move = Move.new(board, piece_id, pieces)
+    if !demo:
+        move = Move.new(board, piece_id, pieces)
 
 # Puts the pieces of the hand on the square. The drop has been checked
 func drop(hand, square):
     board.put(hand, square)
-    move.sync_tampar(board)
+
+    if move:
+        move.sync_tampar(board)
+
     emit_signal("move_changed", move_notation())
+
+# In the demo, pieces taken off the board go back to their fleet
+func take_off(hand):
+    board.take_off(hand)
 
 # The move worked out from the board, or "" when there is nothing to send yet
 func move_notation():
@@ -126,6 +151,7 @@ func undo():
 # Back to the menu: no game, no seat
 func leave():
     sandbox = false
+    demo = false
     player = 0
     status = null
     move = null

@@ -209,14 +209,23 @@ func take(piece):
     $select.play()
 
 # Drops the hand on the tile when the move allows it, and otherwise sends the
-# pieces back. The tile is null when the hand is not over the board
+# pieces back. The tile is null when the hand is not over the board: in the
+# demo the pieces then go back to their fleet
 func release(tile):
     if tile and Match.can_drop(_hand_ids(), _square(tile)):
         drop(tile)
+    elif !tile and Match.demo:
+        send_home()
     else:
         cancel()
 
 func drop(tile):
+    # The demo has no rules: whatever covers a tampa lays it down
+    var stack = Match.board.stack(_square(tile))
+
+    if Match.demo and stack and !_hand_ids().has(stack.back()) and instance_from_id(stack.back()).get_notation_name() == "T":
+        instance_from_id(stack.back()).toggle_block()
+
     Match.drop(_hand_ids(), _square(tile))
 
     for piece in hand.get_children():
@@ -228,6 +237,14 @@ func drop(tile):
 
 # The pieces fly back and the board does not change
 func cancel():
+    _fly_back(hand_origins)
+
+# The pieces leave the board and fly to their place in the fleet
+func send_home():
+    Match.take_off(_hand_ids())
+    _fly_back(home)
+
+func _fly_back(places):
     var tween = Tween.new()
     var pieces = hand.get_children()
     add_child(tween)
@@ -238,7 +255,7 @@ func cancel():
         piece.remove_from_group("hand")
         _reparent(piece, $Pieces)
         piece.global_transform = current
-        tween.interpolate_property(piece, "global_transform", current, hand_origins[piece.get_instance_id()], RETURN_TIME, Tween.TRANS_QUAD, Tween.EASE_OUT)
+        tween.interpolate_property(piece, "global_transform", current, places[piece.get_instance_id()], RETURN_TIME, Tween.TRANS_QUAD, Tween.EASE_OUT)
 
     tween.connect("tween_all_completed", self, "_on_returned", [tween, pieces], CONNECT_ONESHOT)
     tween.start()
@@ -299,11 +316,13 @@ func _follow_mouse():
     position.y = max(position.y, HAND_MIN_HEIGHT)
     hand.translation = position
 
-# A piece from the fleet can be placed standing, as a tampa, except in the opening
+# A piece from the fleet can be placed standing, as a tampa, except in the
+# opening. In the demo any cirya alone in the hand can
 func _rotate():
     var piece = hand.get_child(0)
+    var from_fleet = Match.demo or Match.board.square_of(piece.get_instance_id()) == null
 
-    if hand.get_child_count() == 1 and piece.get_notation_name() != "H" and Match.board.square_of(piece.get_instance_id()) == null and !Match.opening():
+    if hand.get_child_count() == 1 and piece.get_notation_name() != "H" and from_fleet and !Match.opening():
         piece.toggle_block()
         $piecerotation.play()
 

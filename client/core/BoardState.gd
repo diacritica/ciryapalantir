@@ -40,13 +40,17 @@ func owner(square):
 
 # Puts the pieces, in order, on top of the square
 func put(piece_ids, square):
+    take_off(piece_ids)
+
+    for piece_id in piece_ids:
+        stack(square).append(piece_id)
+
+# The pieces leave the board
+func take_off(piece_ids):
     for row in stacks:
         for stack in row:
             for piece_id in piece_ids:
                 stack.erase(piece_id)
-
-    for piece_id in piece_ids:
-        stack(square).append(piece_id)
 
 func copy():
     var board = get_script().new()

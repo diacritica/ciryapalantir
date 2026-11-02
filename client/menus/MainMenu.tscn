@@ -247,7 +247,7 @@ flip_h = true
 [node name="SandboxButton" type="Button" parent="Welcome/Panel"]
 margin_left = 134.539
 margin_top = 440.5
-margin_right = 384.539
+margin_right = 252.539
 margin_bottom = 490.5
 custom_colors/font_color = Color( 1, 0.690196, 0.258824, 1 )
 custom_styles/hover = ExtResource( 7 )
@@ -256,6 +256,22 @@ custom_styles/focus = ExtResource( 6 )
 custom_styles/disabled = ExtResource( 12 )
 custom_styles/normal = ExtResource( 6 )
 text = "Sandbox"
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="DemoButton" type="Button" parent="Welcome/Panel"]
+margin_left = 266.539
+margin_top = 440.5
+margin_right = 384.539
+margin_bottom = 490.5
+custom_colors/font_color = Color( 1, 0.690196, 0.258824, 1 )
+custom_styles/hover = ExtResource( 7 )
+custom_styles/pressed = ExtResource( 7 )
+custom_styles/focus = ExtResource( 6 )
+custom_styles/disabled = ExtResource( 12 )
+custom_styles/normal = ExtResource( 6 )
+text = "Demo"
 __meta__ = {
 "_edit_use_anchors_": false
 }
@@ -828,4 +844,5 @@ valign = 1
 [connection signal="pressed" from="Welcome/Panel/NewGameButton" to="." method="_on_NewGameButton_pressed"]
 [connection signal="pressed" from="Welcome/Panel/JoinGameButton" to="." method="_on_JoinGameButton_pressed"]
 [connection signal="pressed" from="Welcome/Panel/SandboxButton" to="." method="_on_SandboxButton_pressed"]
+[connection signal="pressed" from="Welcome/Panel/DemoButton" to="." method="_on_DemoButton_pressed"]
 [connection signal="pressed" from="JoinGame/Panel/JoinGameButton2" to="." method="_on_JoinGameCode_pressed"]
