@@ -332,8 +332,9 @@ su derecha, la columna a), cada nombre junto a su columna o fila. Siguen la cuad
 la de las casillas desde la esquina de a1. Se ocultan al cerrar el cajón y cuando no es tu turno. La esquina cercana derecha
 queda bajo la franja de la ayuda. Probado en `tests/smoke_written.gd`.
 
-Pendiente: las piezas y el resaltado también siguen la cuadrícula de las casillas y no la dibujada, así que quedan algo
-desplazados hacia a1, más cuanto más cerca de e5. Se arreglaría ajustando `TILE_STEP` al dibujo.
+Las casillas (resaltado y piezas) siguen su propia cuadrícula, algo menor que la dibujada, y se dejan así a propósito
+(decisión de Pablo): a ojo se ven mejor que ajustadas al dibujo, donde el resaltado quedaría pegado a un borde o lo
+rebasaría. No cambiar `TILE_STEP`.
 
 ### 3.3 Regla Henneth Annûn (interruptor ≈ 2 h, la regla ≈ medio día)
 
