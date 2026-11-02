@@ -90,7 +90,34 @@ func can_take(piece_id):
     if demo:
         return true
 
-    return phase == Phase.MY_TURN and Rules.can_take(piece_id, board, move, player, opening())
+    if phase != Phase.MY_TURN or !Rules.can_take(piece_id, board, move, player, opening()):
+        return false
+
+    return hallacirya_playable(player) or !_hallacirya_in_fleet(piece_id)
+
+# The Henneth Annûn rule, chosen for the game
+func henneth_annun():
+    return status != null and status.get("config", {}).get("hennethAnnun", false) and !demo
+
+# Whether the hallacirya of the player can come into play in this turn
+func hallacirya_playable(seat):
+    return !henneth_annun() or turn == Rules.hallacirya_turn(seat)
+
+# It is the turn of the hallacirya of this player and it is still in the
+# fleet: the rule asks to play it, unless that loses the game
+func hallacirya_due():
+    if phase != Phase.MY_TURN or !henneth_annun() or turn != Rules.hallacirya_turn(player):
+        return false
+
+    var fleet = status.get("fleets", {}).get(str(player), {})
+    return int(fleet.get("hallaciryar", 0)) > 0
+
+# Confirming this move gives up the hallacirya for ever
+func renounces_hallacirya():
+    return hallacirya_due() and !move_notation().begins_with("H")
+
+func _hallacirya_in_fleet(piece_id):
+    return instance_from_id(piece_id).get_notation_name() == "H" and board.square_of(piece_id) == null
 
 # Not even the demo puts anything on a hallacirya
 func can_drop(hand, square):

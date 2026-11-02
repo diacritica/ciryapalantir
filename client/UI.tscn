@@ -573,6 +573,21 @@ align = 1
 valign = 1
 clip_text = true
 
+[node name="HennethAnnun" type="Label" parent="CodePanel"]
+visible = false
+margin_left = 16.2245
+margin_top = 238.0
+margin_right = 223.225
+margin_bottom = 266.0
+hint_tooltip = "La Hallacirya solo puede ponerse en juego en el turno 9+7 (16) de Morqua y en el siguiente (17) de Ninquë, salvo que jugarla provoque la derrota instantánea de quien la juega"
+mouse_filter = 0
+mouse_default_cursor_shape = 16
+custom_fonts/font = SubResource( 7 )
+custom_colors/font_color = Color( 1, 0.690196, 0.258824, 1 )
+text = "◆ Henneth Annûn ◆"
+align = 1
+valign = 1
+
 [node name="Exit" type="Button" parent="."]
 anchor_top = 1.0
 anchor_bottom = 1.0

@@ -1,5 +1,7 @@
 package cirya
 
+import "errors"
+
 type WinCondition string
 
 const (
@@ -16,6 +18,28 @@ type Result struct {
 	// 1 or 2, and 0 when the game ends in a draw
 	Winner    int
 	Condition WinCondition
+}
+
+// The turns of the game in which each hallacirya can come into play with the
+// Henneth Annûn rule: the 16th of black, who plays second, and right after
+// it the 17th of white. Every turn of the game counts, so they are the 32nd
+// and the 33rd
+const (
+	HennethAnnunBlack = 32
+	HennethAnnunWhite = 33
+)
+
+// HennethAnnun checks a turn of the game against the Henneth Annûn rule. The
+// rule asks to play the hallacirya in its turn unless that loses the game,
+// which only the player can judge, so it only refuses it in any other turn
+func HennethAnnun(turn int, move string) error {
+	p, ok := parsePlacement(move)
+
+	if !ok || p.stone != 'H' || turn == HennethAnnunBlack || turn == HennethAnnunWhite {
+		return nil
+	}
+
+	return errors.New("with Henneth Annûn the hallacirya is only played in the 16th turn of black or the 17th of white")
 }
 
 // Result checks the board after a turn of the given player

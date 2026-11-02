@@ -62,6 +62,7 @@ func _ready():
     Match.connect("opponent_played", self, "_on_opponent_played")
     Match.connect("turn_refused", self, "_on_turn_refused")
     Match.connect("status_received", self, "_on_status_received")
+    Match.connect("phase_changed", self, "_fade_hallaciryar")
 
     # Player 1, the sandbox and spectators look from the side of player 1
     if Match.player != 2:
@@ -92,6 +93,7 @@ func _ready():
 
     $sandboxlogo.visible = Match.sandbox
     _follow_camera()
+    _fade_hallaciryar()
 
     # Opened in a game already started
     if Match.status:
@@ -374,6 +376,9 @@ func _write_placement(parsed):
     if !piece:
         return "No queda ninguna %s en la bandeja" % ("hallacirya" if kind == "H" else "cirya")
 
+    if kind == "H" and !Match.hallacirya_playable(Match.player):
+        return "Con Henneth Annûn la Hallacirya solo se juega en la jugada 16 de Morqua o en la 17 de Ninquë"
+
     if !Match.can_take(piece.get_instance_id()):
         return "Esa pieza no se puede poner ahora"
 
@@ -529,6 +534,16 @@ func _on_status_received(status, catching_up):
 
     for difference in Status.fleet_differences(status.get("fleets", {}), Match.board, _pieces()):
         push_warning(difference)
+
+    _fade_hallaciryar()
+
+# With Henneth Annûn, a hallacirya in the fleet is faded while it cannot come
+# into play, and for ever once its turn is gone
+func _fade_hallaciryar(_phase = null):
+    for piece in _pieces():
+        if piece.get_notation_name() == "H":
+            var waiting = Match.board.square_of(piece.get_instance_id()) == null and !Match.hallacirya_playable(piece.player)
+            piece.fade(waiting)
 
 # Every piece where the board says: on its square, or back in its fleet
 func _lay_out():

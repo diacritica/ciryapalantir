@@ -126,3 +126,24 @@ func TestEmptyFleetEndsGame(t *testing.T) {
 
 	assert.Equal(t, cirya.Result{Over: true, Winner: 2, Condition: cirya.Flat}, board.Result(1))
 }
+
+func TestHennethAnnun(t *testing.T) {
+	for _, c := range []struct {
+		turn  int
+		move  string
+		legal bool
+	}{
+		{turn: 3, move: "Hc3", legal: false},
+		{turn: 31, move: "Hc3", legal: false},
+		{turn: 32, move: "Hc3", legal: true},
+		{turn: 33, move: "He5", legal: true},
+		{turn: 34, move: "Hc3", legal: false},
+		{turn: 60, move: "Hc3", legal: false},
+		{turn: 3, move: "c3", legal: true},
+		{turn: 3, move: "Tc3", legal: true},
+		{turn: 40, move: "2c3>11H", legal: true},
+	} {
+		err := cirya.HennethAnnun(c.turn, c.move)
+		assert.Equal(t, c.legal, err == nil, "%s in turn %d", c.move, c.turn)
+	}
+}

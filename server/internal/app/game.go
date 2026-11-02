@@ -351,6 +351,12 @@ func (g *Game) Play(user ID, player, turn int, move string) (cirya.Result, error
 		return g.timeUp(player), nil
 	}
 
+	if g.config.HennethAnnun {
+		if err := cirya.HennethAnnun(g.turn, move); err != nil {
+			return cirya.Result{}, err
+		}
+	}
+
 	var err error
 
 	// The first turn of each player places a cirya of the opponent

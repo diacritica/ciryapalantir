@@ -323,6 +323,14 @@ espacios. Sirve en partida y en el sandbox, no en la demo ni para quien mira. Pr
 
 ### 3.3 Regla Henneth Annûn (interruptor ≈ 2 h, la regla ≈ medio día)
 
+**Hecho.** El servidor rechaza con un InvalidTurn la hallacirya puesta fuera de las jugadas 32 (negras) y 33 (blancas)
+de la partida (`cirya.HennethAnnun`), y el cliente no deja cogerla ni escribirla, y lo explica. Mientras no se puede
+jugar se ve translúcida en la bandeja, y para siempre cuando su turno pasa. En su turno la ayuda dice "Henneth Annûn: es
+tu turno de poner la Hallacirya" y, si se confirma otra jugada, se pregunta "¿Renuncias para siempre a tu Hallacirya?"
+("Volver al tablero" o "Renuncio"). Bajo el código de sala, el sello "◆ Henneth Annûn ◆" con el tooltip de la regla.
+Probado en Go (`henneth_test.go`, `TestHennethAnnun`), en `tests/smoke_henneth.gd` (una partida escrita en el sandbox
+hasta la jugada 35) y en `tests/e2e_henneth.gd`, contra el servidor real con un bot guionizado hasta la jugada 34.
+
 **La regla (de Pablo).** Con ella activa, cada jugador solo puede poner en juego su hallacirya en una jugada concreta:
 Morqua (negras) en su jugada 16 y Ninquë (blancas) en su jugada 17, que es la siguiente. Van en orden inverso a la salida
 (empiezan las blancas) para equilibrar la iniciativa. Antes de esa jugada está prohibida; en ella toca jugarla, salvo que

@@ -5,6 +5,12 @@ extends Reference
 
 const Notation = preload("res://core/Notation.gd")
 
+# With the Henneth Annûn rule each hallacirya only comes into play in one turn
+# of the game: the 16th of black, who plays second, and right after it the
+# 17th of white. Every turn of the game counts, so they are the 32nd and 33rd
+const HENNETH_ANNUN_BLACK = 32
+const HENNETH_ANNUN_WHITE = 33
+
 # Whether the player can take this piece, with the ones above it
 static func can_take(piece_id, board, move, player, opening):
     var piece = instance_from_id(piece_id)
@@ -25,6 +31,11 @@ static func can_take(piece_id, board, move, player, opening):
     # A nossë of the player, and no more stones than the board size
     var stack = board.stack(square)
     return board.owner(square) == player and stack.size() - stack.find(piece_id) <= board.size()
+
+# The turn of the game in which the hallacirya of the player comes into play
+# with the Henneth Annûn rule
+static func hallacirya_turn(player):
+    return HENNETH_ANNUN_WHITE if player == 1 else HENNETH_ANNUN_BLACK
 
 # Whether the pieces in the hand can go on the square: the board they leave
 # has to be a legal move, even half done

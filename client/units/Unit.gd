@@ -10,6 +10,9 @@ export(int) var player = 0
 
 var fleet = null
 
+# How much is seen of a faded piece
+const FADED = 0.35
+
 func _ready():
     add_to_group("pieces")
     connect("mouse_entered", self, "_on_mouse_entered")
@@ -38,6 +41,17 @@ func _glow(on):
         material.emission = Color(0.62, 0.27, 0.0) if fleet.white else Color(0.63, 0.34, 0.84)
 
     $Mesh.mesh.surface_set_material(0, material)
+
+# A piece that cannot come into play yet is seen faded, over the glow
+func fade(on):
+    var material = null
+
+    if on:
+        material = $Mesh.mesh.surface_get_material(0).duplicate(true)
+        material.flags_transparent = true
+        material.albedo_color.a = FADED
+
+    $Mesh.set_surface_material(0, material)
 
 func toggle_block():
     if type != "CIRYA":

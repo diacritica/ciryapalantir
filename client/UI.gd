@@ -63,6 +63,7 @@ func _ready():
     Match.connect("move_changed", self, "_on_move_changed")
     Match.connect("turn_refused", self, "_on_turn_refused")
     Match.connect("game_over", self, "_on_game_over")
+    Match.connect("status_received", self, "_show_rules")
     $TurnPanel/Confirm.connect("pressed", self, "_on_confirm_pressed")
     $TurnPanel/Undo.connect("pressed", self, "_on_undo_pressed")
     # Invisible for now, in the bottom left corner
@@ -74,6 +75,7 @@ func _ready():
     _shape_entry(false)
 
     _show_room()
+    _show_rules()
     _on_phase_changed(Match.phase)
 
     # Opened in a game already started: the status came while in the menu
@@ -120,6 +122,10 @@ func _show_room():
     $WhiteTurn/User.text = Server.get_player_name("white")
     $BlackTurn/User.text = Server.get_player_name("black")
 
+# The seal of the Henneth Annûn rule, under the code, when the game has it
+func _show_rules(_status = null, _catching_up = false):
+    $CodePanel/HennethAnnun.visible = Match.henneth_annun()
+
 func _on_phase_changed(phase):
     $TurnPanel.visible = phase == Match.Phase.MY_TURN and !Match.demo
     _show_entry(phase == Match.Phase.MY_TURN and !Match.demo and Match.player != 0)
@@ -155,6 +161,8 @@ func _show_help():
         Match.Phase.MY_TURN:
             if Match.opening():
                 text = "Toma una cirya de tu oponente y ubícala en un sat"
+            elif Match.hallacirya_due():
+                text = "Henneth Annûn: es tu turno de poner la Hallacirya"
         Match.Phase.SUBMITTED:
             text = "Esperando al servidor…"
         Match.Phase.OPPONENT:
@@ -282,7 +290,7 @@ func _unhandled_input(event):
     if event.is_action_pressed("ui_cancel"):
         _ask_to_leave()
     elif event is InputEventKey and event.pressed and !event.echo and event.scancode in [KEY_ENTER, KEY_KP_ENTER]:
-        if $TurnPanel.visible and !$TurnPanel/Confirm.disabled and !has_node("Leave"):
+        if $TurnPanel.visible and !$TurnPanel/Confirm.disabled and !has_node("Leave") and !has_node("Renounce"):
             get_tree().set_input_as_handled()
             _on_confirm_pressed()
     elif event is InputEventMouseButton and event.pressed:
@@ -394,8 +402,28 @@ func _shake(control):
     tween.connect("tween_all_completed", tween, "queue_free")
     tween.start()
 
+# With Henneth Annûn, another move in the turn of the hallacirya gives it up
+# for ever, so it is asked first
 func _on_confirm_pressed():
-    emit_signal("turn_confirmation", true)
+    if Match.renounces_hallacirya():
+        _ask_to_renounce()
+    else:
+        emit_signal("turn_confirmation", true)
+
+func _ask_to_renounce():
+    if has_node("Renounce"):
+        return
+
+    var dialog = ConfirmationDialog.new()
+    dialog.name = "Renounce"
+    dialog.window_title = "Henneth Annûn"
+    dialog.dialog_text = "¿Renuncias para siempre a tu Hallacirya?\nSolo puede ponerse en juego en este turno."
+    dialog.get_ok().text = "Renuncio"
+    dialog.get_cancel().text = "Volver al tablero"
+    dialog.connect("confirmed", self, "emit_signal", ["turn_confirmation", true])
+    dialog.connect("popup_hide", dialog, "queue_free")
+    add_child(dialog)
+    dialog.popup_centered()
 
 func _on_undo_pressed():
     emit_signal("turn_confirmation", false)
