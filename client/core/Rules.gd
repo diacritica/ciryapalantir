@@ -42,6 +42,23 @@ static func fits(stack, size):
 
     return pieces <= size
 
+# The tampar of the player standing on the board: there can be as many as
+# the board is wide. Standing are the pieces in blocks, or that say so
+static func tampar(board, blocks, player):
+    var count = 0
+
+    for row in range(board.size()):
+        for column in range(board.size()):
+            var stack = board.stack(Vector2(row, column))
+
+            if stack:
+                var top = instance_from_id(stack.back())
+
+                if top.player == player and (blocks.has(stack.back()) if blocks != null else top.block):
+                    count += 1
+
+    return count
+
 # The turn of the game in which the hallacirya of the player comes into play
 # with the Henneth Annûn rule
 static func hallacirya_turn(player):
@@ -222,6 +239,9 @@ static func apply_turn(turn, player, opening, board, blocks, pieces, unlimited =
 
         if opening and parsed.stone != "C":
             return {"error": "La apertura pone una cirya plana del rival"}
+
+        if parsed.stone == "T" and tampar(board, standing, player) >= board.size():
+            return {"error": "Ya hay %d tampar de quien juega en el tablero, las que puede haber" % board.size()}
 
         var owner = 3 - player if opening else player
         var hallacirya = parsed.stone == "H"

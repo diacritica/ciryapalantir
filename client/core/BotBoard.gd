@@ -12,6 +12,7 @@ extends Reference
 #   a nossë carries at most as many stones as the board is wide, and holds
 #   no more than that, with a hallacirya on top (unless the variant T4K)
 #   with Henneth Annûn, each hallacirya only comes into play in one turn
+#   a player has at most as many tampar standing as the board is wide
 #
 # Squares are numbered row by row from a1: index = rank * size + file
 
@@ -93,6 +94,7 @@ func moves():
 
     var fleet = fleets[player]
     var hallacirya = fleet.hallaciryar > 0 and hallacirya_allowed(player)
+    var tampa = tampar(player) < size
 
     for index in range(stacks.size()):
         if stacks[index].empty():
@@ -100,7 +102,9 @@ func moves():
 
             if fleet.ciryar > 0:
                 res.append(name)
-                res.append("T" + name)
+
+                if tampa:
+                    res.append("T" + name)
 
             if hallacirya:
                 res.append("H" + name)
@@ -108,6 +112,17 @@ func moves():
             _nosse_moves(index, res)
 
     return res
+
+# The tampar of the player standing on the board
+func tampar(player):
+    var count = 0
+    var stone = "T" + str(player)
+
+    for stack in stacks:
+        if stack and stack.back() == stone:
+            count += 1
+
+    return count
 
 func hallacirya_allowed(player):
     return !henneth_annun or turn == (HENNETH_ANNUN_WHITE if player == 1 else HENNETH_ANNUN_BLACK)

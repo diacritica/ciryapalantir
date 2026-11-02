@@ -436,6 +436,10 @@ Sent to every user when a player answers the offer of a rematch, and when its ti
 * **Fleets:** 5x5: 21 ciryar + 1 hallacirya; 6x6: 30 + 2; 7x7: 40 + 2. Tampar come from the ciryar.
   What is left is sent in `status.fleets`: `{ "1": { "ciryar": 15, "hallaciryar": 1 }, "2": { ... } }`.
 * **Moves:** at most as many stones as the board size, and the drops have to add up to the stones taken.
+* **Height of a nossë:** a square holds at most as many stones as the board size, and a hallacirya on top (not with the
+  variant T4K, see **ChangeConfig**).
+* **Tampar:** a player has at most as many tampar standing on the board as the board size; a tampa flattened by a
+  hallacirya no longer counts. One more is an **InvalidTurn**.
 
 ## Normal game flow
 

@@ -28,6 +28,7 @@ const BLACK_FILL_LAYER = 1 << 19
 # Lines of the 3D picture at most, see _render_3d_apart
 const MAX_3D_LINES = 1440.0
 const RETURN_TIME = 0.35
+const TAMPAR_FULL = "Ya tienes %d tampar en el tablero: no caben más"
 
 # The schematic view hides the tavern: its table and what is on it, the dust
 # in the air and its lights, and lights all evenly from above over a plain
@@ -506,6 +507,9 @@ func _write_placement(parsed):
     if parsed.stone == "T" and Match.opening():
         return "En la apertura no se puede poner una tampa"
 
+    if parsed.stone == "T" and Match.tampar_full():
+        return TAMPAR_FULL % Match.board.size()
+
     var owner = 3 - Match.player if Match.opening() else Match.player
     var kind = "H" if parsed.stone == "H" else "C"
     var piece = null
@@ -599,6 +603,10 @@ func _rotate():
     var from_fleet = Match.demo or Match.board.square_of(piece.get_instance_id()) == null
 
     if hand.get_child_count() == 1 and piece.get_notation_name() != "H" and from_fleet and !Match.opening():
+        if !piece.block and !Match.demo and Match.tampar_full():
+            $UI._say(TAMPAR_FULL % Match.board.size())
+            return
+
         piece.toggle_block()
         $piecerotation.play()
 

@@ -130,7 +130,16 @@ func can_drop(hand, square):
         var stack = board.stack(square)
         return stack.empty() or hand.has(stack.back()) or instance_from_id(stack.back()).get_notation_name() != "H"
 
-    return Rules.can_drop(hand, square, board, move, player, opening()) and !overflows(hand, square)
+    return Rules.can_drop(hand, square, board, move, player, opening()) and !overflows(hand, square) and !_too_many_tampar(hand)
+
+# A tampa from the fleet when the player has all the tampar it can on the board
+func _too_many_tampar(hand):
+    var piece = instance_from_id(hand[0])
+    return hand.size() == 1 and piece.block and board.square_of(hand[0]) == null and tampar_full()
+
+# The player has as many tampar standing on the board as the board is wide
+func tampar_full():
+    return Rules.tampar(board, null, player) >= board.size()
 
 # The pieces would go over the height of a nossë there
 func overflows(hand, square):

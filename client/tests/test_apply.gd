@@ -160,3 +160,12 @@ func test_fits():
     check_equal("and a hallacirya on them", true, Rules.fits(five + put("a2", ["H1"]), 5))
     check_equal("not six", false, Rules.fits(five + put("a3", ["C1"]), 5))
     check_equal("six fit in 6x6", true, Rules.fits(five + put("a4", ["C1"]), 6))
+
+# A player has at most five tampar standing in 5x5
+func test_tampar_on_the_board():
+    for square in ["a1", "b1", "c1", "d1", "e1"]:
+        put(square, ["T1"])
+
+    check_equal("not a sixth", "Ya hay 5 tampar de quien juega en el tablero, las que puede haber", apply("Ta3", 1).error)
+    check_equal("but a flat cirya", "", apply("a3", 1).error)
+    check_equal("black has none", "", apply("Ta3", 2).error)

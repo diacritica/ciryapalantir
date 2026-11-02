@@ -38,6 +38,7 @@ func _play():
     yield(_onto_a_stack(), "completed")
     _wrong()
     _full_nosse()
+    _five_tampar()
     _not_my_turn()
 
     print("smoke written: %d failures" % failures)
@@ -170,6 +171,28 @@ func _full_nosse():
     write("d4+")
     check("not on a full nossë", help_text() == "En d5 ya no cabe más: un nossë tiene 5 piezas como mucho, y la hallacirya encima")
     check("which stays as it was", stack("d5").size() == 5 and stack("d4").size() == 1)
+
+# Five tampar of black standing on the board, the most there can be: a sixth
+# is refused, written or turned with R, and says why
+func _five_tampar():
+    var tampar = []
+
+    for piece in game._pieces():
+        if piece.player == 2 and piece.get_notation_name() == "C" and state.board.square_of(piece.get_instance_id()) == null and tampar.size() < 6:
+            tampar.append(piece)
+
+    for i in range(5):
+        tampar[i].toggle_block()
+        game._place(tampar[i], Notation.parse_square(["a5", "b5", "c5", "e5", "e4"][i]))
+
+    game._remember_turn_start()
+    write("Tb4")
+    check("no sixth tampa written", help_text() == "Ya tienes 5 tampar en el tablero: no caben más" and stack("b4").empty())
+
+    game.take(tampar[5])
+    game._rotate()
+    check("nor turned with R", tampar[5].get_notation_name() == "C" and help_text() == "Ya tienes 5 tampar en el tablero: no caben más")
+    game.cancel()
 
 func _not_my_turn():
     state.sandbox = false

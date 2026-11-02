@@ -195,12 +195,13 @@ func TestFleetLimits(t *testing.T) {
 	require.NoError(t, board.Play(1, "Ha1"))
 	assert.Error(t, board.Play(1, "Hb1"), "only one hallacirya in 5×5")
 
-	// 21 ciryar, tampar included: 20 on ranks 2 to 5, one of every three standing
+	// 21 ciryar, tampar included: 20 on ranks 2 to 5, one of every five
+	// standing, fewer than the five tampar a player can have on the board
 	placed := 0
 	for _, rank := range "2345" {
 		for _, file := range "abcde" {
 			turn := string(file) + string(rank)
-			if placed%3 == 0 {
+			if placed%5 == 0 {
 				turn = "T" + turn
 			}
 			require.NoError(t, board.Play(1, turn))
@@ -252,4 +253,24 @@ func TestHeightWithT4K(t *testing.T) {
 
 	require.NoError(t, board.Play(1, "a1>"))
 	assert.Len(t, stackAt(board, "b1"), 6)
+}
+
+// A player can have as many tampar standing on the board as the board is
+// wide; a flattened one no longer counts
+func TestTamparOnTheBoard(t *testing.T) {
+	five := cirya.BoardData{"1": {"a": {"T1"}, "b": {"T1"}, "c": {"T1"}, "d": {"C2", "T1"}, "e": {"T1"}}}
+
+	for _, c := range []turnCase{
+		{name: "the fifth", board: cirya.BoardData{"1": {"a": {"T1"}, "b": {"T1"}, "c": {"T1"}, "d": {"T1"}}}, turn: "Ta3",
+			want: map[string][]string{"a3": {"T1"}}},
+		{name: "not a sixth", board: five, turn: "Ta3"},
+		{name: "but a flat cirya", board: five, turn: "a3", want: map[string][]string{"a3": {"C1"}}},
+		{name: "the tampar of the other player do not count", board: five, player: 2, turn: "Ta3",
+			want: map[string][]string{"a3": {"T2"}}},
+		{name: "a flattened one does not count", board: cirya.BoardData{"1": {"a": {"T1"}, "b": {"T1"}, "c": {"T1"}, "d": {"T1"}, "e": {"C1", "H2"}}}, turn: "Ta3",
+			want: map[string][]string{"a3": {"T1"}}},
+		{name: "a bigger board holds more", size: 6, board: five, turn: "Ta3", want: map[string][]string{"a3": {"T1"}}},
+	} {
+		t.Run(c.name, c.run)
+	}
 }

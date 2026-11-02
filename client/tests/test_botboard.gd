@@ -238,3 +238,15 @@ func _sound():
             return false
 
     return true
+
+# A player has at most five tampar standing in 5x5; a flattened one does not
+# count, nor do the ones of the other player
+func test_tampar_on_the_board():
+    position({"a1": ["T1"], "b1": ["T1"], "c1": ["T1"], "d1": ["C2", "T1"], "e1": ["T1"], "a2": ["T2"]})
+    var moves = board.moves()
+    check_equal("not a sixth tampa", false, moves.has("Tc3"))
+    check_equal("but a flat cirya", true, moves.has("c3"))
+    check_equal("five standing", 5, board.tampar(1))
+
+    board.stacks[board._index("e1")] = ["C1", "H2"]
+    check_equal("one flattened, another fits", true, board.moves().has("Tc3"))

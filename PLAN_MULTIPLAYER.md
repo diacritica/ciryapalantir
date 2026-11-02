@@ -436,6 +436,17 @@ la partida, un sello "◆ T4K ◆" bajo el código de sala, debajo del de Hennet
 (`TestHeightOfANosse`, `TestHeightWithT4K`, `TestTheVariantT4K`), en `tests/test_apply.gd`, `smoke_written.gd` y
 `e2e_config.gd`, que teclea T4K en el menú contra el servidor real.
 
+### 3.5b Máximo de tampar en el tablero
+
+**La regla (de Pablo).** Un jugador no puede tener en el tablero más tampar de pie que el ancho del tablero (5 en 5×5). Una
+tampa aplanada por una hallacirya ya no cuenta. Se aplica también con T4K, que solo quita el límite de altura del nossë.
+
+**Hecho.** En el servidor (`Board.Tampar`, en `cirya/move.go`: colocar una tampa más es un InvalidTurn), en el cliente (no
+deja levantar la pieza con R, ni soltarla de pie, ni escribirla: "Ya tienes 5 tampar en el tablero: no caben más"), en la
+reproducción de la demo (`Rules.apply_turn`) y en el bot (`BotBoard.moves`). Probado en Go (`TestTamparOnTheBoard`), en
+`tests/test_botboard.gd`, `test_apply.gd` y `smoke_written.gd`; las partidas aleatorias del bot que el servidor rejuega
+se han vuelto a generar con la regla.
+
 ### 3.6 Revancha
 
 **Hecho.** Al terminar una partida, por Londë, por recuento o por tiempo, el diálogo de fin de partida ofrece a cada jugador

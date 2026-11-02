@@ -41,6 +41,10 @@ func (b *Board) place(player int, p placement) error {
 		return fmt.Errorf("%s is not empty", p.at)
 	}
 
+	if p.stone == 'T' && b.Tampar(player) >= b.Size {
+		return fmt.Errorf("player %d has %d tampar on the board, the most there can be", player, b.Size)
+	}
+
 	if err := b.takeFromFleet(player, p.stone); err != nil {
 		return err
 	}
@@ -104,6 +108,22 @@ func (b *Board) move(player int, m move) error {
 	}
 
 	return nil
+}
+
+// Tampar counts the tampar of the player standing on the board. There can
+// be as many as the board is wide; a flattened one no longer counts
+func (b *Board) Tampar(player int) int {
+	count := 0
+
+	for _, s := range b.squares() {
+		head := top(b.stack(s))
+
+		if kind(head) == 'T' && owner(head) == player {
+			count++
+		}
+	}
+
+	return count
 }
 
 // A stack fits on a square with no more than Size stones apart from a
