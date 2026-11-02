@@ -218,3 +218,38 @@ func TestOfficialFleets(t *testing.T) {
 	assert.Equal(t, &cirya.Fleet{Ciryar: 30, Hallaciryar: 2}, cirya.NewFleet(6))
 	assert.Equal(t, &cirya.Fleet{Ciryar: 40, Hallaciryar: 2}, cirya.NewFleet(7))
 }
+
+// A nossë holds as many stones as the board is wide, and a hallacirya on
+// top: a full one is like a tampa, and a nossë broken over it cannot drop
+// anything there
+func TestHeightOfANosse(t *testing.T) {
+	four := []string{"C2", "C1", "C2", "C1"}
+	five := []string{"C2", "C1", "C2", "C1", "C2"}
+
+	for _, c := range []turnCase{
+		{name: "up to five", board: cirya.BoardData{"1": {"a": {"C1"}, "b": four}}, turn: "a1>",
+			want: map[string][]string{"b1": append(append([]string{}, four...), "C1")}},
+		{name: "not six", board: cirya.BoardData{"1": {"a": {"C1"}, "b": five}}, turn: "a1>"},
+		{name: "a hallacirya on top of five", board: cirya.BoardData{"1": {"a": {"H1"}, "b": five}}, turn: "a1>",
+			want: map[string][]string{"b1": append(append([]string{}, five...), "H1")}},
+		{name: "two that make six with a hallacirya", board: cirya.BoardData{"1": {"a": {"C1", "H1"}, "b": four}}, turn: "2a1>",
+			want: map[string][]string{"b1": append(append([]string{}, four...), "C1", "H1")}},
+		{name: "two ciryar that make six", board: cirya.BoardData{"1": {"a": {"C1", "C1"}, "b": four}}, turn: "2a1>"},
+		{name: "nothing dropped over a full nossë on the way", board: cirya.BoardData{"1": {"a": {"C1", "C1"}, "b": five}}, turn: "2a1>11"},
+		{name: "nor carried over it in one drop", board: cirya.BoardData{"1": {"a": {"C1", "C1"}, "b": five}}, turn: "2a1>2"},
+		{name: "a bigger board holds more", size: 6, board: cirya.BoardData{"1": {"a": {"C1"}, "b": five}}, turn: "a1>",
+			want: map[string][]string{"b1": append(append([]string{}, five...), "C1")}},
+	} {
+		t.Run(c.name, c.run)
+	}
+}
+
+// The variant T4K takes the limit away, almost as in Tak
+func TestHeightWithT4K(t *testing.T) {
+	five := []string{"C2", "C1", "C2", "C1", "C2"}
+	board := boardWith(5, cirya.BoardData{"1": {"a": {"C1"}, "b": five}})
+	board.Unlimited = true
+
+	require.NoError(t, board.Play(1, "a1>"))
+	assert.Len(t, stackAt(board, "b1"), 6)
+}

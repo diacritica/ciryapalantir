@@ -49,6 +49,19 @@ func _choose():
     yield(_until("the rule", "_rule_is", [true]), "completed")
     check("the rule shows on", rule.pressed)
 
+    # T4K typed out of any field takes away the limit of the nossë
+    for key in [KEY_T, KEY_4, KEY_K]:
+        var event = InputEventKey.new()
+        event.scancode = key
+        event.unicode = OS.get_scancode_string(key).to_lower().ord_at(0)
+        event.pressed = true
+        Input.parse_input_event(event)
+        Input.flush_buffered_events()
+        yield(self, "idle_frame")
+
+    yield(_until("the variant T4K", "_tak_is", [true]), "completed")
+    check("it shows", config.get_node("Tak").visible)
+
     # The bot sits as black and is ready: now only it could change them. It
     # runs apart, so the output of this script does not wait for it to end
     var bot = "%s -server %s -room %s -name Morqua > /dev/null 2>&1 &" % [_argument("--bot="), _argument("--server="), room]
@@ -68,6 +81,7 @@ func _choose():
     var chosen = state.status.get("config", {}) if state.status else {}
     check("the game has the clock chosen", int(chosen.get("clock", 0)) == 600)
     check("and the rule", chosen.get("hennethAnnun", false) == true)
+    check("and the variant T4K", chosen.get("tak", false) == true)
 
     print("e2e config: %d failures" % failures)
     quit(1 if failures else 0)
@@ -93,6 +107,9 @@ func _has_status():
 
 func _shows(label, text):
     return label.text == text
+
+func _tak_is(on):
+    return menu.config.get("tak", false) == on
 
 func _rule_is(on):
     return menu.config.get("hennethAnnun", false) == on

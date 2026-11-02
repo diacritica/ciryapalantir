@@ -4,10 +4,13 @@ extends Control
 # or the demo.
 # In a room each player picks a colour and a name, and the game starts when
 # both are ready. Before that the clock and the Henneth Annûn rule are chosen
-# by whoever sits first: the second one sees them and cannot change them
+# by whoever sits first: the second one sees them and cannot change them.
+# Typing T4K there, out of any field, takes away the limit to the height of
+# a nossë, almost as in Tak, and typing it again brings it back
 
 # The seconds for each player that the server takes, 0 for no clock
 const CLOCKS = [0, 180, 300, 600, 900]
+const TAK_CODE = "T4K"
 
 onready var Server = get_node("/root/Server")
 onready var Match = get_node("/root/Match")
@@ -16,8 +19,10 @@ onready var BlackButton = $CreateGame/Panel/BlackButton
 onready var Config = $CreateGame/Panel/Config
 
 # The configuration of the room as the server has it, and the seats taken
-var config = {"clock": 300, "hennethAnnun": false, "size": 5}
+var config = {"clock": 300, "hennethAnnun": false, "tak": false, "size": 5}
 var seats = {}
+# The last keys typed, to find the code of the variant T4K
+var typed = ""
 
 func _ready():
     Server.connect("user_logged", self, "_on_user_logged")
@@ -173,6 +178,18 @@ func _show_config():
     rule.disabled = !editable
     # A rule of the Rangers of Ithilien, who only played on 5×5
     rule.visible = int(config.get("size", 5)) == 5
+    Config.get_node("Tak").visible = config.get("tak", false)
+
+# Only keys that no field took arrive here
+func _unhandled_input(event):
+    if !(event is InputEventKey) or !event.pressed or event.echo or event.unicode == 0 or !$CreateGame.visible:
+        return
+
+    typed = (typed + char(event.unicode).to_upper()).right(max(0, typed.length() + 1 - TAK_CODE.length()))
+
+    if typed == TAK_CODE and can_change_config():
+        typed = ""
+        Server.send_change_config({"tak": !config.get("tak", false)})
 
 func _change_clock(step):
     var index = CLOCKS.find(int(config.get("clock", 300)))

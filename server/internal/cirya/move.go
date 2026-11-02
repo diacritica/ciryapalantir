@@ -85,6 +85,10 @@ func (b *Board) move(player int, m move) error {
 
 		stack, err := dropOn(b.stack(at), carried[:n])
 
+		if err == nil && !b.Unlimited && !b.fits(stack) {
+			err = fmt.Errorf("a nossë holds %d stones at most, and a hallacirya on top", b.Size)
+		}
+
 		if err != nil {
 			return fmt.Errorf("cannot drop on %s: %w", at, err)
 		}
@@ -100,6 +104,18 @@ func (b *Board) move(player int, m move) error {
 	}
 
 	return nil
+}
+
+// A stack fits on a square with no more than Size stones apart from a
+// hallacirya, which can only be on top
+func (b *Board) fits(stack []string) bool {
+	stones := len(stack)
+
+	if kind(top(stack)) == 'H' {
+		stones--
+	}
+
+	return stones <= b.Size
 }
 
 // The stack once the stones are dropped on it. Nothing goes over a

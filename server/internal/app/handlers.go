@@ -40,8 +40,7 @@ func (r *Room) onDisconnect(c *Client) {
 }
 
 func (r *Room) onChangeConfig(m *Message, c *Client) {
-	var clock *int
-	var hennethAnnun *bool
+	var change ConfigChange
 
 	if _, present := m.Params["clock"]; present {
 		value, ok := m.intParam("clock")
@@ -51,26 +50,28 @@ func (r *Room) onChangeConfig(m *Message, c *Client) {
 			return
 		}
 
-		clock = &value
+		change.Clock = &value
 	}
 
-	if _, present := m.Params["hennethAnnun"]; present {
-		value, ok := m.boolParam("hennethAnnun")
+	for name, field := range map[string]**bool{"hennethAnnun": &change.HennethAnnun, "tak": &change.Tak} {
+		if _, present := m.Params[name]; present {
+			value, ok := m.boolParam(name)
 
-		if !ok {
-			r.reply(c, errorMessage(CodeBadMessage, "hennethAnnun has to be true or false"))
-			return
+			if !ok {
+				r.reply(c, errorMessage(CodeBadMessage, name+" has to be true or false"))
+				return
+			}
+
+			*field = &value
 		}
-
-		hennethAnnun = &value
 	}
 
-	if clock == nil && hennethAnnun == nil {
-		r.reply(c, errorMessage(CodeBadMessage, "nothing to change: send clock or hennethAnnun"))
+	if change == (ConfigChange{}) {
+		r.reply(c, errorMessage(CodeBadMessage, "nothing to change: send clock, hennethAnnun or tak"))
 		return
 	}
 
-	config, err := r.game.ChangeConfig(c.user, clock, hennethAnnun)
+	config, err := r.game.ChangeConfig(c.user, change)
 
 	if err != nil {
 		r.refuse(c, err)

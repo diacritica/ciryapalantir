@@ -13,6 +13,9 @@ type Board struct {
 	Data   BoardData
 	Size   int
 	Fleets map[int]*Fleet
+	// No limit to the height of a nossë, almost as in Tak (the variant T4K).
+	// Otherwise a stack holds at most Size stones, and a hallacirya on top
+	Unlimited bool
 }
 
 // NewBoard makes an empty board with the official fleets for its size

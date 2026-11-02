@@ -125,7 +125,20 @@ func can_drop(hand, square):
         var stack = board.stack(square)
         return stack.empty() or hand.has(stack.back()) or instance_from_id(stack.back()).get_notation_name() != "H"
 
-    return Rules.can_drop(hand, square, board, move, player, opening())
+    return Rules.can_drop(hand, square, board, move, player, opening()) and !overflows(hand, square)
+
+# The pieces would go over the height of a nossë there
+func overflows(hand, square):
+    if tak():
+        return false
+
+    var after = board.copy()
+    after.put(hand, square)
+    return !Rules.fits(after.stack(square), board.size())
+
+# The variant T4K, chosen for the game: no limit to the height of a nossë
+func tak():
+    return status != null and status.get("config", {}).get("tak", false)
 
 func move_started():
     return move != null and move.started(board)

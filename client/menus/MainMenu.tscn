@@ -778,6 +778,19 @@ custom_styles/normal = SubResource( 20 )
 enabled_focus_mode = 0
 text = "Regla Henneth Annûn"
 
+[node name="Tak" type="Label" parent="CreateGame/Panel/Config"]
+visible = false
+anchor_right = 1.0
+margin_top = 102.0
+margin_bottom = 132.0
+hint_tooltip = "Variante T4K: sin límite de altura del nossë, casi como en Tak. Se quita tecleando otra vez T4K"
+mouse_filter = 0
+custom_colors/font_color = Color( 1, 0.690196, 0.258824, 1 )
+custom_fonts/font = SubResource( 17 )
+text = "◆ Variante T4K: sin límite del nossë ◆"
+align = 1
+valign = 1
+
 [node name="JoinGame" type="Control" parent="."]
 visible = false
 anchor_right = 1.0

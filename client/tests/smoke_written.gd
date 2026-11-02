@@ -37,6 +37,7 @@ func _play():
     _nosse()
     yield(_onto_a_stack(), "completed")
     _wrong()
+    _full_nosse()
     _not_my_turn()
 
     print("smoke written: %d failures" % failures)
@@ -147,6 +148,28 @@ func _wrong():
     check("not off the board", help_text().begins_with("Las piezas") or help_text().begins_with("No se puede soltar"))
     check("the wrong text stays to fix it", text().text == "a3-3")
     check("the board is as it was", state.board.equals(before) and state.move_notation() == "")
+
+# A nossë holds five pieces in 5x5: a turn that drops more on it is refused,
+# and says why. Black plays now, with a cirya next to five on d5
+func _full_nosse():
+    var free = []
+
+    for piece in game._pieces():
+        if piece.get_notation_name() == "C" and state.board.square_of(piece.get_instance_id()) == null:
+            free.append(piece)
+
+    for i in range(5):
+        game._place(free[i], Notation.parse_square("d5"))
+
+    for piece in free:
+        if piece.player == 2 and state.board.square_of(piece.get_instance_id()) == null:
+            game._place(piece, Notation.parse_square("d4"))
+            break
+
+    game._remember_turn_start()
+    write("d4+")
+    check("not on a full nossë", help_text() == "En d5 ya no cabe más: un nossë tiene 5 piezas como mucho, y la hallacirya encima")
+    check("which stays as it was", stack("d5").size() == 5 and stack("d4").size() == 1)
 
 func _not_my_turn():
     state.sandbox = false

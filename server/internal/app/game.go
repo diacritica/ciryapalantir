@@ -81,6 +81,15 @@ type GameConfig struct {
 	// Each hallacirya only goes into play in one turn: the 16th of black and
 	// the 17th of white. Only on the 5×5 board
 	HennethAnnun bool `json:"hennethAnnun"`
+	// No limit to the height of a nossë, almost as in Tak
+	Tak bool `json:"tak"`
+}
+
+// ConfigChange holds what changes of the configuration: nil does not change
+type ConfigChange struct {
+	Clock        *int
+	HennethAnnun *bool
+	Tak          *bool
 }
 
 // The times a game can be played with, in seconds; 0 is no clock
@@ -172,11 +181,11 @@ func (g *Game) Status() GameStatus {
 	return status
 }
 
-// ChangeConfig sets the clock, the Henneth Annûn rule, or both, which are
-// nil when they do not change. It is chosen before the game: by anyone while
-// nobody sits, then only by the one player sitting, and by nobody once both
-// sit, so the second player always sees the game it is going to play
-func (g *Game) ChangeConfig(user ID, clock *int, hennethAnnun *bool) (GameConfig, error) {
+// ChangeConfig sets the clock, the Henneth Annûn rule and the variant T4K,
+// or some of them. It is chosen before the game: by anyone while nobody sits,
+// then only by the one player sitting, and by nobody once both sit, so the
+// second player always sees the game it is going to play
+func (g *Game) ChangeConfig(user ID, change ConfigChange) (GameConfig, error) {
 	if g.Started() {
 		return g.config, refusal{CodeGameStarted, "the game has already started"}
 	}
@@ -193,20 +202,24 @@ func (g *Game) ChangeConfig(user ID, clock *int, hennethAnnun *bool) (GameConfig
 
 	config := g.config
 
-	if clock != nil {
-		if !slices.Contains(Clocks, *clock) {
+	if change.Clock != nil {
+		if !slices.Contains(Clocks, *change.Clock) {
 			return g.config, refusal{CodeBadMessage, fmt.Sprintf("clock has to be one of %v seconds", Clocks)}
 		}
 
-		config.Clock = *clock
+		config.Clock = *change.Clock
 	}
 
-	if hennethAnnun != nil {
-		if *hennethAnnun && config.Size != 5 {
+	if change.HennethAnnun != nil {
+		if *change.HennethAnnun && config.Size != 5 {
 			return g.config, refusal{CodeBadMessage, "the Henneth Annûn rule is only for the 5×5 board"}
 		}
 
-		config.HennethAnnun = *hennethAnnun
+		config.HennethAnnun = *change.HennethAnnun
+	}
+
+	if change.Tak != nil {
+		config.Tak = *change.Tak
 	}
 
 	g.config = config
@@ -271,6 +284,7 @@ func (g *Game) SetReady(user ID, player int, ready bool) (started bool, err erro
 	g.turn = 1
 	g.moves = make([]string, 0)
 	g.board = cirya.NewBoard(g.config.Size)
+	g.board.Unlimited = g.config.Tak
 
 	if g.config.Clock > 0 {
 		full := time.Duration(g.config.Clock) * clockUnit

@@ -52,6 +52,9 @@ const VIEW_OTHER = Color(0.631373, 0.631373, 0.631373, 0.7)
 const SCHEMATIC_HELP_BACKGROUND = Color(0.04, 0.04, 0.04, 0.92)
 const SCHEMATIC_HELP_TEXT = Color(1, 1, 1)
 
+# Room under the seals of the rules in the panel of the code
+const SEAL_MARGIN = 10
+
 # How much the field of the written move rises when it opens, and how fast
 const ENTRY_HEIGHT = 72
 const ENTRY_TIME = 0.15
@@ -73,6 +76,8 @@ var schematic_help = {}
 # back for a replay, and whether one is on the board
 var moves_bottom = 0
 var moves_right = 0
+# The bottom of the panel of the code before the seals of the rules
+var code_bottom = 0
 var replaying = false
 # The field of the written move is open, and stays so from turn to turn
 var entry_open = false
@@ -184,9 +189,25 @@ func _make_help_looks():
     font.outline_size = 0
     schematic_help = {"panel": panel, "font": font, "color": SCHEMATIC_HELP_TEXT}
 
-# The seal of the Henneth Annûn rule, under the code, when the game has it
+# The seals of the Henneth Annûn rule and the variant T4K, one under the
+# other below the code, when the game has them; the panel grows for them
 func _show_rules(_status = null, _catching_up = false):
+    if code_bottom == 0:
+        code_bottom = $CodePanel.margin_bottom
+
     $CodePanel/HennethAnnun.visible = Match.henneth_annun()
+    $CodePanel/Tak.visible = Match.tak()
+    var top = $CodePanel/HennethAnnun.margin_top
+    var seal_height = $CodePanel/HennethAnnun.rect_size.y
+
+    for seal in [$CodePanel/HennethAnnun, $CodePanel/Tak]:
+        if seal.visible:
+            seal.margin_top = top
+            seal.margin_bottom = top + seal_height
+            top += seal_height
+
+    if !Match.demo:
+        $CodePanel.margin_bottom = max(code_bottom, $CodePanel.margin_top + top + SEAL_MARGIN)
 
 func _on_phase_changed(phase):
     $TurnPanel.visible = phase == Match.Phase.MY_TURN and !Match.demo

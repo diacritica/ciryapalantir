@@ -49,27 +49,27 @@ func TestConfigDefaults(t *testing.T) {
 func TestWhoChangesTheConfig(t *testing.T) {
 	g := NewGame()
 
-	config, err := g.ChangeConfig("bob", intRef(600), nil)
+	config, err := g.ChangeConfig("bob", ConfigChange{Clock: intRef(600)})
 	require.NoError(t, err)
 	assert.Equal(t, 600, config.Clock)
 
 	_, err = g.Sit("alice", 1, "Alice", "white")
 	require.NoError(t, err)
-	_, err = g.ChangeConfig("bob", intRef(180), nil)
+	_, err = g.ChangeConfig("bob", ConfigChange{Clock: intRef(180)})
 	assertRefused(t, CodeConfigLocked, err)
 
-	config, err = g.ChangeConfig("alice", nil, boolRef(true))
+	config, err = g.ChangeConfig("alice", ConfigChange{HennethAnnun: boolRef(true)})
 	require.NoError(t, err)
 	assert.Equal(t, 600, config.Clock, "what is not sent stays")
 	assert.True(t, config.HennethAnnun)
 
 	_, err = g.Sit("bob", 2, "Bob", "black")
 	require.NoError(t, err)
-	_, err = g.ChangeConfig("alice", intRef(0), nil)
+	_, err = g.ChangeConfig("alice", ConfigChange{Clock: intRef(0)})
 	assertRefused(t, CodeConfigLocked, err)
 
 	require.NoError(t, g.Stand("bob", 2))
-	_, err = g.ChangeConfig("alice", intRef(0), nil)
+	_, err = g.ChangeConfig("alice", ConfigChange{Clock: intRef(0)})
 	assert.NoError(t, err, "alone again")
 	assert.Equal(t, 0, g.Status().Config.Clock)
 }
@@ -77,17 +77,17 @@ func TestWhoChangesTheConfig(t *testing.T) {
 func TestConfigValues(t *testing.T) {
 	g := NewGame()
 
-	_, err := g.ChangeConfig("alice", intRef(301), nil)
+	_, err := g.ChangeConfig("alice", ConfigChange{Clock: intRef(301)})
 	assertRefused(t, CodeBadMessage, err)
 	assert.Equal(t, 300, g.Status().Config.Clock, "a refused change leaves it as it was")
 
 	for _, clock := range Clocks {
-		_, err = g.ChangeConfig("alice", intRef(clock), nil)
+		_, err = g.ChangeConfig("alice", ConfigChange{Clock: intRef(clock)})
 		assert.NoError(t, err, "%d seconds", clock)
 	}
 
 	g.config.Size = 6
-	_, err = g.ChangeConfig("alice", intRef(300), boolRef(true))
+	_, err = g.ChangeConfig("alice", ConfigChange{Clock: intRef(300), HennethAnnun: boolRef(true)})
 	assertRefused(t, CodeBadMessage, err)
 	assert.False(t, g.Status().Config.HennethAnnun, "Henneth Annûn is only for 5×5")
 	assert.Equal(t, 900, g.Status().Config.Clock, "and nothing else of the change is taken")
@@ -96,7 +96,7 @@ func TestConfigValues(t *testing.T) {
 func TestNoConfigChangesOnceStarted(t *testing.T) {
 	g := startedGame(t)
 
-	_, err := g.ChangeConfig("alice", intRef(600), nil)
+	_, err := g.ChangeConfig("alice", ConfigChange{Clock: intRef(600)})
 	assertRefused(t, CodeGameStarted, err)
 }
 
@@ -232,4 +232,29 @@ func TestEqualFlatsAreADraw(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, cirya.Result{Over: true, Winner: 0, Condition: cirya.Flat}, result)
 	assert.Equal(t, Draw, g.State())
+}
+
+// The variant T4K is chosen like the rest, and the board of the game has no
+// limit to its nossi
+func TestTheVariantT4K(t *testing.T) {
+	g := NewGame()
+	assert.False(t, g.Status().Config.Tak, "the limit by default")
+
+	config, err := g.ChangeConfig("alice", ConfigChange{Tak: boolRef(true)})
+	require.NoError(t, err)
+	assert.True(t, config.Tak)
+	assert.Equal(t, DefaultClock, config.Clock, "the rest stays")
+
+	_, err = g.Sit("alice", 1, "Alice", "white")
+	require.NoError(t, err)
+	_, err = g.Sit("bob", 2, "Bob", "black")
+	require.NoError(t, err)
+	_, err = g.ChangeConfig("alice", ConfigChange{Tak: boolRef(false)})
+	assertRefused(t, CodeConfigLocked, err)
+
+	_, err = g.SetReady("alice", 1, true)
+	require.NoError(t, err)
+	_, err = g.SetReady("bob", 2, true)
+	require.NoError(t, err)
+	assert.True(t, g.board.Unlimited)
 }

@@ -151,7 +151,7 @@ func TestTheBoardEndsTheClocks(t *testing.T) {
 func TestNoClock(t *testing.T) {
 	g := NewGame()
 	zero := 0
-	_, err := g.ChangeConfig("alice", &zero, nil)
+	_, err := g.ChangeConfig("alice", ConfigChange{Clock: &zero})
 	require.NoError(t, err)
 
 	_, err = g.Sit("alice", 1, "Alice", "white")

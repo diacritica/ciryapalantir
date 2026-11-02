@@ -89,18 +89,22 @@ Players keep their seat: they can connect again with the same cookie and keep pl
     "type": "ChangeConfig",
     "params": {
         "clock": 300,
-        "hennethAnnun": true
+        "hennethAnnun": true,
+        "tak": false
     }
 }
 ```
 => Will send a **ConfigChanged** to every user
 
-Either param can be left out, and then it does not change; at least one has to come (**Error** `BAD_MESSAGE`).
+Any param can be left out, and then it does not change; at least one has to come (**Error** `BAD_MESSAGE`).
 * `clock`: seconds for each player, one of 0 (no clock), 180, 300 (the default), 600 or 900 (**Error** `BAD_MESSAGE`).
 * `hennethAnnun`: true or false. Each hallacirya only goes into play in one turn, the 16th of black and the 17th of white,
   which are the turns 32 and 33 of the game; in any other one, placing it is an **InvalidTurn**. The player should play it
   in that turn unless that loses the game, but only the player can judge it, so the server does not ask for it. Only on
   the 5x5 board (**Error** `BAD_MESSAGE`).
+* `tak`: true or false (the default). The variant T4K: no limit to the height of a nossë, almost as in Tak. Without it, a
+  square holds at most as many stones as the board is wide, and a hallacirya on top: a full nossë is like a tampa, and a
+  turn that would drop more on it is an **InvalidTurn**.
 
 The configuration is chosen before the game, so the second player always sees the game it is going to play: anyone can
 change it while nobody sits, then only the one player sitting, and nobody once both sit (**Error** `CONFIG_LOCKED`) or the

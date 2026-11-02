@@ -415,6 +415,27 @@ sobre negro casi opaco con un filo ámbar, como el botón de confirmar, y sin co
 - Tests: el smoke cambia de modo y comprueba que siguen el resaltado de la pieza y del sat, que el cambio no toca el tablero
   ni la jugada a medias, y que el modo elegido se recuerda al volver a abrir.
 
+### 3.5 Altura máxima del nossë y variante T4K
+
+**La regla (de Pablo).** En Cirya, al contrario que en Tak, un nossë tiene como mucho tantas piezas como el tablero es de
+ancho (5 en 5×5, 6 en 6×6…), y encima de ellas puede ir la hallacirya: en 5×5, 5 ciryar (o 4 y una tampa) y la hallacirya.
+No estaba decidido en 2020, pero tras varios Omentië Ciryandilion se ve mucho mejor como regla obligatoria. Un nossë lleno
+actúa de hecho como una tampa: salvo la hallacirya no se le puede poner nada encima, y un nossë que se rompe no puede soltar
+parte de su carga en él y seguir. Cambia mucho la táctica respecto a Tak.
+
+**Hecho.** La regla va por defecto en el servidor (`Board.fits` en `cirya/move.go`: un sat no puede quedar con más de `Size`
+piezas sin contar la hallacirya, que siempre es la de arriba) y en el cliente (`Rules.fits`, que aplican `Match.can_drop`
+para el ratón y la jugada escrita, que dice "En d5 ya no cabe más…", y `Rules.apply_turn` para la reproducción de la demo).
+El límite de carga sigue siendo el tamaño del tablero (confirmado por Pablo): una pila de 5 y la hallacirya no se mueve
+entera, al menos la de abajo se queda en su sat.
+
+La variante T4K quita el límite, casi como en Tak: es `GameConfig.tak` (por defecto `false`), con las mismas reglas de
+bloqueo que el resto de la configuración. Se activa como un código Konami: en crear juego, tecleando T4K con el foco fuera
+de cualquier campo; aparece "◆ Variante T4K: sin límite del nossë ◆" bajo Henneth Annûn, y tecleándolo otra vez se quita. En
+la partida, un sello "◆ T4K ◆" bajo el código de sala, debajo del de Henneth Annûn si también está. Probado en Go
+(`TestHeightOfANosse`, `TestHeightWithT4K`, `TestTheVariantT4K`), en `tests/test_apply.gd`, `smoke_written.gd` y
+`e2e_config.gd`, que teclea T4K en el menú contra el servidor real.
+
 ## Fuera de alcance (para el hackathon o más adelante)
 
 Cámara en raíl, revancha, chat, persistencia en base de datos (si se reinicia el servidor se pierden las partidas),

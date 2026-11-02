@@ -10,7 +10,7 @@ import (
 // A started game, with the Henneth Annûn rule or without it
 func hennethGame(t *testing.T, rule bool) *Game {
 	g := NewGame()
-	_, err := g.ChangeConfig("alice", nil, &rule)
+	_, err := g.ChangeConfig("alice", ConfigChange{HennethAnnun: &rule})
 	require.NoError(t, err)
 
 	_, err = g.Sit("alice", 1, "Alice", "white")

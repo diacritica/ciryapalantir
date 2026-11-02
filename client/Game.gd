@@ -566,7 +566,12 @@ func _write_nosse(parsed):
 func _write_drop(square):
     if !_on_board(square) or !Match.can_drop(_hand_ids(), square):
         var name = Notation.square_name(square) if _on_board(square) else "fuera del tablero"
+        var full = _on_board(square) and Match.overflows(_hand_ids(), square)
         _let_go()
+
+        if full:
+            return "En %s ya no cabe más: un nossë tiene %d piezas como mucho, y la hallacirya encima" % [name, Match.board.size()]
+
         return "No se puede soltar en %s" % name
 
     release($Board.tile(square))

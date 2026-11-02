@@ -32,6 +32,16 @@ static func can_take(piece_id, board, move, player, opening):
     var stack = board.stack(square)
     return board.owner(square) == player and stack.size() - stack.find(piece_id) <= board.size()
 
+# A square holds at most as many pieces as the board is wide, and a
+# hallacirya on top, unless the variant T4K takes the limit away
+static func fits(stack, size):
+    var pieces = stack.size()
+
+    if stack and instance_from_id(stack.back()).type == "HALLACIRYA":
+        pieces -= 1
+
+    return pieces <= size
+
 # The turn of the game in which the hallacirya of the player comes into play
 # with the Henneth Annûn rule
 static func hallacirya_turn(player):
@@ -193,7 +203,7 @@ static func replay(turn, player, opening, board, fleet):
 # and otherwise there are the "steps" as replay gives them, and the "board"
 # and the tampar standing ("blocks", their ids) after it. Pieces are all of
 # them: the ones off the board are in their fleets
-static func apply_turn(turn, player, opening, board, blocks, pieces):
+static func apply_turn(turn, player, opening, board, blocks, pieces, unlimited = false):
     var parsed = Notation.parse(turn)
     var after = board.copy()
     var standing = blocks.duplicate()
@@ -280,6 +290,9 @@ static func apply_turn(turn, player, opening, board, blocks, pieces):
                 standing.erase(top)
 
         after.put(dropped, square)
+
+        if !unlimited and !fits(after.stack(square), board.size()):
+            return {"error": "En %s ya no cabe más: un nossë tiene %d piezas como mucho, y la hallacirya encima" % [Notation.square_name(square), board.size()]}
 
         for piece_id in dropped:
             steps.append({"piece": piece_id, "square": square, "stand": false})

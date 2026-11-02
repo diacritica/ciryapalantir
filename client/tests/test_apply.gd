@@ -131,3 +131,32 @@ func test_a_whole_game():
         blocks = result.blocks
 
     check_equal("all of it", 36, parsed.turns.size())
+
+# A nossë holds five pieces in 5x5, and a hallacirya on top
+func test_height_of_a_nosse():
+    put("b1", ["C2", "C1", "C2", "C1"])
+    put("a1", ["C1"])
+    check_equal("up to five", "", apply("a1>", 1).error)
+
+    setup()
+    put("b1", ["C2", "C1", "C2", "C1", "C2"])
+    put("a1", ["C1"])
+    check_equal("not six", "En b1 ya no cabe más: un nossë tiene 5 piezas como mucho, y la hallacirya encima", apply("a1>", 1).error)
+    check_equal("unless the variant T4K", "", Rules.apply_turn("a1>", 1, false, board, blocks, pieces, true).error)
+
+    setup()
+    put("b1", ["C2", "C1", "C2", "C1", "C2"])
+    put("a1", ["H1"])
+    check_equal("a hallacirya on top of five", "", apply("a1>", 1).error)
+
+    setup()
+    put("c1", ["C2", "C1", "C2", "C1", "C2"])
+    put("a1", ["C1", "C1"])
+    check_equal("nothing dropped on a full one on the way", "En c1 ya no cabe más: un nossë tiene 5 piezas como mucho, y la hallacirya encima", apply("2a1>11", 1).error)
+
+func test_fits():
+    var five = put("a1", ["C1", "C2", "C1", "C2", "C1"])
+    check_equal("five fit", true, Rules.fits(five, 5))
+    check_equal("and a hallacirya on them", true, Rules.fits(five + put("a2", ["H1"]), 5))
+    check_equal("not six", false, Rules.fits(five + put("a3", ["C1"]), 5))
+    check_equal("six fit in 6x6", true, Rules.fits(five + put("a4", ["C1"]), 6))
