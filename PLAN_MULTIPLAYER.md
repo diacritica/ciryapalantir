@@ -240,6 +240,119 @@ Con el servidor lanzado con `go run -race ./cmd/cirya-server`. Los casos automá
 
 ---
 
+## Para el hackathon (o antes): reloj, jugada escrita, Henneth Annûn y modo Esquemático
+
+Cuatro piezas independientes; el reloj y la regla Henneth Annûn comparten la configuración de sala, que hoy no existe
+(`ChangeConfig` está reservado y `GameConfig` solo tiene ambiente, piezas y tamaño). Orden propuesto: configuración de sala →
+reloj → jugada escrita → Henneth Annûn → Esquemático.
+
+### 3.0 Configuración de sala (base del reloj y de Henneth Annûn, ≈ medio día)
+
+- `GameConfig` gana `clock` (segundos por jugador, 0 = sin reloj, por defecto 300) y `hennethAnnun` (bool, por defecto false).
+  Viaja ya en `status.config`, así que el cliente que entra lo ve sin mensajes nuevos.
+- `ChangeConfig` se implementa: solo antes de empezar, valida los valores (lista cerrada de tiempos) y difunde
+  `ConfigChanged` con la configuración entera.
+- **Ojo con el arranque:** hoy la partida empieza en cuanto los dos se sientan, porque el menú manda `SetReady` solo al
+  sentarse. La configuración tiene que estar fijada antes de que se siente el segundo. Propuesta: la elige quien crea la sala
+  (o el primero que se sienta) y queda bloqueada en cuanto hay dos sentados; el segundo la ve, sin poder tocarla, antes de
+  elegir color. Un cambio de configuración con alguien ya listo le quita el listo, para que nadie empiece con reglas que no vio.
+- En la pantalla de crear juego hay poco sitio: la tarjeta de color se alarga al escribir el nombre (de 200 a 300 px) y
+  bajo ella quedan unos 90 px hasta el borde del panel. Cabe una fila; para el selector de tiempo y el interruptor de
+  Henneth Annûn hace falta alargar el panel hacia abajo (hay margen hasta ~1000 px de los 1080) o ponerlos en una sola fila.
+- Tests: Go (cambiar antes y después de empezar, valores fuera de lista, quién puede) y e2e de que el segundo ve lo elegido.
+
+### 3.1 Reloj de partida (≈ un día)
+
+**Reglas (de Pablo):** tiempo por jugador elegible, 5 minutos por defecto. El reloj empieza cuando las negras confirman
+su apertura (la jugada 2, con la pieza del rival); desde la jugada 3 corre el del jugador al que le toca hasta que el servidor
+acepta su jugada. Sin incremento. Si un reloj llega a 0, ese jugador pierde, vaya como vaya el tablero.
+
+- **El servidor manda.** La sala guarda el tiempo restante de cada uno y cuándo empezó el turno; al aceptar una jugada resta
+  lo gastado y arranca el del otro. Una jugada rechazada no para el reloj. Un `time.Timer` en el `select` de la goroutine
+  de la sala dispara la derrota: `GameFinished` con `winCondition: "TIME"` (nueva, junto a LONDI y FLAT).
+  Si el reloj ya está a 0 cuando llega la jugada, gana el tiempo.
+- Desconectarse no para el reloj (si no, cortar la conexión sería una forma de pensar gratis). Así lo cubre E5 sin cambios.
+- Cada `Turn`, `StartGame` y `StatusResponse` lleva `clocks: {"1": ms, "2": ms}` y `running: 1|2|0`. El cliente cuenta
+  hacia atrás por su cuenta y se corrige con cada mensaje; quien entra a mitad (o vuelve) recibe el estado en el status.
+- **Interfaz:** el reloj muy visible al lado de cada pastilla de jugador, arriba a la izquierda (donde hoy asoma la cinta
+  de turno), con cifras grandes `4:59`; en ámbar el que corre, apagado el que espera, en rojo por debajo de 30 s y con
+  décimas por debajo de 10 s. Sin reloj (`clock: 0`), en el sandbox y en la demo no se muestra.
+- **ENTER confirma la jugada** igual que el botón (atajo del botón Confirmar), salvo cuando el foco está en el campo de jugada
+  escrita (3.2), que usa su propio ENTER.
+- El aviso de fin de partida dice "por tiempo" (`CONDITIONS` de `UI.gd`).
+- Tests: Go con un reloj inyectable (sin `sleep`): empieza tras la jugada 2, se descuenta, rechazo no para, derrota por tiempo,
+  jugada que llega con el tiempo agotado. Cliente: el formato y los colores en el smoke; e2e con 3 s por jugador y un bot que
+  no juega, que acaba en `TIME`.
+
+### 3.2 Jugada escrita (≈ medio día)
+
+- Un campo centrado abajo, algo por debajo de donde sale la ayuda de la demo, plegado por defecto. Se despliega con un tirador
+  en el estilo de la interfaz (la cinta `ribbon-btn.svg` y los rombos de los botones, como "Movimientos"), y deja ver un
+  `LineEdit` y a la derecha un botón con una flecha hacia arriba ("al tablero"), con el mismo estilo. ENTER o la flecha envían.
+- Lo escrito se lee con `Notation.parse` (se aceptan minúsculas en `t`/`h` y espacios sobrantes) y se pasa a pasos con
+  `Rules.replay`, lo mismo que muestra las jugadas del rival. Si cabe, la jugada **se coloca en el tablero** como si se hubiera
+  hecho con el ratón y se confirma como siempre (botón o ENTER); si no, el campo tiembla, se queda con el texto y la ayuda dice
+  por qué ("e6 no existe", "esa pieza no es tuya", "no puedes romper así el nossë").
+  Pendiente de decidir: si conviene una opción para enviar directamente sin el paso de confirmar.
+- Sirve en partida online y en el sandbox; en la demo será la puerta de "Insertar movimientos" (Replay).
+  Junto con el modo Esquemático da una forma de jugar sin arrastrar piezas, más accesible.
+- Tests: smoke escribiendo una colocación, una tampa y una rotura de nossë, y textos malos; e2e reutiliza el guion del nossë
+  escrito en vez de arrastrado.
+
+### 3.3 Regla Henneth Annûn (interruptor ≈ 2 h, la regla ≈ medio día)
+
+**La regla (de Pablo).** Con ella activa, cada jugador solo puede poner en juego su hallacirya en una jugada concreta:
+Morqua (negras) en su jugada 16 y Ninquë (blancas) en su jugada 17, que es la siguiente. Van en orden inverso a la salida
+(empiezan las blancas) para equilibrar la iniciativa. Antes de esa jugada está prohibida; en ella toca jugarla, salvo que
+jugarla dé la victoria al rival, y eso lo juzga el propio jugador; después ya no puede jugarse nunca, aunque fuera obvio
+que jugarla en su momento le daba la victoria al otro. La gracia está ahí: relaja un poco el modelo cortesano de Aracirya
+y crea un momento previsible de tensión a medida que se acerca Henneth Annûn. El 9+7 es una referencia oculta a la Caída
+de Númenor; lo que cuenta es el 16. Si en esa jugada no queda ningún sat libre, la partida ya habrá acabado por recuento de
+ciryar (FLAT). Sin la regla, la hallacirya se juega cuando se quiera, como hoy.
+
+- Cada jugador cuenta sus propias jugadas, no las de la partida: la 16.ª de Morqua es la 32 de la lista de movimientos
+  (que numera las de los dos desde la apertura de las blancas) y la 17.ª de Ninquë es la 33, justo después. Contando las
+  de la partida sería demasiado pronto (8 jugadas de las blancas y 7 de las negras).
+- Solo en 5×5: viene de los Montaraces de Ithilien, con Faramir a la cabeza, que solo tenían ocasión de jugar en 5×5.
+  En 6×6 y 7×7 el interruptor no aparece y la regla no se aplica.
+- Como el servidor no puede juzgar si jugarla daría la victoria al rival, la obligación se programa como permiso con aviso:
+  la hallacirya solo se puede coger (cliente) y solo se acepta (servidor) en la jugada 32 de la partida para las negras y en
+  la 33 para las blancas. En esa jugada la ayuda lo anuncia ("Henneth Annûn: es tu turno de poner la Hallacirya") y, si se confirma otra
+  jugada, se pregunta antes "¿Renuncias para siempre a tu Hallacirya?".
+- En crear juego, bajo las tarjetas de color, un interruptor "Regla Henneth Annûn" con el estilo de la interfaz
+  (`CheckButton` con iconos propios) y el tooltip:
+  "La Hallacirya solo puede ponerse en juego en el turno 9+7 (16) de Morqua y en el siguiente (17) de Ninquë, salvo que
+  jugarla provoque la derrota instantánea de quien la juega". Va en `GameConfig.hennethAnnun` (3.0).
+- En la partida se ve que la regla está activa (un pequeño sello junto al código de sala, con el mismo tooltip), y la
+  hallacirya de la bandeja se ve apagada mientras no se pueda jugar.
+- La regla va en las reglas del servidor (`internal/cirya/rules.go`, un rechazo claro: "con Henneth Annûn la Hallacirya
+  solo se juega en la jugada 16 de Morqua o en la 17 de Ninquë") y en las del cliente (`core/Rules.gd`, que ya decide qué se puede coger).
+- Tests en los dos: prohibida hasta la jugada 31 de la partida, aceptada en la 32 para las negras y en la 33 para las
+  blancas, rechazada a las dos desde la 34; sin la regla, como hoy; y la configuración no la admite fuera de 5×5. Un e2e
+  que llegue a la jugada 32 (con un bot guionizado que no cierre antes la partida).
+
+### 3.4 Modos Historia y Esquemático (≈ un día)
+
+- **Historia** es la partida tal como está: la taberna, la luz de las velas, la profundidad de campo, las partículas.
+  **Esquemático** es la misma partida en alto contraste, pensada para ser muy accesible. Cada jugador elige el suyo;
+  se guarda en su configuración local (`Settings`, en `user://`) y no viaja al servidor.
+- El cambio se hace con un interruptor junto a la pastilla del jugador: dos iconos pequeños (un libro para Historia,
+  una cuadrícula para Esquemático) en el estilo de la interfaz, con tooltip. Se cambia en caliente, sin recargar la escena.
+- Esquemático, de momento sin cambiar la cámara:
+  - Tablero liso y claro con líneas de sat negras y gruesas, y las coordenadas a1…e5 en los bordes (una textura nueva para el
+    tablero de 5×5).
+  - Piezas blancas en blanco puro con contorno negro, negras en negro puro con contorno blanco; la tampa de pie y la
+    hallacirya se reconocen por su silueta, no por el color.
+  - Mesa en gris oscuro liso, bandejas sencillas; fuera la decoración (jarras, velas), las partículas y los efectos
+    (DOF, glow, SSAO, niebla). Luz uniforme y sombras suaves.
+  - El resaltado de la pieza cogida y del sat donde caería, con un color fuerte y grueso (no el morado tenue de Historia):
+    ya se perdió una vez el resaltado de la casilla en una refactorización, y aquí importa todavía más.
+  - Se puede apoyar en lo que ya hace `Settings` por calidad (efectos de `Environment`, MSAA) y en `material_override`
+    sobre las mallas de las piezas (`Unit.gd` tiene `$Mesh`).
+- Más adelante: cámara cenital ortográfica opcional, y paletas para daltonismo.
+- Tests: el smoke cambia de modo y comprueba que siguen el resaltado de la pieza y del sat, que el cambio no toca el tablero
+  ni la jugada a medias, y que el modo elegido se recuerda al volver a abrir.
+
 ## Fuera de alcance (para el hackathon o más adelante)
 
 Cámara en raíl, revancha, chat, persistencia en base de datos (si se reinicia el servidor se pierden las partidas),
