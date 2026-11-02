@@ -252,19 +252,31 @@ Hay bandejas para 6×6 y 7×7 en `client/assets/tray/`, pero falta:
 - Elegir el tamaño al crear la sala. Las reglas del servidor ya conocen las flotas de 5, 6 y 7, pero la partida siempre se crea con 5:
   `DoChangeConfig` está vacío. El cliente tiene que montar el tablero y la bandeja de ese tamaño.
 
-**Modo Demo (para enseñar a jugar).** Como el sandbox, pero sin reglas ni turnos: se coge cualquier pieza o parte de un nossë,
+**Modo Demo (para enseñar a jugar).** ✅ Como el sandbox, pero sin reglas ni turnos: se coge cualquier pieza o parte de un nossë,
 se suelta en cualquier sat o se devuelve a su bandeja, y se pueden levantar Tampar fuera de la apertura.
 Sirve para montar deprisa una posición ("imagina este tablero") y mover piezas a placer mientras se explica.
 Se juega siempre desde el lado de las blancas, sin botón de confirmar ni texto de turno, para que no se confunda con una partida.
-- Base que ya existe: el arrastre de `Game.gd` (coge la pieza y las de encima), `BoardState`, y `_place` para aplanar Tampar.
-- Falta: un modo en `Match` en el que `can_take` y `can_drop` acepten todo, soltar sobre la bandeja para devolver la pieza a su sitio
-  (`home`), y esconder la interfaz de turnos.
+- Hecho: botón Demo en el menú; `Match.demo` acepta cualquier toma y suelta, soltar fuera del tablero devuelve las piezas a
+  su sitio de la bandeja (`Game.send_home`), R levanta una tampa en cualquier momento y lo que cae encima la tumba; nada se suelta sobre una
+  hallacirya (vuelve a donde se cogió). Sin turnos,
+  lista de movimientos ni código de sala; la ayuda se ve 10 s. Probado en `tests/smoke_demo.gd`.
+- Vestida para enseñarse en streaming: quedan el logo de Cirya Palantir y "Juega en play.cirya.me" arriba a la derecha, los
+  paneles de Ninquë y Morqua estrechos (sin nombres ni turno) y el cuadro de Movimientos bajo con "Modo Demo" dentro, el
+  sitio donde irá la lista cuando se reproduzca una partida.
 
 **Replay de partidas.**
 1. Exportar los movimientos en cualquier momento: copiar al portapapeles y guardar en `.txt`, el mismo formato que la lista (`1. c4`…).
    En escritorio, `OS.set_clipboard` y un diálogo de guardar; en web, `JavaScript.download_buffer` (el portapapeles del navegador
    tiene restricciones y hay que probarlo).
-2. Variante del modo Demo: pegar esa lista en el cuadro de movimientos y recorrerla con las flechas (→ o ↓ avanza, ← o ↑ retrocede).
+   ✅ Hecho en parte: la lista se selecciona con el ratón y se copia con Ctrl+A y Ctrl+C. Falta guardarla en `.txt`.
+2. Variante del modo Demo, para el profesor que comenta en retrospectiva una partida espectacular: "Insertar movimientos"
+   en el cuadro de Movimientos de la demo, pegar la lista exportada (el mismo formato `1. c4`…), validarla con `Notation.parse`,
+   y preguntar antes de reproducirla:
+   - **Limpiar el tablero**: todas las piezas vuelven a su bandeja y la lista se juega desde la jugada 1, con la apertura.
+   - **Respetar el tablero**: la lista se juega sobre la posición montada a mano. Las jugadas se comprueban con `Rules` sobre
+     esa posición y la primera que no cabe se marca y para la reproducción; con quién empieza hay que decidirlo (preguntar,
+     o deducirlo del color de la primera jugada si es una colocación).
+   Después se recorre con las flechas (→ o ↓ avanza, ← o ↑ retrocede).
    Cada jugada se anima: la pieza sale de su bandeja o del sat de origen, iluminada en morado como al cogerla, y en la rotura
    del nossë se ve cada suelta casilla a casilla.
 - Base que ya existe: `Notation.parse`, y `Rules.replay`, que ya traduce una jugada (también la apertura y la rotura del nossë)
