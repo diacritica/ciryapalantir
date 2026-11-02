@@ -688,6 +688,38 @@ __meta__ = {
 "_edit_use_anchors_": false
 }
 
+[node name="LocalBot" type="Label" parent="CreateGame/Panel"]
+visible = false
+margin_right = 141.0
+margin_bottom = 30.0
+custom_colors/font_color = Color( 1, 0.690196, 0.258824, 1 )
+custom_fonts/font = SubResource( 17 )
+text = "◆ Bot local ◆"
+align = 1
+valign = 1
+
+[node name="Start" type="Button" parent="CreateGame/Panel"]
+visible = false
+anchor_left = 0.5
+anchor_right = 0.5
+margin_left = -60.0
+margin_top = 628.0
+margin_right = 60.0
+margin_bottom = 663.0
+focus_mode = 0
+custom_colors/font_color_disabled = Color( 0.478431, 0.352941, 0.196078, 1 )
+custom_colors/font_color = Color( 1, 0.690196, 0.258824, 1 )
+custom_colors/font_color_hover = Color( 1, 0.690196, 0.258824, 1 )
+custom_colors/font_color_pressed = Color( 1, 0.690196, 0.258824, 1 )
+custom_fonts/font = SubResource( 10 )
+custom_styles/hover = ExtResource( 7 )
+custom_styles/pressed = ExtResource( 7 )
+custom_styles/focus = ExtResource( 7 )
+custom_styles/disabled = ExtResource( 6 )
+custom_styles/normal = ExtResource( 6 )
+enabled_focus_mode = 0
+text = "Comenzar"
+
 [node name="Config" type="Control" parent="CreateGame/Panel"]
 margin_left = 40.0
 margin_top = 690.0

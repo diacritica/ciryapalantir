@@ -6,11 +6,14 @@ extends Control
 # both are ready. Before that the clock and the Henneth Annûn rule are chosen
 # by whoever sits first: the second one sees them and cannot change them.
 # Typing T4K there, out of any field, takes away the limit to the height of
-# a nossë, almost as in Tak, and typing it again brings it back
+# a nossë, almost as in Tak, and typing it again brings it back.
+# Once seated, the card of the other colour turns the bot of this client on
+# and off for that seat; with it on, Comenzar sits it and the game starts
 
 # The seconds for each player that the server takes, 0 for no clock
 const CLOCKS = [0, 180, 300, 600, 900]
 const TAK_CODE = "T4K"
+const BOT_NAME = "Bot local"
 
 onready var Server = get_node("/root/Server")
 onready var Match = get_node("/root/Match")
@@ -23,6 +26,9 @@ var config = {"clock": 300, "hennethAnnun": false, "tak": false, "size": 5}
 var seats = {}
 # The last keys typed, to find the code of the variant T4K
 var typed = ""
+# The bot of this client chosen for the other seat, and whether it was sent
+var local_bot = false
+var bot_started = false
 
 func _ready():
     Server.connect("user_logged", self, "_on_user_logged")
@@ -32,6 +38,7 @@ func _ready():
     Config.get_node("Clock/Less").connect("pressed", self, "_change_clock", [-1])
     Config.get_node("Clock/More").connect("pressed", self, "_change_clock", [1])
     Config.get_node("HennethAnnun").connect("toggled", self, "_on_henneth_annun_toggled")
+    $CreateGame/Panel/Start.connect("pressed", self, "_on_start_pressed")
     _show_config()
 
     # Back from a game: the user logged in long ago
@@ -90,6 +97,8 @@ func _on_notification_received(message):
             if int(params.player) == Match.player:
                 Server.send_set_ready(true)
 
+            _offer_local_bot()
+
         # A game already started opens at once: for a player coming back or
         # for someone who comes to watch
         "StatusResponse":
@@ -116,6 +125,7 @@ func _on_notification_received(message):
         "PlayerLeft":
             seats.erase(int(message.params.player))
             _show_config()
+            _offer_local_bot()
 
         "ConfigChanged":
             config = message.params.config
@@ -149,6 +159,48 @@ func _on_play_pressed(button):
 
     Match.player = 1 if button == WhiteButton else 2
     Server.send_join_player(Match.player, "white" if Match.player == 1 else "black", button.get_node("Edit/InputName").text)
+
+# Seated, with the other seat free, its card turns the bot on and off; when
+# someone else sits there it is gone
+func _offer_local_bot():
+    var free = seats.has(Match.player) and !seats.has(3 - Match.player)
+    var card = _card(3 - Match.player) if Match.player != 0 else null
+
+    if card and free and !card.is_connected("pressed", self, "_toggle_local_bot"):
+        card.connect("pressed", self, "_toggle_local_bot")
+    elif card and !free and !bot_started and card.is_connected("pressed", self, "_toggle_local_bot"):
+        card.disconnect("pressed", self, "_toggle_local_bot")
+
+    if !free and !bot_started:
+        local_bot = false
+
+    _show_local_bot()
+
+func _card(player):
+    return WhiteButton if player == 1 else BlackButton
+
+func _toggle_local_bot():
+    local_bot = !local_bot
+    _show_local_bot()
+
+# The label under the card of the bot, and the button to start above the
+# options of the game
+func _show_local_bot():
+    var label = $CreateGame/Panel/LocalBot
+    var start = $CreateGame/Panel/Start
+    label.visible = local_bot
+    start.visible = local_bot
+    start.disabled = bot_started
+
+    if local_bot:
+        var card = _card(3 - Match.player)
+        label.rect_position = Vector2(card.rect_position.x, card.rect_position.y + card.rect_size.y + 4)
+        label.rect_size.x = card.rect_size.x
+
+func _on_start_pressed():
+    bot_started = true
+    _show_local_bot()
+    Server.start_bot(3 - Match.player, BOT_NAME)
 
 # The seat is taken: it shows the name and cannot be picked any more
 func _show_player(button, name):

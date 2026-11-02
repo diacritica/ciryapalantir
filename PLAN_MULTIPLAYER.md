@@ -547,6 +547,11 @@ instantáneo. En 5×5 con 2 capas y buen orden de jugadas debería bastar; se mi
    reglas normales y con T4K y Henneth Annûn, dos partidas seguidas (la segunda tras la revancha, con los asientos
    cambiados), sin una sola jugada rechazada.
 4. La interfaz del menú: el interruptor, la etiqueta y Comenzar; el nombre del bot en la partida (≈ medio día).
+   ✅ Hecho: sentado el jugador y con el otro asiento libre, la tarjeta del otro color enciende y apaga el bot; encendido
+   se ve "◆ Bot local ◆" bajo ella y "Comenzar" encima de las opciones de partida, que llama a `Server.start_bot`. El bot
+   se sienta como "Bot local" y la partida empieza como siempre. Si se sienta otra persona antes, el interruptor se va.
+   Al volver al menú, el bot se para. Probado en `tests/e2e_local_bot.gd`, por el menú real y contra el servidor real.
+   Para el paso 5: el bot pone su hallacirya muy pronto (jugada 4 en la prueba); los bots de Tak guardan la suya.
 5. Medir en la web, ajustar el tiempo de búsqueda y los pesos de la evaluación jugando contra él (≈ medio día).
 
 **Por decidir.**

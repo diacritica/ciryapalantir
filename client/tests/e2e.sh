@@ -62,6 +62,12 @@ for answer in yes no; do
     echo "$output" | grep -q "SCRIPT ERROR" && status=1
 done
 
+# A game against the bot of the client, started from the menu
+ROOM=$(new_room)
+output=$("$GODOT" --no-window --path client -s tests/e2e_local_bot.gd -- --server="127.0.0.1:$PORT" --profile=e2e_local_bot --room="$ROOM" 2>&1) || status=1
+echo "$output" | grep -E "FAIL|SCRIPT ERROR|e2e"
+echo "$output" | grep -q "SCRIPT ERROR" && status=1
+
 # Two bots of the client play each other through the server, with the usual rules and with T4K and Henneth Annûn
 for rules in usual t4k; do
     ROOM=$(new_room)
