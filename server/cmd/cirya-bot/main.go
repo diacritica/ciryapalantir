@@ -7,6 +7,9 @@
 // With -moves it plays those turns first, in order, for scripted games:
 //
 //	go run ./cmd/cirya-bot -room KM7Q2X -moves b1,Ta4,e5
+//
+// With -rematch it accepts the rematch when the game ends, once, and plays
+// the new game in the other seat
 package main
 
 import (
@@ -22,12 +25,13 @@ import (
 )
 
 var (
-	server = flag.String("server", "127.0.0.1:3333", "host:port of the server")
-	room   = flag.String("room", "", "code of the room")
-	seat   = flag.Int("seat", 2, "seat to take, 1 (white) or 2 (black)")
-	name   = flag.String("name", "Bot", "name shown to the other player")
-	moves  = flag.String("moves", "", "turns to play first, separated by commas")
-	delay  = flag.Duration("delay", 0, "time to think before every turn")
+	server  = flag.String("server", "127.0.0.1:3333", "host:port of the server")
+	room    = flag.String("room", "", "code of the room")
+	seat    = flag.Int("seat", 2, "seat to take, 1 (white) or 2 (black)")
+	name    = flag.String("name", "Bot", "name shown to the other player")
+	moves   = flag.String("moves", "", "turns to play first, separated by commas")
+	delay   = flag.Duration("delay", 0, "time to think before every turn")
+	rematch = flag.Bool("rematch", false, "accept a rematch when the game ends, once")
 )
 
 type message struct {
@@ -76,6 +80,11 @@ func main() {
 
 		switch m.Type {
 		case "StartGame", "Turn":
+			if m.Params["rematch"] == true {
+				*seat, script = 3-*seat, nil
+				log.Printf("rematch: playing in seat %d", *seat)
+			}
+
 			if int(m.Params["nextPlayer"].(float64)) == *seat {
 				move := firstEmpty(*m.Status)
 				if len(script) > 0 {
@@ -89,7 +98,18 @@ func main() {
 			log.Printf("%s: %v", m.Type, m.Params)
 		case "GameFinished":
 			log.Printf("game over: %v", m.Params)
-			return
+
+			if !*rematch {
+				return
+			}
+
+			*rematch = false
+			send(conn, message{Type: "Rematch", Params: map[string]any{"player": *seat, "accept": true}})
+		case "RematchChanged":
+			if state := m.Params["state"]; state != "OPEN" {
+				log.Printf("no rematch: %v", state)
+				return
+			}
 		}
 	}
 }

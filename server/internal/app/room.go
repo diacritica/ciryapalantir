@@ -123,7 +123,8 @@ func (r *Room) EndIfEmptySince(since time.Time) bool {
 }
 
 func (r *Room) run() {
-	// Fires when the running clock of the game reaches 0
+	// Fires when the running clock of the game reaches 0, or the time to
+	// accept a rematch passes
 	var clock *time.Timer
 	var timeout <-chan time.Time
 
@@ -173,7 +174,13 @@ func (r *Room) run() {
 
 		clock, timeout = nil, nil
 
-		if left, running := r.game.TimeLeft(); running {
+		left, running := r.game.TimeLeft()
+
+		if rematch, open := r.game.RematchLeft(); open && (!running || rematch < left) {
+			left, running = rematch, true
+		}
+
+		if running {
 			clock = time.NewTimer(left)
 			timeout = clock.C
 		}

@@ -25,6 +25,8 @@ func (r *Room) dispatch(m *Message, c *Client) {
 		r.onSetReady(m, c)
 	case SubmitTurn:
 		r.onSubmitTurn(m, c)
+	case Rematch:
+		r.onRematch(m, c)
 	default:
 		log.Printf("room %s: cannot handle %s", r.code, m.Type)
 	}
@@ -149,9 +151,35 @@ func (r *Room) onSubmitTurn(m *Message, c *Client) {
 }
 
 // The clock of the player whose turn it is ran out: the other one wins
+// The clock of a player ran out, or the time to accept a rematch
 func (r *Room) onTimeout() {
 	if turn, over := r.game.Timeout(); over {
 		r.broadcast(gameFinished(r.game.State(), cirya.Time, turn, r.game.Status()))
+	}
+
+	if r.game.ExpireRematch() {
+		r.broadcast(rematchChanged(r.game.rematchStatus(), r.game.Status()))
+	}
+}
+
+func (r *Room) onRematch(m *Message, c *Client) {
+	player, _ := m.intParam("player")
+	accept, ok := m.boolParam("accept")
+
+	if !ok {
+		r.reply(c, errorMessage(CodeBadMessage, "accept has to be true or false"))
+		return
+	}
+
+	started, err := r.game.Rematch(c.user, player, accept)
+
+	switch {
+	case err != nil:
+		r.refuse(c, err)
+	case started:
+		r.broadcast(rematchStarted(r.game.Status()))
+	default:
+		r.broadcast(rematchChanged(r.game.rematchStatus(), r.game.Status()))
 	}
 }
 

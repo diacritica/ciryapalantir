@@ -161,8 +161,9 @@ func _on_data():
     match message.type:
         "PlayerJoined":
             context[message.params.color] = message.params.name
-        "StatusResponse":
-            for seat in message.status.get("players", {}).values():
+        # A rematch starts with the players in each other's seats
+        "StatusResponse", "StartGame":
+            for seat in message.get("status", {}).get("players", {}).values():
                 context[seat.color] = seat.name
 
     emit_signal("notification_received", message)
@@ -189,6 +190,21 @@ func send_join_player(player, color, name):
 # Only what changes: {"clock": seconds} or {"hennethAnnun": true}
 func send_change_config(changes):
     ws_send_message({"type": "ChangeConfig", "params": changes})
+
+# Each player takes the other seat after a rematch, and keeps it when it
+# comes back to the room
+func swap_seat():
+    if !context.has("player"):
+        return
+
+    context["player"] = 3 - context.player
+    context["color"] = "white" if context.player == 1 else "black"
+    config.set_value("seats", context.room_id, context.player)
+    config.save(_config_path())
+
+# The answer to the offer of a rematch when a game ends
+func send_rematch(accept):
+    ws_send_message({"type": "Rematch", "params": {"player": context.player, "accept": accept}})
 
 func send_set_ready(is_ready):
     ws_send_message({"type": "SetReady", "params": {"player": context.player, "ready": is_ready}})

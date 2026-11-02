@@ -436,6 +436,21 @@ la partida, un sello "◆ T4K ◆" bajo el código de sala, debajo del de Hennet
 (`TestHeightOfANosse`, `TestHeightWithT4K`, `TestTheVariantT4K`), en `tests/test_apply.gd`, `smoke_written.gd` y
 `e2e_config.gd`, que teclea T4K en el menú contra el servidor real.
 
+### 3.6 Revancha
+
+**Hecho.** Al terminar una partida, por Londë, por recuento o por tiempo, el diálogo de fin de partida ofrece a cada jugador
+otra, con los colores cambiados: "Adelante" y "Ahora no", con la cuenta atrás de 30 s. Con que uno diga "Ahora no", diga lo
+que diga el otro (o aunque ya hubiera dicho "Adelante"), los dos ven "No habrá una nueva partida"; igual si pasan los 30 s
+("…: se acabó el tiempo"). Nadie sale de la sala: la partida queda ahí para copiar los movimientos o volver al menú. Si los
+dos dicen "Adelante", el servidor intercambia los asientos y los colores y empieza una partida nueva con la misma
+configuración; cada cliente toma el otro asiento (y lo recuerda para volver a la sala) y rehace la escena, ya desde el lado
+de su nuevo color. La oferta se repite al final de cada partida.
+
+Servidor: `internal/app/rematch.go` (la acción `Rematch`, la notificación `RematchChanged`, `StartGame` con `"rematch": true`
+y `status.rematch`), con el temporizador de la sala para lo primero que venza, el reloj o la oferta. El bot acepta una
+revancha con `-rematch`. Probado en `rematch_test.go` y en `tests/e2e_rematch.gd`, contra el servidor real, aceptándola
+(nueva partida como negras) y rechazándola (la partida terminada se queda).
+
 ## Fuera de alcance (para el hackathon o más adelante)
 
 Cámara en raíl, revancha, chat, persistencia en base de datos (si se reinicia el servidor se pierden las partidas),

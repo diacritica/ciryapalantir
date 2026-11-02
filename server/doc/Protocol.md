@@ -187,6 +187,30 @@ Before checking the move, the user receives an **Error** when:
 * `turn` is not the current turn: `STALE_TURN`
 
 
+### Rematch
+
+```json
+{
+    "type": "Rematch",
+    "params": {
+        "player": 1,
+        "accept": true
+    }
+}
+```
+=> Will send a **RematchChanged** to every user, or a **StartGame** when it is the second yes
+
+When a game ends, however it ends, each player is offered another one, with the colours swapped. Only the owner of the
+seat answers (**Error** `NOT_YOUR_SEAT`), and only while the offer is open (**Error** `NO_REMATCH`): from the end of the
+game for 30 seconds, until one of them says no. `accept` has to be true or false (**Error** `BAD_MESSAGE`).
+* One no is enough, whatever the other one said or even after a yes: the offer is over for both (`DECLINED`).
+* When 30 seconds pass without both saying yes it is over too (`EXPIRED`), and the server sends it on its own.
+* When both say yes the players swap their seats and colours (the user in seat 1 takes seat 2 and the other way round),
+  and a new game starts at once with the same configuration, from turn 1. **StartGame** comes with `"rematch": true`.
+
+Nobody leaves the room when there is no rematch: the finished game stays there to look at. Every game that ends offers
+it again.
+
 ## Notifications
 
 ### Error
@@ -204,7 +228,7 @@ Only sent to the user whose request could not be done. Nothing changes in the ro
 ```
 
 Codes: `BAD_MESSAGE`, `SEAT_TAKEN`, `NOT_YOUR_SEAT`, `NOT_YOUR_TURN`, `STALE_TURN`,
-`GAME_NOT_STARTED`, `GAME_STARTED`, `GAME_FINISHED`, `CONFIG_LOCKED`.
+`GAME_NOT_STARTED`, `GAME_STARTED`, `GAME_FINISHED`, `CONFIG_LOCKED`, `NO_REMATCH`.
 
 ### InvalidTurn
 
@@ -247,7 +271,8 @@ The move does not follow the rules. The turn does not change and the player can 
             "2": { "ciryar": 13, "hallaciryar": 1 }
         },
         "clocks": { "1": 254300, "2": 187020 },
-        "clockRunning": 1
+        "clockRunning": 1,
+        "rematch": { "state": "OPEN", "accepted": [2], "left": 21000 }
     }
 }
 ```
@@ -260,6 +285,8 @@ runs, 0 when none does) only come once a game with clock has started. No clock r
 player 1 starts when player 2 has played turn 2, and from then on each clock runs from the end of the turn of the other
 player until the server takes the move of its own player. A refused move does not stop it, nor does a lost connection,
 and no time is added after a turn. The clients count down on their own and correct it with every message.
+`rematch` only comes once a game is over: `state` is `OPEN`, `DECLINED` or `EXPIRED`, `accepted` the players who said
+yes, and `left` the milliseconds to answer while it is open.
 
 ### ConfigChanged
 
@@ -344,6 +371,24 @@ The whole configuration, after a **ChangeConfig**.
 }
 ```
 
+After a rematch it comes with `"rematch": true`: the players have swapped their seats, so each client takes the other one.
+
+### RematchChanged
+
+```json
+{
+    "type": "RematchChanged",
+    "params": {
+        "state": "OPEN",
+        "accepted": [1],
+        "left": 24000
+    },
+    "status": { ... }
+}
+```
+
+Sent to every user when a player answers the offer of a rematch, and when its time passes. See **Rematch**.
+
 ### Turn
 
 ```json
@@ -403,6 +448,9 @@ The whole configuration, after a **ChangeConfig**.
 5. The player whose turn it is sends **SubmitTurn**. Everybody gets **Turn** with the move and who plays next.
    A move against the rules gets **InvalidTurn** and the same player tries again.
 6. When a move ends the game everybody gets **GameFinished** instead of **Turn**.
+7. Each player may answer the offer of a rematch with **Rematch**. With two yes in 30 seconds everybody gets
+   **StartGame** for a new game with the seats swapped, and it goes on from step 5; otherwise **RematchChanged** says
+   there will be none.
 
 ## Board representation
 

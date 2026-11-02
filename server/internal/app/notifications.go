@@ -34,6 +34,15 @@ func gameStarted(status GameStatus) *Message {
 	return &Message{Type: StartGame, Params: Params{"nextPlayer": 1, "nextTurn": 1}, Status: &status}
 }
 
+// The new game after a rematch, in which the players have swapped their seats
+func rematchStarted(status GameStatus) *Message {
+	return &Message{Type: StartGame, Params: Params{"nextPlayer": 1, "nextTurn": 1, "rematch": true}, Status: &status}
+}
+
+func rematchChanged(rematch RematchStatus, status GameStatus) *Message {
+	return &Message{Type: RematchChanged, Params: Params{"state": rematch.State, "accepted": rematch.Accepted, "left": rematch.Left}, Status: &status}
+}
+
 func turnPlayed(player, turn int, move string, nextPlayer, nextTurn int, status GameStatus) *Message {
 	return &Message{
 		Type: Turn,

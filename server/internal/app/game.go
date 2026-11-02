@@ -38,6 +38,7 @@ const (
 	CodeGameStarted    ErrorCode = "GAME_STARTED"
 	CodeGameFinished   ErrorCode = "GAME_FINISHED"
 	CodeConfigLocked   ErrorCode = "CONFIG_LOCKED"
+	CodeNoRematch      ErrorCode = "NO_REMATCH"
 )
 
 type refusal struct {
@@ -67,6 +68,9 @@ type Game struct {
 	since   time.Time
 	// The time now, which the tests set
 	now func() time.Time
+
+	// The rematch offered when the game ends, see rematch.go
+	rematch rematchOffer
 }
 
 // A second of the clock. The tests make it shorter
@@ -120,6 +124,8 @@ type GameStatus struct {
 	// Milliseconds left to each player, and the player whose clock runs
 	Clocks       map[int]int64 `json:"clocks,omitempty"`
 	ClockRunning *int          `json:"clockRunning,omitempty"`
+	// Once the game is over, the rematch offered
+	Rematch *RematchStatus `json:"rematch,omitempty"`
 }
 
 // NewGame makes a game waiting for its players. The board comes when it starts
@@ -176,6 +182,11 @@ func (g *Game) Status() GameStatus {
 		running := g.running
 		status.Clocks = map[int]int64{1: g.left(1).Milliseconds(), 2: g.left(2).Milliseconds()}
 		status.ClockRunning = &running
+	}
+
+	if g.rematch.state != "" {
+		rematch := g.rematchStatus()
+		status.Rematch = &rematch
 	}
 
 	return status
@@ -280,18 +291,24 @@ func (g *Game) SetReady(user ID, player int, ready bool) (started bool, err erro
 		return false, nil
 	}
 
+	g.start()
+	return true, nil
+}
+
+// A new game with the configuration chosen, from the first turn
+func (g *Game) start() {
 	g.state = Turn1
 	g.turn = 1
 	g.moves = make([]string, 0)
 	g.board = cirya.NewBoard(g.config.Size)
 	g.board.Unlimited = g.config.Tak
+	g.clocks, g.running = nil, 0
+	g.rematch = rematchOffer{}
 
 	if g.config.Clock > 0 {
 		full := time.Duration(g.config.Clock) * clockUnit
 		g.clocks = map[int]time.Duration{1: full, 2: full}
 	}
-
-	return true, nil
 }
 
 // The time left to the player now, never below 0
@@ -335,6 +352,8 @@ func (g *Game) timeUp(player int) cirya.Result {
 	} else {
 		g.state = Win1
 	}
+
+	g.offerRematch()
 
 	return cirya.Result{Over: true, Winner: 3 - player, Condition: cirya.Time}
 }
@@ -412,6 +431,10 @@ func (g *Game) Play(user ID, player, turn int, move string) (cirya.Result, error
 		g.state, g.turn = Turn2, g.turn+1
 	default:
 		g.state, g.turn = Turn1, g.turn+1
+	}
+
+	if result.Over {
+		g.offerRematch()
 	}
 
 	return result, nil

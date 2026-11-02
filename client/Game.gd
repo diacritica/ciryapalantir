@@ -77,6 +77,7 @@ func _ready():
     Match.connect("turn_refused", self, "_on_turn_refused")
     Match.connect("status_received", self, "_on_status_received")
     Match.connect("phase_changed", self, "_fade_hallaciryar")
+    Match.connect("rematch_started", self, "_on_rematch_started")
 
     # Player 1, the sandbox and spectators look from the side of player 1
     if Match.player != 2:
@@ -352,6 +353,10 @@ func _follow_mouse():
 
     position.y = max(position.y, HAND_MIN_HEIGHT)
     hand.translation = position
+
+# A new game in the same room: the scene is made again, seen from the new seat
+func _on_rematch_started():
+    get_tree().reload_current_scene()
 
 # A list of turns on the board of the demo, from the start or on the board
 # as it is, replacing the one there was

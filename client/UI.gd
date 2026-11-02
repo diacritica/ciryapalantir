@@ -54,6 +54,8 @@ const SCHEMATIC_HELP_TEXT = Color(1, 1, 1)
 
 # Room under the seals of the rules in the panel of the code
 const SEAL_MARGIN = 10
+# Milliseconds the server gives to accept a rematch
+const REMATCH_TIME = 30000
 
 # How much the field of the written move rises when it opens, and how fast
 const ENTRY_HEIGHT = 72
@@ -78,6 +80,12 @@ var moves_bottom = 0
 var moves_right = 0
 # The bottom of the panel of the code before the seals of the rules
 var code_bottom = 0
+# The offer of a rematch at the end of a game: what the dialog says of the
+# result, the state of the offer, who accepted, and until when it is open
+var result_text = ""
+var rematch_state = ""
+var rematch_accepted = []
+var rematch_until = 0
 var replaying = false
 # The field of the written move is open, and stays so from turn to turn
 var entry_open = false
@@ -100,6 +108,7 @@ func _ready():
     Match.connect("turn_refused", self, "_on_turn_refused")
     Match.connect("game_over", self, "_on_game_over")
     Match.connect("status_received", self, "_show_rules")
+    Match.connect("rematch_changed", self, "_on_rematch_changed")
     $TurnPanel/Confirm.connect("pressed", self, "_on_confirm_pressed")
     $TurnPanel/Undo.connect("pressed", self, "_on_undo_pressed")
     # Invisible for now, in the bottom left corner
@@ -121,8 +130,12 @@ func _ready():
     if Match.status:
         _on_history(Match.status.get("moves", []))
 
-# The clocks count down every frame between the messages of the server
+# The clocks count down every frame between the messages of the server, and
+# so does the time to accept a rematch
 func _process(_delta):
+    if rematch_state == "OPEN" and has_node("GameOver"):
+        _show_rematch()
+
     var shown = Match.has_clock() and !Match.sandbox and !Match.demo
 
     for seat in [1, 2]:
@@ -514,6 +527,7 @@ func _on_game_over(result, condition):
         text += "\n" + ("¡Has ganado!" if result == mine else ("Has empatado" if result == "DRAW" else "Has perdido"))
 
     var dialog = AcceptDialog.new()
+    dialog.name = "GameOver"
     dialog.window_title = "Fin de la partida"
     dialog.dialog_text = text
     dialog.get_ok().text = "Volver al menú"
@@ -521,10 +535,91 @@ func _on_game_over(result, condition):
     # still be scrolled to see how the game went
     dialog.get_close_button().hide()
     dialog.connect("confirmed", self, "_back_to_menu")
+    result_text = text
+
+    # The players are offered another game, with the colours swapped
+    if Match.player != 0 and !Match.sandbox:
+        # Each one goes before the others, so they read Adelante, Ahora no
+        dialog.add_button("Ahora no", false, "no_rematch").name = "NoRematch"
+        dialog.add_button("Adelante", false, "rematch").name = "Rematch"
+        dialog.connect("custom_action", self, "_on_rematch_answered")
+        rematch_state = "OPEN"
+        rematch_accepted = []
+        rematch_until = OS.get_ticks_msec() + REMATCH_TIME
+
     add_child(dialog)
     dialog.show()
-    dialog.rect_size = dialog.get_combined_minimum_size()
-    dialog.rect_position = (get_viewport_rect().size - dialog.rect_size) / 2
+
+    if rematch_state == "OPEN":
+        _show_rematch()
+
+    _fit_dialog(dialog)
+
+func _on_rematch_answered(action):
+    var accept = action == "rematch"
+    Server.send_rematch(accept)
+
+    if accept:
+        rematch_accepted.append(Match.player)
+    else:
+        rematch_state = "DECLINED"
+
+    _show_rematch()
+
+func _on_rematch_changed(state, accepted, left):
+    rematch_state = state
+    rematch_accepted = accepted
+    rematch_until = OS.get_ticks_msec() + left
+
+    if has_node("GameOver"):
+        _show_rematch()
+
+# What the dialog says of the rematch: the time left, who is waiting for
+# whom, and that there will be no new game as soon as one does not want it
+func _show_rematch():
+    var dialog = $GameOver
+    var mine = rematch_accepted.has(Match.player)
+    var theirs = rematch_accepted.has(3 - Match.player)
+    var seconds = int(ceil(max(rematch_until - OS.get_ticks_msec(), 0) / 1000.0))
+    var line = ""
+
+    match rematch_state:
+        "OPEN":
+            if mine:
+                line = "Esperando al otro jugador… %d s" % seconds
+            elif theirs:
+                line = "El otro jugador quiere otra partida · %d s" % seconds
+            else:
+                line = "¿Otra partida? Os cambiáis los colores · %d s" % seconds
+        "DECLINED":
+            line = "No habrá una nueva partida"
+        "EXPIRED":
+            line = "No habrá una nueva partida: se acabó el tiempo"
+
+    var text = result_text + "\n\n" + line
+
+    if dialog.dialog_text == text:
+        return
+
+    dialog.dialog_text = text
+
+    # One no is enough at any time, even after a yes
+    for name in ["Rematch", "NoRematch"]:
+        var button = dialog.find_node(name, true, false)
+
+        if button:
+            button.visible = rematch_state == "OPEN"
+
+    dialog.find_node("Rematch", true, false).disabled = mine
+    _fit_dialog(dialog)
+
+# The dialog as big as what it says now, in the middle of the screen
+func _fit_dialog(dialog):
+    var size = dialog.get_combined_minimum_size()
+
+    if size != dialog.rect_size:
+        dialog.rect_size = size
+        dialog.rect_position = (get_viewport_rect().size - size) / 2
 
 # Escape asks too, Enter confirms the turn like its button, and a click on
 # the table leaves the moves, so their selection does not keep the keys

@@ -27,6 +27,7 @@ const (
 	LeaveGame    MessageType = "LeaveGame"
 	SetReady     MessageType = "SetReady"
 	SubmitTurn   MessageType = "SubmitTurn"
+	Rematch      MessageType = "Rematch"
 )
 
 // Notifications, sent by the server
@@ -41,12 +42,13 @@ const (
 	StartGame      MessageType = "StartGame"
 	Turn           MessageType = "Turn"
 	GameFinished   MessageType = "GameFinished"
+	RematchChanged MessageType = "RematchChanged"
 	InvalidTurn    MessageType = "InvalidTurn"
 	Error          MessageType = "Error"
 )
 
 var actions = map[MessageType]bool{
-	GetStatus: true, ChangeConfig: true, JoinGame: true, LeaveGame: true, SetReady: true, SubmitTurn: true,
+	GetStatus: true, ChangeConfig: true, JoinGame: true, LeaveGame: true, SetReady: true, SubmitTurn: true, Rematch: true,
 }
 
 // ParseMessage reads an action sent by a client

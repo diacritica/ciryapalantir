@@ -33,6 +33,11 @@ signal history(moves)
 signal move_changed(notation)
 # result: WIN_1, WIN_2 or DRAW. condition: LONDI or FLAT
 signal game_over(result, condition)
+# The offer of a rematch changed: state OPEN, DECLINED or EXPIRED, the
+# players who accepted, and the milliseconds left to accept
+signal rematch_changed(state, accepted, left)
+# Both accepted: a new game starts with the seats swapped
+signal rematch_started
 
 # The same rules and turns, without the server
 var sandbox = false
@@ -239,7 +244,18 @@ func _on_notification(message):
             _follow(message.status)
 
         "StartGame":
+            if params.get("rematch", false):
+                _rematch()
+
             _next(params.nextTurn, params.nextPlayer)
+
+        "RematchChanged":
+            var accepted = []
+
+            for seat in params.accepted:
+                accepted.append(int(seat))
+
+            emit_signal("rematch_changed", params.state, accepted, int(params.left))
 
         "Turn":
             _played(int(params.turn), int(params.player), params.move)
@@ -271,6 +287,18 @@ func _on_notification(message):
         # A move sent too late is not played: the board goes back without a warning
         var late = message.type == "GameFinished" and params.get("winCondition") == "TIME"
         emit_signal("status_received", status, message.type == "StatusResponse" or late)
+
+# The players swap their seats, so white plays black, and the board starts
+# empty: the scene is made again
+func _rematch():
+    if player != 0:
+        player = 3 - player
+        Server.swap_seat()
+
+    status = null
+    move = null
+    board = BoardState.new(board.size())
+    emit_signal("rematch_started")
 
 # Takes the turn and the phase of a status
 func _follow(game):
