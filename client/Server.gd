@@ -103,8 +103,11 @@ func join_room(code):
     retries = 0
     _open_socket()
 
-# Closes the connection to the room, to join another one later
+# Closes the connection to the room, to join another one later, and the one
+# of the bot if there was one
 func leave_room():
+    stop_bot()
+
     for key in ["room_id", "player", "color", "white", "black"]:
         context.erase(key)
 
@@ -176,6 +179,21 @@ func get_player_name(color):
 
 func get_code():
     return context.get("room_id", "")
+
+# A bot of this client in the other seat of the room, see BotPlayer.gd
+func start_bot(player, name):
+    stop_bot()
+    var bot = load("res://BotPlayer.gd").new()
+    bot.name = "Bot"
+    add_child(bot)
+    bot.start(_url("/rooms/" + context.room_id, true), ["Cookie: cirya-user=%s" % context.user_id], player, name)
+    return bot
+
+func stop_bot():
+    if has_node("Bot"):
+        var bot = $Bot
+        remove_child(bot)
+        bot.stop()
 
 func ws_send_message(data):
     ws.get_peer(1).put_packet(JSON.print(data).to_utf8())

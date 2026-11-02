@@ -3,8 +3,9 @@
 # a headless client playing white through the game scene and a spectator
 # coming in through the menu. A second, scripted game breaks a nossë and ends
 # by Londë, a third one is configured in the menu first, a fourth one
-# reaches the turns of the hallaciryar with the Henneth Annûn rule, and two more end with
-# the offer of a rematch, accepted and refused. Set GODOT to the Godot 3.5 binary.
+# reaches the turns of the hallaciryar with the Henneth Annûn rule, two more end with
+# the offer of a rematch, accepted and refused, and in the last ones two bots of the client
+# play each other. Set GODOT to the Godot 3.5 binary.
 
 cd "$(dirname "$0")/../.." || exit 1
 GODOT=${GODOT:-godot}
@@ -57,6 +58,14 @@ echo "$output" | grep -q "SCRIPT ERROR" && status=1
 for answer in yes no; do
     ROOM=$(new_room)
     output=$("$GODOT" --no-window --path client -s tests/e2e_rematch.gd -- --server="127.0.0.1:$PORT" --profile=e2e_rematch_$answer --room="$ROOM" --bot="$BIN/bot" --answer=$answer 2>&1) || status=1
+    echo "$output" | grep -E "FAIL|SCRIPT ERROR|e2e"
+    echo "$output" | grep -q "SCRIPT ERROR" && status=1
+done
+
+# Two bots of the client play each other through the server, with the usual rules and with T4K and Henneth Annûn
+for rules in usual t4k; do
+    ROOM=$(new_room)
+    output=$("$GODOT" --no-window --path client -s tests/e2e_bots.gd -- --server="127.0.0.1:$PORT" --profile=e2e_bots_$rules --room="$ROOM" --rules=$rules 2>&1) || status=1
     echo "$output" | grep -E "FAIL|SCRIPT ERROR|e2e"
     echo "$output" | grep -q "SCRIPT ERROR" && status=1
 done

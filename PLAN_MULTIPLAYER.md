@@ -538,6 +538,14 @@ instantáneo. En 5×5 con 2 capas y buen orden de jugadas debería bastar; se mi
    cosas: una evaluación que no era simétrica (a 1 capa salía muy agresivo y a 2 muy pasivo) y la elección en la raíz,
    que tomaba por buenas jugadas recortadas por la poda, cuyo valor es solo una cota.
 3. `BotPlayer` (la segunda conexión sin cabeza) y el autojuego contra el servidor (≈ medio día).
+   ✅ Hecho: `BotPlayer.gd` abre su propio websocket a la sala con el usuario del jugador, se sienta en el asiento que le
+   dan, dice que está listo y, cuando el `status` dice que le toca, piensa sobre `BotBoard.from_status` (repartiendo la
+   búsqueda entre fotogramas) y manda su jugada tras una espera mínima de 0,6 s; descarta lo pensado si la partida siguió.
+   Acepta todas las revanchas y cambia de asiento. Si el servidor le rechazara una jugada, juega otra legal al azar. Se
+   reconecta si se cae. `Server.start_bot(asiento, nombre)` lo crea como hijo suyo (sobrevive a los cambios de escena) y
+   `leave_room()` lo para. Probado en `tests/e2e_bots.gd`: dos bots juegan entre sí a través del servidor real, con las
+   reglas normales y con T4K y Henneth Annûn, dos partidas seguidas (la segunda tras la revancha, con los asientos
+   cambiados), sin una sola jugada rechazada.
 4. La interfaz del menú: el interruptor, la etiqueta y Comenzar; el nombre del bot en la partida (≈ medio día).
 5. Medir en la web, ajustar el tiempo de búsqueda y los pesos de la evaluación jugando contra él (≈ medio día).
 
