@@ -526,6 +526,17 @@ instantáneo. En 5×5 con 2 capas y buen orden de jugadas debería bastar; se mi
    partidas aleatorias (la mitad con T4K) en `server/internal/cirya/testdata/bot_games.json`, y `TestTheGamesOfTheBot` las
    rejuega con las reglas del servidor, que acepta todas las jugadas y llega al mismo tablero y al mismo resultado.
 2. `Bot` con los atajos y la evaluación a 1 capa, y luego alfa-beta a 2 (≈ un día).
+   ✅ Hecho: `core/Bot.gd`, negamax con poda alfa-beta y profundidad iterativa hasta 2 capas con tope de tiempo (1,5 s),
+   que puede esperar un fotograma cada tantas posiciones para no congelar el juego. Si puede ganar, gana; abre en una
+   esquina. La evaluación es simétrica para quien mueve: si a quien mueve le falta un sat para el Londë y le quedan piezas,
+   gana; si al otro le falta uno y tiene dos sats para cerrarlo, está perdido; si no, la distancia al Londë de cada uno
+   (BFS 0-1: sus sats 0, vacíos 1, pilas del rival que se pueden cubrir 2; tampas, hallacirya y nossi llenos son muros),
+   el recuento de ciryar (que pesa más con las bandejas vacías), el control de pilas, los prisioneros y el centro. Con
+   Henneth Annûn, una hallacirya que no se pone en su turno cuenta como perdida. Probado en `tests/test_bot.gd`.
+   En nativo piensa unos 170 ms de mediana y 500 ms como mucho a 2 capas. A 2 capas gana 7 de 10 a sí mismo a 1 capa;
+   las que pierde son por recuento jugando con negras, a ajustar en el paso 5. Para llegar ahí hubo que corregir dos
+   cosas: una evaluación que no era simétrica (a 1 capa salía muy agresivo y a 2 muy pasivo) y la elección en la raíz,
+   que tomaba por buenas jugadas recortadas por la poda, cuyo valor es solo una cota.
 3. `BotPlayer` (la segunda conexión sin cabeza) y el autojuego contra el servidor (≈ medio día).
 4. La interfaz del menú: el interruptor, la etiqueta y Comenzar; el nombre del bot en la partida (≈ medio día).
 5. Medir en la web, ajustar el tiempo de búsqueda y los pesos de la evaluación jugando contra él (≈ medio día).
