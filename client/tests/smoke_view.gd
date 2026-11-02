@@ -54,6 +54,7 @@ func _play():
     check("the wooden board comes back", !game.get_node("Board").has_node("Schematic") and game.get_node("Board/tabletop-5x5-wood/5x5-wood").visible)
     check("and the wooden pieces", game.get_node("Pieces").get_child(0).get_node("Mesh").material_override == null)
     check("the story button shows chosen", ui.get_node("View/Story").modulate == ui.VIEW_CHOSEN)
+    check("the help of the tavern comes back", ui.get_node("HelpPanel/AdviceLavel").get("custom_fonts/font").outline_size > 0)
     check("the board is still the same", state.board.equals(board) and state.move_notation() == "c3")
 
     # The schematic view lasts while in the game
@@ -70,6 +71,9 @@ func _play():
 func _schematic(board):
     check("the schematic view is chosen", settings.view == settings.SCHEMATIC)
     check("the schematic button shows chosen", ui.get_node("View/Schematic").modulate == ui.VIEW_CHOSEN and ui.get_node("View/Story").modulate == ui.VIEW_OTHER)
+    var help = ui.get_node("HelpPanel/AdviceLavel")
+    check("the help is white on black", help.get("custom_colors/font_color") == ui.SCHEMATIC_HELP_TEXT and ui.get_node("HelpPanel").get("custom_styles/panel").bg_color == ui.SCHEMATIC_HELP_BACKGROUND)
+    check("without the dark outline", help.get("custom_fonts/font").outline_size == 0)
 
     for name in ["table-tavern2", "candle-tavern3", "wood-mug3", "Particles", "SpotLight", "light2"]:
         check("no %s" % name, !game.get_node(name).visible)

@@ -390,8 +390,8 @@ con contorno negro y en negro puro con contorno blanco (el shader `outline.tres`
 contorno naranja grueso y las casillas se iluminan en naranja liso. La hallacirya apagada de Henneth Annûn también se ve
 translúcida aquí. Probado en `tests/smoke_view.gd`.
 
-Pendiente: revisar la legibilidad de los textos sobreimpresos abajo (la ayuda y los botones de turno) sobre el gris claro
-del modo Esquemático.
+La ayuda de abajo, que en Historia va sobre negro translúcido con letra de contorno oscuro, en Esquemático pasa a blanco
+sobre negro casi opaco con un filo ámbar, como el botón de confirmar, y sin contorno: sobre el tablero blanco se empastaba.
 
 
 - **Historia** es la partida tal como está: la taberna, la luz de las velas, la profundidad de campo, las partículas.

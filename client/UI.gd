@@ -39,6 +39,11 @@ const TENTHS_TIME = 10000
 # The button of the view in use, and the other one
 const VIEW_CHOSEN = Color(1, 0.690196, 0.258824)
 const VIEW_OTHER = Color(0.631373, 0.631373, 0.631373, 0.7)
+# In the schematic view the help is white on black with a thin amber edge,
+# as the button to confirm, and without the dark outline that the story
+# needs over the wood
+const SCHEMATIC_HELP_BACKGROUND = Color(0.04, 0.04, 0.04, 0.92)
+const SCHEMATIC_HELP_TEXT = Color(1, 1, 1)
 
 # How much the field of the written move rises when it opens, and how fast
 const ENTRY_HEIGHT = 72
@@ -52,6 +57,9 @@ onready var active_style = load("res://assets/interface/background_active.tres")
 
 # Counts the passing messages, so an old one does not hide a newer one
 var messages = 0
+# The look of the help in the story, and in the schematic view
+var story_help = {}
+var schematic_help = {}
 # The field of the written move is open, and stays so from turn to turn
 var entry_open = false
 
@@ -141,6 +149,26 @@ func _choose_view(view):
 func show_view():
     $View/Story.modulate = VIEW_OTHER if Settings.schematic() else VIEW_CHOSEN
     $View/Schematic.modulate = VIEW_CHOSEN if Settings.schematic() else VIEW_OTHER
+
+    if story_help.empty():
+        _make_help_looks()
+
+    var look = schematic_help if Settings.schematic() else story_help
+    $HelpPanel.set("custom_styles/panel", look.panel)
+    $HelpPanel/AdviceLavel.set("custom_fonts/font", look.font)
+    $HelpPanel/AdviceLavel.set("custom_colors/font_color", look.color)
+
+func _make_help_looks():
+    var label = $HelpPanel/AdviceLavel
+    story_help = {"panel": $HelpPanel.get("custom_styles/panel"), "font": label.get("custom_fonts/font"), "color": label.get("custom_colors/font_color")}
+
+    var panel = StyleBoxFlat.new()
+    panel.bg_color = SCHEMATIC_HELP_BACKGROUND
+    panel.border_color = VIEW_CHOSEN
+    panel.set_border_width_all(1)
+    var font = story_help.font.duplicate()
+    font.outline_size = 0
+    schematic_help = {"panel": panel, "font": font, "color": SCHEMATIC_HELP_TEXT}
 
 # The seal of the Henneth Annûn rule, under the code, when the game has it
 func _show_rules(_status = null, _catching_up = false):
