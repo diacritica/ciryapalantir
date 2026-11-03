@@ -12,7 +12,8 @@ import (
 
 // Random games played by the board of the bot in the client, written by
 // client/tests/dump_bot_games.gd: every turn it thinks legal has to be
-// legal here, end the game when it ends it there, and lead to the same board
+// legal here, end the game when it ends it there, and lead to the same board.
+// client/tests/test_shared.gd plays them with the lists of the client too
 type botGame struct {
 	Unlimited bool                `json:"unlimited"`
 	Moves     []string            `json:"moves"`

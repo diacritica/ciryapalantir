@@ -10,6 +10,9 @@ const Notation = preload("res://core/Notation.gd")
 # 17th of white. Every turn of the game counts, so they are the 32nd and 33rd
 const HENNETH_ANNUN_BLACK = 32
 const HENNETH_ANNUN_WHITE = 33
+# Official fleets by board size: ciryar (tampar come from them) and
+# hallaciryar. Other sizes have as many ciryar as squares
+const FLEETS = {5: [21, 1], 6: [30, 2], 7: [40, 2]}
 
 # Whether the player can take this piece, with the ones above it
 static func can_take(piece_id, board, move, player, opening):
@@ -63,6 +66,10 @@ static func tampar(board, blocks, player):
 # with the Henneth Annûn rule
 static func hallacirya_turn(player):
     return HENNETH_ANNUN_WHITE if player == 1 else HENNETH_ANNUN_BLACK
+
+# The fleet of each player on a board of that size: [ciryar, hallaciryar]
+static func fleet(size):
+    return FLEETS.get(size, [size * size, 2])
 
 # Whether the pieces in the hand can go on the square: the board they leave
 # has to be a legal move, even half done

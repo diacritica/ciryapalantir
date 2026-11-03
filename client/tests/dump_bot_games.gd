@@ -3,7 +3,8 @@ extends SceneTree
 # Plays random games with the board of the bot and writes them, with the
 # board and the result at their end, where the tests of the server replay
 # them with its own rules: every turn the bot thinks legal has to be legal
-# there, and lead to the same board. From the client folder:
+# there, and lead to the same board, as in test_shared.gd with the rules of
+# the lists of the client. From the client folder:
 #
 #   godot --no-window --path . -s tests/dump_bot_games.gd
 

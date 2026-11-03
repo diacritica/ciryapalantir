@@ -22,7 +22,7 @@ extends Reference
 # waits a frame every so many positions, so the game does not freeze while it
 # thinks, and then it returns a GDScriptFunctionState to wait for
 
-const BotBoard = preload("res://core/BotBoard.gd")
+const Rules = preload("res://core/Rules.gd")
 
 const WIN = 100000
 const BLOCKED = 1000
@@ -231,7 +231,7 @@ func evaluate(board, player):
 
     # The count of flat ciryar matters more as the fleets run out
     var left = board.fleets[1].ciryar + board.fleets[2].ciryar
-    var full = BotBoard.FLEETS.get(board.size, [board.size * board.size, 2])[0] * 2
+    var full = Rules.fleet(board.size)[0] * 2
     var flats = (board.flat_count(player) - board.flat_count(other)) * FLAT * (1.0 + 2.0 * (1.0 - float(left) / full))
     value += flats
 
@@ -267,9 +267,7 @@ func evaluate(board, player):
     # With Henneth Annûn, a hallacirya still in the fleet after its turn is lost
     if board.henneth_annun:
         for each in [player, other]:
-            var window = BotBoard.HENNETH_ANNUN_WHITE if each == 1 else BotBoard.HENNETH_ANNUN_BLACK
-
-            if board.turn > window and board.fleets[each].hallaciryar > 0:
+            if board.turn > Rules.hallacirya_turn(each) and board.fleets[each].hallaciryar > 0:
                 value -= HALLACIRYA_LOST if each == player else -HALLACIRYA_LOST
 
     return value
@@ -280,7 +278,7 @@ func brought_out_first(board, player):
     if board.henneth_annun:
         return false
 
-    var full = BotBoard.FLEETS.get(board.size, [0, 2])[1]
+    var full = Rules.fleet(board.size)[1]
     return board.fleets[player].hallaciryar < full and board.fleets[3 - player].hallaciryar == full
 
 # The empty squares where a cirya of the player would close a Londë

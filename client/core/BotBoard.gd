@@ -16,15 +16,12 @@ extends Reference
 #
 # Squares are numbered row by row from a1: index = rank * size + file
 
+const Rules = preload("res://core/Rules.gd")
+
 const FILES = "abcdefghi"
 # The steps of a nossë as the notation writes them: up and down a rank,
 # right and left a file
 const STEPS = {"+": [1, 0], "-": [-1, 0], ">": [0, 1], "<": [0, -1]}
-# The turns of the hallaciryar with the Henneth Annûn rule
-const HENNETH_ANNUN_BLACK = 32
-const HENNETH_ANNUN_WHITE = 33
-# Official fleets by board size: ciryar (tampar come from them) and hallaciryar
-const FLEETS = {5: [21, 1], 6: [30, 2], 7: [40, 2]}
 
 var size = 5
 var stacks = []
@@ -44,7 +41,7 @@ func _init(board_size = 5):
     for i in range(size * size):
         stacks.append([])
 
-    var fleet = FLEETS.get(size, [size * size, 2])
+    var fleet = Rules.fleet(size)
     fleets = {1: {"ciryar": fleet[0], "hallaciryar": fleet[1]}, 2: {"ciryar": fleet[0], "hallaciryar": fleet[1]}}
 
 # The board of a status of the server, with its rules
@@ -125,7 +122,7 @@ func tampar(player):
     return count
 
 func hallacirya_allowed(player):
-    return !henneth_annun or turn == (HENNETH_ANNUN_WHITE if player == 1 else HENNETH_ANNUN_BLACK)
+    return !henneth_annun or turn == Rules.hallacirya_turn(player)
 
 # Every way to break the nossë of the square: how many stones it carries,
 # where to, and how many it drops on each square on the way
