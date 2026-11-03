@@ -1,0 +1,15 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+path="res://.import/Village+Ambiance+-+320bit.mp3-992a015a45b75b0997ff58361b2e9084.mp3str"
+
+[deps]
+
+source_file="res://assets/music/Village+Ambiance+-+320bit.mp3"
+dest_files=[ "res://.import/Village+Ambiance+-+320bit.mp3-992a015a45b75b0997ff58361b2e9084.mp3str" ]
+
+[params]
+
+loop=true
+loop_offset=0

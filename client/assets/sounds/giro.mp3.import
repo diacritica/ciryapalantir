@@ -1,0 +1,15 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+path="res://.import/giro.mp3-8dc620cdf7d4a1aabe34cb74c8044bc2.mp3str"
+
+[deps]
+
+source_file="res://assets/sounds/giro.mp3"
+dest_files=[ "res://.import/giro.mp3-8dc620cdf7d4a1aabe34cb74c8044bc2.mp3str" ]
+
+[params]
+
+loop=true
+loop_offset=0

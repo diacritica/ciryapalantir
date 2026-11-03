@@ -1,0 +1,15 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+path="res://.import/golpe1.mp3-cdaa35176a6ca0fbf93c3a34cd836949.mp3str"
+
+[deps]
+
+source_file="res://assets/sounds/golpe1.mp3"
+dest_files=[ "res://.import/golpe1.mp3-cdaa35176a6ca0fbf93c3a34cd836949.mp3str" ]
+
+[params]
+
+loop=true
+loop_offset=0

@@ -1,0 +1,15 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+path="res://.import/Nomadic+Sunset+-+320bit.mp3-e1660d289504245e127d57ce4cb66621.mp3str"
+
+[deps]
+
+source_file="res://assets/music/Nomadic+Sunset+-+320bit.mp3"
+dest_files=[ "res://.import/Nomadic+Sunset+-+320bit.mp3-e1660d289504245e127d57ce4cb66621.mp3str" ]
+
+[params]
+
+loop=true
+loop_offset=0

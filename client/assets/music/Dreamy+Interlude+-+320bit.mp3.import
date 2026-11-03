@@ -1,0 +1,15 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+path="res://.import/Dreamy+Interlude+-+320bit.mp3-a4c85ec5ab5a18663411bb766378b278.mp3str"
+
+[deps]
+
+source_file="res://assets/music/Dreamy+Interlude+-+320bit.mp3"
+dest_files=[ "res://.import/Dreamy+Interlude+-+320bit.mp3-a4c85ec5ab5a18663411bb766378b278.mp3str" ]
+
+[params]
+
+loop=true
+loop_offset=0
