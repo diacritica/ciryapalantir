@@ -49,13 +49,13 @@ func _not_a_game():
         check("the %s panel stays" % panel, ui.get_node(panel).visible)
         check("with no name", !ui.get_node(panel + "/User").visible)
         check("and no turn", !ui.get_node(panel + "/CurrentTurn").visible)
-        check("narrow", ui.get_node(panel).rect_size.x == ui.DEMO_WIDTH)
+        check("narrow", ui.get_node(panel).rect_size.x == ui.get_node("Demo").DEMO_WIDTH)
     check("the moves say it is the demo", ui.get_node("Moves").visible and ui.get_node("Moves/DemoText").text == "Modo Demo" and !ui.get_node("Moves/MovesText").visible)
     var demo = ui.get_node("Moves/DemoText")
     check("and it fits", demo.get_minimum_size().x < demo.rect_size.x and demo.get_global_rect().end.y <= ui.get_node("Moves").get_global_rect().end.y)
     check("the logo and the link to play", ui.get_node("CodePanel").visible and ui.get_node("CodePanel/ShareText/Link").text == "play.cirya.me")
     check("with no room code", !ui.get_node("CodePanel/CodeText").visible)
-    check("the help of the demo", ui.get_node("HelpPanel").visible and ui.get_node("HelpPanel/AdviceLavel").text == ui.DEMO_HELP)
+    check("the help of the demo", ui.get_node("HelpPanel").visible and ui.get_node("HelpPanel/AdviceLavel").text == ui.get_node("Demo").DEMO_HELP)
     check("not the sandbox", !game.get_node("sandboxlogo").visible)
     check("seen from the side of white", game.get_node("CameraPlayer1").current)
 
@@ -129,7 +129,7 @@ func _back_to_the_fleet():
 func _replay():
     var ui = game.get_node("UI")
     var insert = ui.get_node("Moves/Insert")
-    check("the door to insert moves", insert.visible and insert.text == ui.INSERT_TEXT)
+    check("the door to insert moves", insert.visible and insert.text == ui.get_node("Demo").INSERT_TEXT)
     insert.emit_signal("pressed")
     yield(self, "idle_frame")
     var dialog = ui.get_node("InsertMoves")
@@ -153,8 +153,8 @@ func _replay():
     check("the board is cleaned", _all_off())
     check("four turns can be played", replay.playable() == 4 and replay.wrong == 4)
     check("the list shows in the moves", ui.get_node("Moves/MovesText").visible and ui.get_node("Moves/MovesText").get_line_count() == 5)
-    check("with the way to go through it", ui.get_node("HelpPanel/AdviceLavel").text.find(ui.REPLAY_KEYS) != -1)
-    check("and the end of it", insert.text == ui.STOP_TEXT)
+    check("with the way to go through it", ui.get_node("HelpPanel/AdviceLavel").text.find(ui.get_node("Demo").REPLAY_KEYS) != -1)
+    check("and the end of it", insert.text == ui.get_node("Demo").STOP_TEXT)
 
     for i in range(3):
         yield(_key(KEY_RIGHT), "completed")
@@ -184,7 +184,7 @@ func _replay():
     check("no piece is taken by hand meanwhile", game.drag == game.Drag.IDLE)
 
     insert.emit_signal("pressed")
-    check("the replay ends", !game.has_node("Replay") and ui.get_node("Moves/DemoText").visible and insert.text == ui.INSERT_TEXT)
+    check("the replay ends", !game.has_node("Replay") and ui.get_node("Moves/DemoText").visible and insert.text == ui.get_node("Demo").INSERT_TEXT)
     check("and the board stays", _owners("c3") == [2] and _owners("a1") == [1])
 
 # On the board as it is: a nossë says whose the first turn is, and a

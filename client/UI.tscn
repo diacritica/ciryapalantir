@@ -1,4 +1,4 @@
-[gd_scene load_steps=31 format=2]
+[gd_scene load_steps=32 format=2]
 
 [ext_resource path="res://UI.gd" type="Script" id=1]
 [ext_resource path="res://assets/interface/logo.png" type="Texture" id=2]
@@ -17,6 +17,7 @@
 [ext_resource path="res://assets/interface/send-up.svg" type="Texture" id=17]
 [ext_resource path="res://assets/interface/view-story.svg" type="Texture" id=18]
 [ext_resource path="res://assets/interface/view-schematic.svg" type="Texture" id=19]
+[ext_resource path="res://ui/MoveEntry.gd" type="Script" id=20]
 
 [sub_resource type="DynamicFont" id=1]
 size = 18
@@ -456,6 +457,7 @@ margin_top = -36.0
 margin_right = 280.0
 rect_clip_content = true
 mouse_filter = 2
+script = ExtResource( 20 )
 
 [node name="Handle" type="Button" parent="MoveEntry"]
 anchor_left = 0.5

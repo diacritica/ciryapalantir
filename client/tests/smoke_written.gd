@@ -55,7 +55,7 @@ func _the_field():
     check("at the bottom edge", is_equal_approx(entry.get_global_rect().end.y, ui.get_viewport_rect().size.y))
 
     entry.get_node("Handle").emit_signal("pressed")
-    yield(create_timer(ui.ENTRY_TIME + 0.1), "timeout")
+    yield(create_timer(ui.get_node("MoveEntry").ENTRY_TIME + 0.1), "timeout")
     check("open, the field shows whole", entry.rect_size.y >= field.rect_position.y + field.rect_size.y)
     check("and it has the keys", text().has_focus())
     check("the handle closes it now", entry.get_node("Handle/Label").text == "Cerrar")
@@ -64,12 +64,12 @@ func _the_field():
 
     # Escape closes it instead of asking to leave
     _key(KEY_ESCAPE)
-    yield(create_timer(ui.ENTRY_TIME + 0.1), "timeout")
-    check("Escape closes the field", !ui.entry_open and !text().has_focus())
+    yield(create_timer(ui.get_node("MoveEntry").ENTRY_TIME + 0.1), "timeout")
+    check("Escape closes the field", !ui.get_node("MoveEntry").open and !text().has_focus())
     check("and hides the coordinates", !coordinates_shown())
     check("and does not ask to leave", !ui.has_node("Leave"))
     entry.get_node("Handle").emit_signal("pressed")
-    yield(create_timer(ui.ENTRY_TIME + 0.1), "timeout")
+    yield(create_timer(ui.get_node("MoveEntry").ENTRY_TIME + 0.1), "timeout")
 
 func _openings():
     write("ta1")
