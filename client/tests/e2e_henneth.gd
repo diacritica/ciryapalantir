@@ -8,6 +8,7 @@ extends SceneTree
 # here once the rule is chosen; tests/e2e.sh passes it with --bot=
 
 const Status = preload("res://core/Status.gd")
+const Notation = preload("res://core/Notation.gd")
 
 var server
 var state
@@ -140,7 +141,7 @@ func _refused():
 func _stones(square):
     var stones = []
 
-    for piece_id in state.board.stack(game.Notation.parse_square(square)):
+    for piece_id in state.board.stack(Notation.parse_square(square)):
         var piece = instance_from_id(piece_id)
         stones.append(piece.get_notation_name() + str(piece.player))
 

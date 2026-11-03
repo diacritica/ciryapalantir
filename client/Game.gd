@@ -2,11 +2,16 @@ extends Spatial
 
 # The table. It turns the mouse into taking and dropping pieces, shows the
 # turns of the opponent and puts the pieces back when a turn is undone. What
-# is legal is decided by Match and the rules in core/
+# is legal is decided by Match and the rules in core/. Some parts have
+# scripts of their own:
+#
+#   table/WrittenMove.gd    a turn written in the field, made as the mouse would
+#   table/SchematicView.gd  the tavern or the plain schematic table
 
-const Notation = preload("res://core/Notation.gd")
 const Rules = preload("res://core/Rules.gd")
 const Status = preload("res://core/Status.gd")
+const SchematicView = preload("res://table/SchematicView.gd")
+const WrittenMove = preload("res://table/WrittenMove.gd")
 
 # Collision layers as bit masks: the tiles, the pieces, and what the dragged
 # pieces float over (pieces and the table)
@@ -30,15 +35,6 @@ const MAX_3D_LINES = 1440.0
 const RETURN_TIME = 0.35
 const TAMPAR_FULL = "Ya tienes %d tampar en el tablero: no caben más"
 
-# The schematic view hides the tavern: its table and what is on it, the dust
-# in the air and its lights, and lights all evenly from above over a plain
-# grey table, with plain trays
-const TAVERN = ["table-tavern2", "candle-tavern3", "candle-tavern4", "wood-mug3", "wood-mug4", "Particles", "Particles2", "BakedLightmap", "SpotLight", "light2", "light4", "light5", "BlackFill"]
-const SCHEMATIC_BACKGROUND = Color(0.16, 0.16, 0.17)
-const SCHEMATIC_TABLE = Color(0.24, 0.24, 0.25)
-const SCHEMATIC_TRAY = Color(0.46, 0.46, 0.48)
-const SCHEMATIC_TABLE_HEIGHT = -0.42
-
 # IDLE: nothing in the hand. DRAGGING: the hand follows the mouse.
 # RETURNING: rejected pieces fly back and nothing can be taken
 enum Drag { IDLE, DRAGGING, RETURNING }
@@ -60,11 +56,9 @@ var turn_start = {}
 var home = {}
 # Times the board was out of step with the server and had to be rebuilt
 var rebuilds = 0
-# What the story view shows, to come back to it: the environment of the
-# tavern and which of its nodes were visible
-var story_environment = null
-var tavern_shown = {}
-
+# The look of the table, story or schematic, and the turns written in the field
+var view = null
+var written = null
 func _ready():
     _render_3d_apart()
     Settings.medium()
@@ -72,8 +66,8 @@ func _ready():
     Match.new_board($Board.rows)
 
     $UI.connect("turn_confirmation", self, "_on_turn_confirmation")
-    $UI.connect("move_written", self, "_on_move_written")
-    $UI.connect("entry_shown", self, "_on_entry_shown")
+    $UI/MoveEntry.connect("move_written", self, "_on_move_written")
+    $UI/MoveEntry.connect("entry_shown", self, "_on_entry_shown")
     Match.connect("opponent_played", self, "_on_opponent_played")
     Match.connect("turn_refused", self, "_on_turn_refused")
     Match.connect("status_received", self, "_on_status_received")
@@ -111,14 +105,14 @@ func _ready():
     _follow_camera()
     _fade_hallaciryar()
 
-    story_environment = $WorldEnvironment.environment
-    for name in TAVERN:
-        if has_node(name):
-            tavern_shown[name] = get_node(name).visible
-
+    view = SchematicView.new(self)
+    written = WrittenMove.new(self)
     $UI.connect("view_chosen", self, "_on_view_chosen")
-    $UI.connect("replay_requested", self, "start_replay")
-    $UI.connect("replay_stopped", self, "stop_replay")
+
+    if Match.demo:
+        $UI/Demo.connect("replay_requested", self, "start_replay")
+        $UI/Demo.connect("replay_stopped", self, "stop_replay")
+
     _show_view()
 
     # Opened in a game already started
@@ -366,7 +360,7 @@ func start_replay(turns, clean, first_player):
     var replay = load("res://Replay.gd").new()
     replay.name = "Replay"
     add_child(replay)
-    replay.connect("position_changed", $UI, "show_replay", [replay])
+    replay.connect("position_changed", $UI/Demo, "show_replay", [replay])
     replay.start(self, turns, clean, first_player)
 
 # The board stays as the replay left it, to move the pieces by hand again
@@ -383,77 +377,13 @@ func _on_view_chosen(view):
 # Changes the view at once, without loading the scene again
 func _show_view():
     var schematic = Settings.schematic()
-
-    for name in tavern_shown:
-        get_node(name).visible = tavern_shown[name] and !schematic
-
-    $WorldEnvironment.environment = _schematic_environment() if schematic else story_environment
-
-    if schematic and !has_node("SchematicTable"):
-        _set_the_schematic_table()
-    elif !schematic and has_node("SchematicTable"):
-        for name in ["SchematicTable", "SchematicLight"]:
-            var node = get_node(name)
-            remove_child(node)
-            node.queue_free()
-
-    var tray = null
-
-    if schematic:
-        tray = SpatialMaterial.new()
-        tray.albedo_color = SCHEMATIC_TRAY
-        tray.roughness = 1.0
-
-    for fleet in [$Fleet, $Fleet2]:
-        _paint_meshes(fleet, tray)
+    view.show(schematic)
 
     for piece in _pieces():
         piece.set_schematic(schematic)
 
     $Board.set_schematic(schematic, _view_player())
-    _on_entry_shown($UI.entry_open and $UI.get_node("MoveEntry").visible)
-
-# Even light and no effects: no glow, depth of field, ambient occlusion or fog
-func _schematic_environment():
-    var environment = Environment.new()
-    environment.background_mode = Environment.BG_COLOR
-    environment.background_color = SCHEMATIC_BACKGROUND
-    environment.ambient_light_color = Color(1, 1, 1)
-    environment.ambient_light_energy = 0.6
-    environment.tonemap_mode = Environment.TONE_MAPPER_LINEAR
-    return environment
-
-func _set_the_schematic_table():
-    var plain = SpatialMaterial.new()
-    plain.albedo_color = SCHEMATIC_TABLE
-    plain.roughness = 1.0
-
-    var plane = PlaneMesh.new()
-    plane.size = Vector2(400, 400)
-    var table = MeshInstance.new()
-    table.name = "SchematicTable"
-    table.mesh = plane
-    table.material_override = plain
-    table.translation.y = SCHEMATIC_TABLE_HEIGHT
-    add_child(table)
-
-    # From above and a little from the side of player 1, with soft shadows
-    var light = DirectionalLight.new()
-    light.name = "SchematicLight"
-    light.light_energy = 0.7
-    light.shadow_enabled = true
-    light.shadow_color = Color(0.45, 0.45, 0.45)
-    light.directional_shadow_mode = DirectionalLight.SHADOW_ORTHOGONAL
-    light.rotation_degrees = Vector3(-70, 30, 0)
-    add_child(light)
-
-func _paint_meshes(node, material):
-    for child in node.get_children():
-        if child is MeshInstance:
-            child.material_override = material
-
-        if !child.is_in_group("pieces"):
-            _paint_meshes(child, material)
+    _on_entry_shown($UI/MoveEntry.open and $UI/MoveEntry.visible)
 
 func _view_player():
     return 2 if has_node("CameraPlayer2") else 1
@@ -466,125 +396,9 @@ func _on_entry_shown(shown):
 func _on_move_written(text):
     $UI.move_written_result(play_written(text))
 
-# Makes a written turn on the board as the mouse would, taking and dropping
-# with the same checks, so what cannot be dragged cannot be written either.
-# It takes the place of the move on the board, which comes back if the new
-# one cannot be made. The answer is why not, or "" when it is on the board
-# waiting to be confirmed
+# The answer is why the turn cannot be made, or "" when it is on the board
 func play_written(text):
-    var turn = Notation.normalize(text)
-    var parsed = Notation.parse(turn)
-
-    if parsed.empty():
-        return "No entiendo «%s»" % text.strip_edges()
-
-    if drag != Drag.IDLE:
-        return "Suelta antes la pieza que llevas"
-
-    var before = Match.move_notation()
-    _undo()
-    var error = _write(parsed)
-
-    # What the board ended up with has to be what was written
-    if error == "" and str(Notation.parse(Match.move_notation())) != str(parsed):
-        error = "«%s» no es una jugada válida ahora" % turn
-
-    if error != "":
-        _undo()
-
-        if before != "":
-            _write(Notation.parse(before))
-
-    return error
-
-func _write(parsed):
-    return _write_placement(parsed) if parsed.has("stone") else _write_nosse(parsed)
-
-func _write_placement(parsed):
-    if !_on_board(parsed.square):
-        return "No hay ningún sat %s" % Notation.square_name(parsed.square)
-
-    if parsed.stone == "T" and Match.opening():
-        return "En la apertura no se puede poner una tampa"
-
-    if parsed.stone == "T" and Match.tampar_full():
-        return TAMPAR_FULL % Match.board.size()
-
-    var owner = 3 - Match.player if Match.opening() else Match.player
-    var kind = "H" if parsed.stone == "H" else "C"
-    var piece = null
-
-    for each in _pieces():
-        if each.player == owner and each.get_notation_name() == kind and Match.board.square_of(each.get_instance_id()) == null:
-            piece = each
-            break
-
-    if !piece:
-        return "No queda ninguna %s en la bandeja" % ("hallacirya" if kind == "H" else "cirya")
-
-    if kind == "H" and !Match.hallacirya_playable(Match.player):
-        return "Con Henneth Annûn la Hallacirya solo se juega en la jugada 16 de Morqua o en la 17 de Ninquë"
-
-    if !Match.can_take(piece.get_instance_id()):
-        return "Esa pieza no se puede poner ahora"
-
-    take(piece)
-
-    if parsed.stone == "T":
-        _rotate()
-
-    return _write_drop(parsed.square)
-
-func _write_nosse(parsed):
-    var stack = Match.board.stack(parsed.from) if _on_board(parsed.from) else []
-    var total = 0
-
-    for drop in parsed.drops:
-        total += drop
-
-    if stack.size() < parsed.count:
-        return "En %s no hay %d piezas" % [Notation.square_name(parsed.from), parsed.count]
-
-    if total != parsed.count:
-        return "Las piezas que se sueltan tienen que sumar %d" % parsed.count
-
-    # All the carried pieces go to each square, and the ones left there are
-    # taken again for the next, as with the mouse
-    var square = parsed.from
-    var carried = parsed.count
-
-    for drop in parsed.drops:
-        stack = Match.board.stack(square)
-        var piece_id = stack[stack.size() - carried]
-
-        if !Match.can_take(piece_id):
-            return "Esas piezas de %s no se pueden mover ahora" % Notation.square_name(square)
-
-        take(instance_from_id(piece_id))
-        square += parsed.step
-
-        var error = _write_drop(square)
-
-        if error != "":
-            return error
-
-        carried -= drop
-
-    return ""
-
-func _write_drop(square):
-    if !_on_board(square) or !Match.can_drop(_hand_ids(), square):
-        var name = Notation.square_name(square) if _on_board(square) else "fuera del tablero"
-        var full = _on_board(square) and Match.overflows(_hand_ids(), square)
-        _let_go()
-
-        if full:
-            return "En %s ya no cabe más: un nossë tiene %d piezas como mucho, y la hallacirya encima" % [name, Match.board.size()]
-
-        return "No se puede soltar en %s" % name
-
-    release($Board.tile(square))
-    return ""
+    return written.play(text)
 
 # The hand opens where it is: the undo that follows puts every piece back
 func _let_go():
@@ -592,9 +406,6 @@ func _let_go():
         _land(piece)
 
     _close_hand()
-
-func _on_board(square):
-    return square.x >= 0 and square.y >= 0 and square.x < Match.board.size() and square.y < Match.board.size()
 
 # A piece from the fleet can be placed standing, as a tampa, except in the
 # opening. In the demo any cirya alone in the hand can
@@ -604,7 +415,7 @@ func _rotate():
 
     if hand.get_child_count() == 1 and piece.get_notation_name() != "H" and from_fleet and !Match.opening():
         if !piece.block and !Match.demo and Match.tampar_full():
-            $UI._say(TAMPAR_FULL % Match.board.size())
+            $UI.say(TAMPAR_FULL % Match.board.size())
             return
 
         piece.toggle_block()
